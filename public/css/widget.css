@@ -1,0 +1,36 @@
+
+.wrapper__topright_space{
+  position: fixed;
+  top: 1rem;
+  left: auto;
+  right:1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.wrapper__bottomright_space{
+  position: fixed;
+  bottom: 1rem;
+  left: auto;
+  right:1rem;
+  display: flex;
+  flex-direction: column;
+  display: none;
+}
+
+.wrapper__bottomright_widget{
+  position: fixed;
+  bottom: calc(2rem + 32px); /*up from wrapper__bottomright_space*/
+  left: auto;
+  right:1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.mainmap__topleft_space{
+  position: relative;
+  top: 1rem;
+  left: 1rem;
+  right:auto;
+}

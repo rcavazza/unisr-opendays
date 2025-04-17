@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prenotazione Confermata</title>
+    <link rel="stylesheet" href="/css/common-layout.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'DINNextLTPro-MediumCond';
+            src: url('/fonts/DINNextLTPro-MediumCond.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        
+        @font-face {
+            font-family: 'DINNextLTPro-LightCondensed';
+            src: url('/fonts/DINNextLTPro-LightCondensed.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        
+        @font-face {
+            font-family: 'DINNextLTPro-Bold';
+            src: url('/fonts/DINNextLTPro-Bold.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+    </style>
+    <style>
+        h2 {
+            font-family: 'DINNextLTPro-MediumCond', sans-serif;
+            font-size: 111pt;
+            font-weight: normal;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        body {
+            font-family: 'Poppins', Arial, sans-serif;
+            background-color: #FFC72D; /* Yellow background */
+            color: white;
+            text-align: center;
+            /* Base flexbox layout is now in common-layout.css */
+        }
+        
+        /* Container styles are now in common-layout.css */
+        
+        .qr-container {
+            width: 200px;
+            height: 200px;
+            background-color: white;
+            margin: 0 auto;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        
+        .qr-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .pickup-info {
+            margin: 20px 0;
+            font-size: 1.2rem;
+        }
+        
+        .pickup-detail {
+            font-size: 1.2rem;
+            margin: 5px 0;
+        }
+        
+        .pickup-time {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        
+        .confirm-button {
+            background-color: #c9151b; /* Red button */
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-family: 'DINNextLTPro-MediumCond', sans-serif;
+            font-size: 1.5rem;
+            font-weight: normal;
+            margin: 10px auto; /* Reduced from 20px to 10px */
+            display: block;
+            width: 80%;
+            max-width: 400px;
+        }
+        
+        .language-switcher {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
+        }
+        
+        .language-switcher a {
+            display: inline-block;
+            margin-left: 10px;
+            text-decoration: none;
+        }
+        
+        .language-switcher img {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+        }
+        
+        .tagline {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 30px 0;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 576px) {
+            h2 {
+                font-size: 60pt;
+            }
+            
+            .pickup-info p:first-child {
+                font-size: 30pt !important;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            
+            .qr-container {
+                width: 150px;
+                height: 150px;
+            }
+            
+            .pickup-info {
+                font-size: 1rem;
+            }
+            
+            .pickup-detail {
+                font-size: 1rem;
+            }
+            
+            .pickup-time {
+                font-size: 1.2rem;
+            }
+            
+            .confirm-button {
+                font-size: 1.2rem;
+            }
+            
+            .tagline {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="/images/uniSR.png" alt="UniSR Logo" class="logo">
+    </div>
+    <div class="container">
+        <% if (typeof qrCode !== 'undefined' && qrCode) { %>
+        <div class="qr-container">
+            <img src="<%= qrCode %>" alt="Codice QR" class="qr-image">
+        </div>
+        
+        <div class="pickup-info">
+            <p style="font-family: 'DINNextLTPro-LightCondensed', sans-serif; font-size: 30pt; line-height: 1.1; margin-bottom: 20px;">Puoi ritirare il tuo zaino</p>
+            <% if (typeof fieldData !== 'undefined' && fieldData) { %>
+                <% if (fieldData.customObjectLocation) { %>
+                    <% if (fieldData.customObjectLocation === 'Milano2') { %>
+                        <p class="pickup-detail" style="font-family: 'DINNextLTPro-Bold', sans-serif; font-size: 20pt;">
+                            Milano2: Palazzo Donatello, Student Lounge
+                        </p>
+                    <% } else if (fieldData.customObjectLocation === 'Olgettina') { %>
+                        <p class="pickup-detail" style="font-family: 'DINNextLTPro-Bold', sans-serif; font-size: 20pt;">
+                            Olgettina: Ingresso Dibit 1, lato Olgettina 58
+                        </p>
+                    <% } else { %>
+                        <p class="pickup-detail" style="font-family: 'DINNextLTPro-Bold', sans-serif; font-size: 30pt;">
+                            <strong>location:</strong> <%= fieldData.customObjectLocation %>
+                        </p>
+                    <% } %>
+                <% } else { %>
+                    <p class="pickup-detail" style="font-family: 'DINNextLTPro-Bold', sans-serif; font-size: 30pt;">
+                        <strong>location:</strong> Campus Principale
+                    </p>
+                <% } %>
+                <% if (fieldData.day) { %>
+                    <%
+                    // Parse the date string (YYYY-MM-DD)
+                    const dateParts = fieldData.day.split('-');
+                    const formattedDate = dateParts.length === 3 ?
+                        `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : fieldData.day;
+                    %>
+                    <p class="pickup-time" style="font-family: 'DINNextLTPro-Bold', sans-serif; font-size: 20pt;">
+                        <strong>data:</strong> <%= formattedDate %>
+                    </p>
+                <% } else { %>
+                    <p class="pickup-time" style="font-family: 'DINNextLTPro-Bold', sans-serif; font-size: 30pt;">
+                        <strong>data:</strong> Lunedì alle 13:00
+                    </p>
+                <% } %>
+            <% } else { %>
+                <p class="pickup-detail" style="font-family: 'DINNextLTPro-Bold', sans-serif; font-size: 30pt;"><strong>location:</strong> Campus Principale</p>
+                <p class="pickup-time" style="font-family: 'DINNextLTPro-Bold', sans-serif; font-size: 30pt;"><strong>data:</strong> Lunedì alle 13:00</p>
+            <% } %>
+        </div>
+        
+        <% } else { %>
+        <div class="qr-container">
+            <p>Codice QR non disponibile</p>
+        </div>
+        
+        <div class="pickup-info">
+            <p style="font-family: 'DINNextLTPro-LightCondensed', sans-serif; font-size: 60pt; line-height: 1.1; margin-bottom: 20px;">Prenotazione confermata</p>
+            <p class="pickup-time">Grazie!</p>
+        </div>
+        
+        <% } %>
+    </div>
+    
+    <!-- Footer with image -->
+    <div class="page-footer">
+        <img src="/images/successres.png" alt="Footer Image">
+    </div>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Form Email</title>
+    <!-- Collega il file CSS esterno -->
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+    <div class="form-container">
+        <h2>Inserisci la tua email</h2>
+        <form action="/submit-email" method="POST">
+            <!-- Se vuoi passare il valore di email come variabile in futuro -->
+            <input type="email" name="mail" value="<%= email ? email : '' %>" placeholder="Inserisci la tua email" required>
+            <button type="submit">Invia</button>
+        </form>
+    </div>
+
+</body>
+</html>

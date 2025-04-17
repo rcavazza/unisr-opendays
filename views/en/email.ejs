@@ -1,0 +1,208 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reservation Confirmed</title>
+    <style type="text/css">
+      @font-face {
+        font-family: "Poppins";
+        src: url("https://changemakers.unisr.org/fonts/Poppins-Regular.ttf") format("truetype");
+        font-weight: 400;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: "Poppins";
+        src: url("https://changemakers.unisr.org/fonts/Poppins-Medium.ttf") format("truetype");
+        font-weight: 500;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: "Poppins";
+        src: url("https://changemakers.unisr.org/fonts/Poppins-SemiBold.ttf") format("truetype");
+        font-weight: 600;
+        font-style: normal;
+      }
+      body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+      table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+      img { -ms-interpolation-mode: bicubic; }
+      img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+      table { border-collapse: collapse !important; }
+      body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
+      a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; font-size: inherit !important; font-family: inherit !important; font-weight: inherit !important; line-height: inherit !important; }
+      @media screen and (max-width: 525px) {
+        .wrapper { width: 100% !important; max-width: 100% !important; }
+        .responsive-table { width: 100% !important; }
+        .padding { padding: 10px 5% 15px 5% !important; }
+        .section-padding { padding: 0 15px 50px 15px !important; }
+        .qr-code { width: 150px !important; height: 150px !important; }
+        .pickup-info { font-size: 16px !important; }
+        .pickup-detail { font-size: 16px !important; }
+        .pickup-time { font-size: 18px !important; }
+      }
+      @media (prefers-color-scheme: dark) {
+        body { background-color: #333333 !important; }
+        .email-container { background-color: #333333 !important; }
+        p, h1, h2, h3, span, a { color: #ffffff !important; }
+      }
+    </style>
+  </head>
+  <body style="margin: 0 !important; padding: 0 !important; background-color: #FFC72D; color: #FFFFFF;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed;">
+      <tr>
+        <td bgcolor="#FFC72D" align="center" style="padding: 45px 15px 45px 15px;" class="section-padding">
+          <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 700px;" class="responsive-table">
+            <tr>
+              <td>
+                <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td>
+                      <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                        <tr>
+                          <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 28px; font-weight: 700; color: #FFFFFF; text-transform: uppercase; padding-bottom: 12px;">
+                            Reservation Confirmed
+                          </td>
+                        </tr>
+                        
+                        <!-- QR Code Section -->
+                        <% if (typeof qrCode !== 'undefined' && qrCode) { %>
+                        <tr>
+                          <td align="center" style="padding: 0 0 24px 0;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="200" height="200" style="background-color: white; margin: 0 auto;">
+                              <tr>
+                                <td align="center" valign="middle">
+                                  <img src="https://zaini.unisr.org/<%= qrCode %>" width="200" height="200" border="0" alt="QR Code" style="display: block; width: 200px; height: 200px; max-width: 200px;" class="qr-code">
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                        
+                        <!-- Pickup Information -->
+                        <tr>
+                          <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; color: #FFFFFF; line-height: 25px; padding-bottom: 12px;" class="pickup-info">
+                            <p style="margin: 0;">You can pick up your backpack</p>
+                          </td>
+                        </tr>
+                        
+                        <% if (typeof fieldData !== 'undefined' && fieldData) { %>
+                          <% if (fieldData.customObjectLocation) { %>
+                          <% if (fieldData.customObjectLocation === 'Milano2') { %>
+                          <tr>
+                            <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 400; color: #FFFFFF; line-height: 24px; padding-bottom: 12px;" class="pickup-detail">
+                              <p style="margin: 0;"><strong>location:</strong> <!-- Custom text for Milano2 -->
+                              Milano2: Palazzo Donatello, Student Lounge</p>
+                            </td>
+                          </tr>
+                          <% } else if (fieldData.customObjectLocation === 'Olgettina') { %>
+                          <tr>
+                            <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 400; color: #FFFFFF; line-height: 24px; padding-bottom: 12px;" class="pickup-detail">
+                              <p style="margin: 0;"><strong>location:</strong> <!-- Custom text for Olgettina -->
+                              Olgettina: Dibit 1 Entrance, Olgettina 58 side</p>
+                            </td>
+                          </tr>
+                          <% } else { %>
+                          <tr>
+                            <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 400; color: #FFFFFF; line-height: 24px; padding-bottom: 12px;" class="pickup-detail">
+                              <p style="margin: 0;"><strong>location:</strong> <%= fieldData.customObjectLocation %></p>
+                            </td>
+                          </tr>
+                          <% } %>
+                          <% } else { %>
+                          <tr>
+                            <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 400; color: #FFFFFF; line-height: 24px; padding-bottom: 12px;" class="pickup-detail">
+                              <p style="margin: 0;"><strong>location:</strong> Main Campus</p>
+                            </td>
+                          </tr>
+                          <% } %>
+                          
+                          <% if (fieldData.day) { %>
+                          <%
+                          // Parse the date string (YYYY-MM-DD)
+                          const dateParts = fieldData.day.split('-');
+                          const formattedDate = dateParts.length === 3 ?
+                              `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : fieldData.day;
+                          %>
+                          <tr>
+                            <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 700; color: #FFFFFF; line-height: 28px; padding-bottom: 24px;" class="pickup-time">
+                              <p style="margin: 0;"><strong>data:</strong> <%= formattedDate %></p>
+                            </td>
+                          </tr>
+                          <% } else { %>
+                          <tr>
+                            <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 700; color: #FFFFFF; line-height: 28px; padding-bottom: 24px;" class="pickup-time">
+                              <p style="margin: 0;"><strong>data:</strong> Monday at 01:00pm</p>
+                            </td>
+                          </tr>
+                          <% } %>
+                        <% } else { %>
+                          <tr>
+                            <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 400; color: #000000; line-height: 24px; padding-bottom: 12px;" class="pickup-detail">
+                              <p style="margin: 0;"><strong>location:</strong> Main Campus</p>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 700; color: #000000; line-height: 28px; padding-bottom: 24px;" class="pickup-time">
+                              <p style="margin: 0;"><strong>data:</strong> Monday at 01:00pm</p>
+                            </td>
+                          </tr>
+                        <% } %>
+                        
+                        <% } else { %>
+                        <!-- QR Code Not Available -->
+                        <tr>
+                          <td align="center" style="padding: 0 0 24px 0;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="200" height="200" style="background-color: white; margin: 0 auto;">
+                              <tr>
+                                <td align="center" valign="middle" style="font-family: 'Poppins', sans-serif; font-size: 16px; color: #000000;">
+                                  QR Code not available
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                        
+                        <tr>
+                          <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; color: #000000; line-height: 25px; padding-bottom: 12px;">
+                            <p style="margin: 0;">Reservation confirmed</p>
+                          </td>
+                        </tr>
+                        
+                        <tr>
+                          <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 700; color: #000000; line-height: 28px; padding-bottom: 24px;">
+                            <p style="margin: 0;">Thank you!</p>
+                          </td>
+                        </tr>
+                        <% } %>
+                        
+                        <!-- Additional Information -->
+                        <tr>
+                          <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 400; color: #FFFFFF; line-height: 24px; padding-bottom: 24px;">
+                            <p style="margin: 0;">Il ritiro potra' essere effettuato tra le 10:00 e le 16:00</p>
+                          </td>
+                        </tr>
+                        
+                        <!-- Footer -->
+                        <tr>
+                          <td style="padding: 24px 0 0 0; border-top: 1px solid #000000;">
+                            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                              <tr>
+                                <td align="center">
+                                  <img src="https://zaini.unisr.org/images/uniSRFooter.png" width="200" height="auto" border="0" alt="uniSR" style="display: block; width: 200px; height: auto;">
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

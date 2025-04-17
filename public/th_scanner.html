@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>uniSR QR scanner</title>
+    <script src="qr-scanner.umd.min.js"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        #video {
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+            margin-top: 20px;
+        }
+        #result, #qrContent {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: white;
+            word-break: break-all;
+            max-width: 300px;
+            overflow-y: auto;
+            max-height: 200px;
+        }
+        .button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #scannerControls, #resultControls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 300px;
+        }
+        #debugInfo {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #ffeeaa;
+            border-radius: 5px;
+            max-width: 300px;
+            overflow-y: auto;
+            max-height: 150px;
+        }
+    </style>
+</head>
+<body>
+    <div id="scannerControls">
+        <video id="video"></video>
+        <button id="switchCamera" class="button">Cambia fotocamera</button>
+    </div>
+    <div id="resultControls" style="display: none;">
+<!--         <div id="qrContent"></div>
+ -->        <button id="confirmButton" class="button">Confirm</button>
+        <div id="result"></div>
+        <button id="restartScanner" class="button">Riavvia scanner</button>
+    </div>
+    <div id="debugInfo"></div>
+
+    <script>
+        const video = document.getElementById('video');
+        const qrContentDiv = document.getElementById('qrContent');
+        const resultDiv = document.getElementById('result');
+        const switchCameraButton = document.getElementById('switchCamera');
+        const confirmButton = document.getElementById('confirmButton');
+        const restartScannerButton = document.getElementById('restartScanner');
+        const scannerControls = document.getElementById('scannerControls');
+        const resultControls = document.getElementById('resultControls');
+        const debugInfo = document.getElementById('debugInfo');
+        let qrScanner;
+        let currentCamera = 'environment';
+        let lastQrContent = '';
+        let lastScannedId = '';
+
+        function updateDebugInfo(message) {
+            debugInfo.innerHTML += `<p>${message}</p>`;
+            debugInfo.scrollTop = debugInfo.scrollHeight;
+        }
+
+        async function fetchApiData(id) {
+            updateDebugInfo('Chiamata API in corso...');
+            try {
+                const response = await fetch(`https://carrot.bounceme.net:8080/docheckin/${encodeURIComponent(id)}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                updateDebugInfo('Risposta API ricevuta');
+                return data;
+            } catch (error) {
+                updateDebugInfo(`Errore nella chiamata API: ${error.message}`);
+                return { error: 'Errore nel recupero dei dati dall\'API' };
+            }
+        }
+
+        function displayJsonResult(jsonData) {
+            if (jsonData.result === 'success') {
+                resultDiv.innerHTML = '<p style="color: green;">Check In Success</p>';
+            } else if (jsonData.result === 'ok') {
+                resultDiv.innerHTML = '<p style="color: green;">Vincitore</p>';
+            } else {
+                resultDiv.innerHTML = '<h3>Risposta API:</h3>';
+                resultDiv.innerHTML += `<pre>${JSON.stringify(jsonData, null, 2)}</pre>`;
+            }
+        }
+        
+        async function startScanner() {
+            try {
+                updateDebugInfo('Avvio dello scanner...');
+                qrScanner = new QrScanner(
+                    video,
+                    async result => {
+                        qrScanner.stop();
+                        scannerControls.style.display = 'none';
+                        resultControls.style.display = 'flex';
+                        lastQrContent = result.data;
+
+                        try {
+                            const response = await fetch('/decodewin/'+result.data, {
+                            });
+
+                            if (!response.ok) {
+                                throw new Error(`Errore API: ${response.statusText}`);
+                            }
+
+                            const apiResult = await response.json();
+                            
+                            // Salva l'ID per la successiva chiamata API
+                            lastScannedId = apiResult.id || '';
+
+                            // Visualizza il risultato come una lista nel blocco in alto
+                            let resultHtml = '<h3>Risultato:</h3><ul>';
+                            for (const [key, value] of Object.entries(apiResult)) {
+                                if (key !== 'error' && key !== 'id') {
+                                    resultHtml += `<li><strong>${key}:</strong> ${value}</li>`;
+                                }
+                            }
+                            resultHtml += '</ul>';
+                            qrContentDiv.innerHTML = resultHtml;
+
+                            // Gestisce la visualizzazione del pulsante Confirm e degli errori
+                            if (apiResult.error) {
+                                resultDiv.innerHTML = `<p style="color: red;">${apiResult.error}</p>`;
+                                confirmButton.style.display = 'none';
+                            } else {
+                                resultDiv.innerHTML = '';
+                                confirmButton.style.display = 'block';
+                            }
+
+                        } catch (apiError) {
+                            updateDebugInfo('Errore nella chiamata API: ' + apiError.message);
+                            alert('Si è verificato un errore durante la comunicazione con l\'API.');
+                            confirmButton.style.display = 'none';
+                        }
+                    },
+                    { preferredCamera: currentCamera }
+                );
+
+                await qrScanner.start();
+                updateDebugInfo('Scanner avviato con successo');
+
+                // Resetta i contenuti dei blocchi quando si torna allo scanner
+                qrContentDiv.innerHTML = '';
+                resultDiv.innerHTML = '';
+                lastScannedId = ''; // Resetta anche l'ID salvato
+
+            } catch (error) {
+                updateDebugInfo('Errore nell\'avvio dello scanner: ' + error.message);
+                alert('Impossibile accedere alla fotocamera. Assicurati di aver concesso i permessi necessari.');
+            }
+        }
+
+        switchCameraButton.addEventListener('click', () => {
+            currentCamera = currentCamera === 'environment' ? 'user' : 'environment';
+            qrScanner.setCamera(currentCamera);
+            updateDebugInfo(`Fotocamera cambiata a: ${currentCamera}`);
+        });
+
+        confirmButton.addEventListener('click', async () => {
+            updateDebugInfo('Pulsante Confirm premuto');
+            confirmButton.style.display = 'none'; // Nasconde il pulsante Confirm
+            if (lastScannedId) {
+                const apiResponse = await fetchApiData(lastScannedId);
+                displayJsonResult(apiResponse);
+            } else {
+                updateDebugInfo('Nessun ID disponibile per la chiamata API');
+                alert('Nessun ID disponibile. Scansiona nuovamente il QR code.');
+            }
+        });
+
+        restartScannerButton.addEventListener('click', () => {
+            updateDebugInfo('Riavvio scanner...');
+            resultControls.style.display = 'none';
+            scannerControls.style.display = 'flex';
+            startScanner();
+        });
+
+        startScanner();
+    </script>
+</body>
+</html>

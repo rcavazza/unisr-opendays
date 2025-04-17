@@ -1,0 +1,317 @@
+<% 
+  let backgroundColor = '';
+  let uniSRLogo = 'uniSRFooter.png';
+  let title = '';
+  let image = '';
+  let color = '#ffffff';
+  let content = "";
+  switch(faction) {
+    // Corso di Laurea in Fisioterapia
+    case "10129":
+    // rosso
+      backgroundColor = '#D51126';
+      title = 'FISIOTERAPIA';
+      content = 'FISIOTERAPIA';
+      image = 'heartBeaters.png';
+      break;
+    // Corso di Laurea in Igiene Dentale
+    case "10128":
+    // giallo
+      backgroundColor = '#FFCF21';
+      title = 'IGIENE DENTALE';
+      content = 'IGIENE DENTALE';
+      image = 'mindBlowers.png';
+      break;
+    // Corso di Laurea in Ostetricia
+    case "10230":
+    // blu azzurro
+      backgroundColor = '#0096D6';
+      title = 'OSTETRICIA';
+      content = 'OSTETRICIA';
+      image = 'truthSeekers.png';
+      break;
+    // Corso di Laurea in Ricerca biotecnologica in medicina
+    case "10212":
+    // bianco 
+      backgroundColor = '#FFFFFF';
+      title = 'RICERCA BIOTECNOLOGICA IN MEDICINA';
+      content = 'RICERCA BIOTECNOLOGICA IN MEDICINA';
+      image = 'fastThinkersInverted.png';
+      color = '#000000';
+      uniSRLogo = 'uniSRInverted.png';      
+      break;
+      
+    // 7 ottobre gruppo 1 
+    case "10120":
+      backgroundColor = '#d51126';
+      title = 'INFERMIERISTICA';
+      content = 'INFERMIERISTICA';
+      image = 'heart.png';
+      break;
+    case "10235":
+      backgroundColor = '#0096d6';
+      title = 'SCIENZE<br/>INFERMIERISTICHE<br/>ED OSTETRICHE';
+      content = 'SCIENZE INFERMIERISTICHE ED OSTETRICHE';
+      image = 'leonardo.png';
+      break;
+    case "10130":
+      backgroundColor = '#ffcf21';
+      title = 'ODONTOIATRIA E<br/>PROTESI DENTARIA';
+      content = 'ODONTOIATRIA E PROTESI DENTARIA';
+      image = 'brain.png';
+      break;
+    case "10124":
+      backgroundColor = '#ffffff';
+      title = 'INTERNATIONAL<br/>MEDICAL DOCTORAL<br/>PROGRAM';
+      content = 'INTERNATIONAL MEDICAL DOCTORAL PROGRAM';
+      image = 'atom.png';
+      color = '#000000';
+      uniSRLogo = 'uniSRInverted.png';      
+      break;
+    case "10213":
+      backgroundColor = '#333333';
+      title = 'BIOTECHNOLOGY<br/>AND MEDICAL<br/>BIOLOGY';
+      content = 'BIOTECHNOLOGY AND MEDICAL BIOLOGY';
+      image = 'microscope.png';
+      break;
+    case "10114":
+      backgroundColor = '#d51126';
+      title = 'SCIENZE E<br/>TECNICHE<br/>PSICOLOGICHE';
+      content = 'SCIENZE E TECNICHE PSICOLOGICHE';
+      image = 'heart.png';
+      break;
+    case "10242":
+      backgroundColor = '#0096d6';
+      title = 'SCIENZE POLITICHE<br/>E STRATEGIE<br/>GLOBALI';
+      content = 'SCIENZE POLITICHE E STRATEGIE GLOBALI';
+      image = 'leonardo.png';
+      break;
+    case "10123":
+      backgroundColor = '#ffcf21';
+      title = 'PSICOLOGIA';
+      content = 'PSICOLOGIA';
+      image = 'brain.png';
+      break;
+    case "10121":
+      backgroundColor = '#ffffff';
+      title = 'FILOSOFIA';
+      content = 'FILOSOFIA';
+      color = '#000000';
+      image = 'book.png';
+      uniSRLogo = 'uniSRInverted.png';   
+      break;
+    case "10185":
+      backgroundColor = '#333333';
+      title = 'FILOSOFIA DEL<br/>MONDO<br/>CONTEMPORANEO';
+      content = 'FILOSOFIA DEL MONDO CONTEMPORANEO';
+      image = 'world.png';
+      break;
+    case "10236":
+      backgroundColor = '#727272';
+      title = 'FILOSOFIA STORIA<br/>ARTE E IMMAGINE';
+      content = 'FILOSOFIA STORIA ARTE E IMMAGINE';
+      image = 'hands.png';
+      break;
+
+
+
+    // Casate
+
+    case "1":
+      title = 'HEART BEATERS';
+      content = 'HEART BEATERS';
+      backgroundColor = '#F45E00';
+      image = 'heart.png';
+      break;
+    case "2":
+      title = 'MIND BLOWERS';
+      content = 'MIND BLOWERS';
+      backgroundColor = '#7FBC9E';
+      image = 'brain.png'; 
+      break;
+    case "3":
+      title = 'TRUTH SEEKERS';
+      content = 'TRUTH SEEKERS';
+      backgroundColor = '#14163E';
+      image = 'leonardo.png';
+      break;
+    case "4":
+      title = 'FAST THINKERS';
+      content = 'FAST THINKERS';
+      backgroundColor = '#7C4FE3';
+      image = 'atomWhite.png';  
+      break;
+
+    // 14 ottobre - fcfs
+    case 1000:
+      backgroundColor = '#069AD9';
+      image = 'pittogramma_rgb.png';
+      break;
+    case 1001:
+      backgroundColor = '#CB333B';
+      image = 'pittogramma_rgb.png';
+      break;
+    case 1002:
+      backgroundColor = '#FFFFFF';
+      color = '#000000';
+      image = 'pittogramma_rgb.png';
+      uniSRLogo = 'uniSRInverted.png';   
+      break;
+    case "1000":
+      backgroundColor = '#069AD9';
+      image = 'pittogramma_rgb.png';
+      break;
+    case "1001":
+      backgroundColor = '#CB333B';
+      image = 'pittogramma_rgb.png';
+      break;
+    case "1002":
+      backgroundColor = '#FFFFFF';
+      color = '#000000';
+      image = 'pittogramma_rgb.png';
+      uniSRLogo = 'uniSRInverted.png';   
+      break;
+  }
+
+%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="it">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Grazie</title>
+    <style type="text/css">
+      @font-face {
+        font-family: "Poppins";
+        src: url("https://changemakers.unisr.org/fonts/Poppins-Regular.ttf") format("truetype");
+        font-weight: 400;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: "Poppins";
+        src: url("https://changemakers.unisr.org/fonts/Poppins-Medium.ttf") format("truetype");
+        font-weight: 500;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: "Poppins";
+        src: url("https://changemakers.unisr.org/fonts/Poppins-SemiBold.ttf") format("truetype");
+        font-weight: 600;
+        font-style: normal;
+      }
+      body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+      table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+      img { -ms-interpolation-mode: bicubic; }
+      img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+      table { border-collapse: collapse !important; }
+      body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
+      a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; font-size: inherit !important; font-family: inherit !important; font-weight: inherit !important; line-height: inherit !important; }
+      @media screen and (max-width: 525px) {
+        .wrapper { width: 100% !important; max-width: 100% !important; }
+        .responsive-table { width: 100% !important; }
+        .padding { padding: 10px 5% 15px 5% !important; }
+        .section-padding { padding: 0 15px 50px 15px !important; }
+      }
+      @media (prefers-color-scheme: dark) {
+        body { background-color: #333333; }
+        .email-container { background-color: #333333 !important; }
+        p, h1, h2, h3, span, a { color: #ffffff; }
+      }
+    </style>
+  </head>
+  <body style="margin: 0 !important; padding: 0 !important; background-color: <%= backgroundColor %>; color: <%= color %>;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed;">
+      <tr>
+        <td bgcolor="<%= backgroundColor %>" align="center" style="padding: 45px 15px 45px 15px;" class="section-padding">
+          <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 700px;" class="responsive-table">
+            <tr>
+              <td>
+                <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td>
+                      <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                        <tr>
+                          <td align="center" style="font-family: 'Viridian College', sans-serif; font-size: 28px; font-weight: 700; color: <%= color %>; text-transform: uppercase; padding-bottom: 12px;">
+                            <%- title %>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td align="center" style="padding: 12px 0 24px 0;">
+                            <img src="https://changemakers.unisr.org/images/<%= image %>" width="260" height="260" border="0" alt="<%= title %>" style="display: block; width: 260px; height: 260px; max-width: 260px; object-fit: cover;">
+                          </td>
+                        </tr>
+                        <tr>
+                          <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; color: <%= color %>; line-height: 25px; padding-bottom: 12px;">
+                            <%= name %> <%= lastname %>,
+                          </td>
+                        </tr>
+                        <tr>
+                          <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 400; color: <%= color %>; line-height: 24px; padding-bottom: 12px;">
+                            <% if (faction != 1002) { %>
+                            E' nostro piacere ospitarvi alla cerimonia di Laurea Magistrale Honoris Causa in Biotechnology and Medical Biology insignita al professor Drew Weissman dal Magnifico Rettore, Prof. Enrico Gherlone - presso l'aula Caravella Santa Maria in <a href="https://www.google.com/maps/search/Via+Olgettina+58+-+Milano" style="color: <%= color %>;">Via Olgettina 58</a> - Milano il giorno 14 Ottobre 2024 alle ore 10:00.
+                            <% } else {%>
+                              E' nostro piacere ospitarvi alla cerimonia di Laurea Magistrale Honoris Causa in Biotechnology and Medical Biology insignita al professor Drew Weissman dal Magnifico Rettore, Prof. Enrico Gherlone - presso una delle aule in Streaming al complesso Dibit 1 in <a href="https://www.google.com/maps/search/Via+Olgettina+58+-+Milano" style="color: <%= color %>;">Via Olgettina 58</a> - Milano il giorno 14 Ottobre 2024 alle ore 10:00.
+                            <% } %>
+                          </td>
+                        </tr>
+              
+                        <% if (qrCode) { %>
+                        <tr>
+                          <td align="center" style="padding: 0 0 24px 0;">
+                            <img src="https://changemakers.unisr.org/<%= qrCode %>" width="200" height="200" border="0" alt="QR Code" style="display: block; width: 200px; height: 200px; max-width: 200px;">
+                          </td>
+                        </tr>
+                        <% } %>
+
+
+                        <tr>
+                          <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 400; color: <%= color %>; line-height: 24px; padding-bottom: 12px;">
+                            <% if (faction == 1000) { %>
+        Con questo QR code avra' accesso esclusivo alla sala per assistere alla cerimonia, presentando questo invito al personale di sala.
+                               <% } else if(faction == 1001) {%>
+                              Con questo QR code avra' accesso alla sala fino ad esaurimento dei posti disponibili per assistere alla cerimonia, presentando questo invito al personale di sala.
+                              <% } %>
+                          </td>
+                        </tr>
+
+                        <% if (qrCode) { %>
+                        <tr>
+                          <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 400; color: <%= color %>; line-height: 24px; padding-bottom: 12px;">
+                            Una copia vi e' stata anche inviata per email.
+                          </td>
+                        </tr>
+                        <% } %>
+
+                        <tr>
+                          <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 400; color: <%= color %>; line-height: 24px; padding-bottom: 12px;">
+                            Vi aspettiamo
+                          </td>
+                        </tr>
+
+                        <tr>
+                          <td style="padding: 24px 0 0 0;"></td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 24px 0 0 0; border-top: 1px solid <%= color %>;">
+                            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                              <tr>
+                                <td align="center">
+                                  <img src="https://changemakers.unisr.org/images/<%= uniSRLogo %>" width="200" height="auto" border="0" alt="uniSR" style="display: block; width: 200px; height: auto;">
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

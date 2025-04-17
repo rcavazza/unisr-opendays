@@ -1,0 +1,441 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins-Light.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins-ExtraLight.ttf") format("truetype");
+  font-weight: 100;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins-ExtraBold.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Viridian College";
+  src: url("/fonts/ViridianCollege.otf") format("otf"),
+    url("/fonts/ViridianCollege.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  text-decoration: none;
+}
+
+body {
+  font-family: "Poppins";
+  font-weight: 400;
+  color: #ffffff;
+}
+
+strong {
+  font-weight: 600;
+}
+
+* {
+  font-family: "Poppins", sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: "Poppins", sans-serif;
+  line-height: 1.5em;
+  margin-bottom: 0.75em;
+}
+
+h1 {
+  font-family: "Viridian College";
+  text-transform: uppercase;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+h3 {
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+
+h4 {
+  font-size: 0.625rem;
+  font-weight: 400;
+}
+
+p {
+  margin-bottom: 0.5rem;
+  line-height: 1.2em;
+  font-weight: 400;
+}
+
+.main {
+  display: flex;
+  /* align-items: center;
+  justify-content: center; */
+  padding: 2.813rem;
+  min-height: 100vh;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1;
+  /* padding-top: 1.563rem; */
+}
+
+.footer.image {
+  max-width: 300px;
+  margin: 0rem auto;
+  padding: 0rem 0;
+  border-top: 1px solid #ffffff;
+  padding-top: 1rem;
+  position: relative;
+  width: 100%;
+}
+
+.image.header {
+  width: 18.75rem;
+  padding: 0;
+  margin: 0 auto;
+}
+
+.footer.image .imageIn {
+  width: 50%;
+  position: relative;
+  padding-bottom: initial;
+  margin: 0 auto;
+}
+
+.footer.image .imageIn img {
+  position: initial;
+  object-fit: contain;
+}
+
+.switchLang {
+  position: fixed;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.switchLang img {
+  width: 2rem;
+  height: 2rem;
+}
+
+h1.title {
+  margin-bottom: 0;
+}
+
+/* Overlay */
+
+.overlayMenu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 70vw;
+  height: 100vh;
+  background-color: #ffc72c;
+  color: #000000;
+  padding: 2.813rem 1.813rem;
+  transform: translate(-100%, 0);
+  transition: all 0.4s;
+  transition-timing-function: ease-in;
+  z-index: 2;
+}
+
+.overlayMenu.open {
+  transition-timing-function: ease-out;
+  transform: translate(0%, 0);
+}
+
+.overlayMenu .logoTop {
+  transform: scale(1.4) translate(-2%, 0);
+  margin-bottom: 1rem;
+}
+
+.overlayMenu .logoBottom {
+  width: 90%;
+}
+
+.overlayContent {
+  display: flex;
+  justify-content: space-between;
+  flex-direction: column;
+  height: 100%;
+  padding-top: 5rem;
+}
+
+.overlayMenu button {
+  position: relative;
+  width: 100%;
+  transition: all 0.24s;
+  text-transform: uppercase;
+  border: none;
+  font-weight: 800;
+  font-size: 1.225rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid #000000;
+  background-color: transparent;
+  border-radius: 0;
+  color: #000000;
+  text-align: left;
+  margin: 0;
+}
+
+.overlayMenu a.active button {
+  color: #ffffff;
+}
+
+.overlayMenu .image {
+  padding: 0;
+}
+
+.overlayMenu .image {
+  max-width: 250px;
+}
+
+.overlayMenu .image .imageIn {
+  padding-bottom: initial;
+}
+
+.overlayMenu .image .imageIn img {
+  position: relative;
+  height: initial;
+  object-fit: initial;
+}
+
+.overlayMenuBackground {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 0;
+  opacity: 0;
+  transition: all 0.4s;
+  pointer-events: none;
+}
+
+.overlayMenuBackground.show {
+  pointer-events: all;
+  opacity: 1;
+}
+
+/* End overlay */
+
+/* Burger menu */
+
+.icon-1,
+.icon-2,
+.icon-3 {
+  position: absolute;
+  left: 25%;
+  top: 50%;
+  width: 32px;
+  height: 3px;
+  background-color: #fff;
+  transition: all 400ms cubic-bezier(0.84, 0.06, 0.52, 1.8);
+}
+
+.icon-1 {
+  transform: translateY(-8px);
+  animation-delay: 100ms;
+}
+
+.icon-3 {
+  transform: translateY(8px);
+  animation-delay: 250ms;
+}
+
+.hamburger-icon {
+  position: fixed;
+  height: 60px;
+  width: 60px;
+  top: -0.5rem;
+  left: 0rem;
+  z-index: 3;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all 0.2s ease-in-out;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hamburger-icon:active,
+.hamburger-icon:focus {
+  background-color: transparent;
+}
+
+.hamburger-icon:hover {
+  /* transform: scale(1.2);
+  box-shadow: 0px 0px 30px rgba(0,0,0,0.1); */
+}
+
+.icon-1.a {
+  transform: rotate(40deg);
+  background-color: #000;
+}
+
+.icon-3.b {
+  transform: rotate(-40deg);
+  background-color: #000;
+}
+
+.icon-2.c {
+  opacity: 0;
+  background-color: #000;
+}
+
+.clear {
+  clear: both;
+}
+
+@keyframes slideIn {
+  0% {
+    width: 0%;
+    opacity: 0;
+  }
+
+  100% {
+    width: 50%;
+    opacity: 1;
+  }
+}
+
+/* End burger menu */
+
+@media only screen and (min-width: 600px) {
+  .container {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .footer .imageIn {
+    width: 40%;
+    position: relative;
+    padding-bottom: initial;
+    margin: 0 auto;
+  }
+
+  .overlayMenu {
+    width: 30vw;
+  }
+}
+
+@media only screen and (min-width: 1370px) {
+  .overlayContent {
+    padding-top: 15rem;
+  }
+}
+
+@media screen and (orientation: portrait) and (min-height: 1920px) {
+  .image.header {
+    width: 28.75rem;
+  }
+  .footer.image {
+    max-width: 450px;
+  }
+  .container {
+    max-width: 90%;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+  .hamburger-icon {
+    transform-origin: center;
+    transform: scale(2);
+    top: 1rem;
+    left: 2rem;
+  }
+  .switchLang {
+    transform: scale(2);
+    top: 2rem;
+    right: 2rem;
+  }
+  .overlayMenu {
+    width: 60vw;
+  }
+  .overlayMenu button {
+    font-size: 1.75rem;
+  }
+  .overlayMenu .image {
+    max-width: 350px;
+  }
+
+  .footer.image {
+    max-width: 100%;
+    padding-top: 3rem;
+  }
+
+  .footer.image .imageIn {
+    width: 30%;
+  }
+  .image.header {
+    width: 40rem;
+    transform: translate(0px, 15%);
+  }
+
+  .decoration {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    z-index: 0;
+  }
+}

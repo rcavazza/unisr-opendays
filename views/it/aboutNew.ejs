@@ -1,0 +1,90 @@
+<% let queryString = ''; if (typeof totem !== 'undefined' && totem !== null &&
+totem !== '') { queryString = `?totem=${totem}`; } else if (typeof banner !==
+'undefined' && banner !== null && banner !== '') { queryString =
+`?banner=${banner}`; } %> <% if (typeof hide !== 'undefined' && hide !== null &&
+hide !== '') { if(queryString === ''){ queryString = `?hide=${hide}`; } else {
+queryString = `${queryString}&hide=${hide}`; } }if (typeof qr !== 'undefined' &&
+qr !== null && qr !== '') { if(queryString === ''){ queryString = `?qr=${qr}`; }
+else { queryString = `${queryString}&qr=${qr}`; } } %>
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Menu</title>
+    <link rel="stylesheet" href="/css/reset.css" />
+    <link rel="stylesheet" href="/css/common.css" />
+    <link rel="stylesheet" href="/css/aboutNew.css" />
+  </head>
+  <body class="body">
+    <div class="main">
+      <div class="container">
+        <h1 class="title">
+          ABOUT
+          <div class="image header">
+            <div class="imageIn">
+              <img src="/images/drew.png" alt="Drew Weissman" />
+            </div>
+          </div>
+        </h1>
+
+        <div>
+          <p>
+            <strong>Drew Weissman</strong>, MD, PhD, è riconosciuto a livello
+            globale per il suo lavoro insieme a Katalin Karikó nella scoperta
+            della tecnologia dell'mRNA modificato, che ha inaugurato una nuova
+            era nello sviluppo dei vaccini. La loro svolta nella ricerca
+            sull'mRNA è stata utilizzata sia nei vaccini COVID-19 di
+            BioNTech/Pfizer che di Moderna, rivoluzionando il campo dello
+            sviluppo dei vaccini.
+          </p>
+          <p>
+            “Attraverso le loro scoperte rivoluzionarie, che hanno cambiato
+            radicalmente la nostra comprensione di come l'mRNA interagisce con
+            il nostro sistema immunitario, i vincitori hanno contribuito al
+            ritmo senza precedenti dello sviluppo dei vaccini durante una delle
+            più grandi minacce alla salute umana nei tempi moderni,” si legge
+            nella spiegazione pubblicata sul sito web del Nobel.
+          </p>
+          <p>
+            La ricerca attuale del Dr. Weissman si concentra sullo sviluppo di
+            un vaccino pan-coronavirus per fermare la prossima epidemia di
+            coronavirus, un vaccino universale contro l'influenza, terapie
+            contro il cancro e un vaccino per prevenire l'herpes. Oltre ai
+            vaccini contro le malattie infettive, il suo laboratorio sta
+            sviluppando vaccini per le malattie autoimmuni e per gli allergeni
+            alimentari e aerei.
+          </p>
+          <p>
+            Il Dr. Weissman ha pubblicato oltre 300 articoli scientifici. È
+            stato riconosciuto con numerosi premi tra cui il Premio
+            Lasker-DeBakey per la Ricerca Medica Clinica, il Breakthrough Prize
+            in Life Sciences, l'Albany
+            Medical Center Prize in Medicine and Biomedical Research e il Premio Nobel Prize in Medicine or Physiology.
+          </p>
+          <p>
+            Attualmente svolge la sua attività come Roberts Family Professor in
+            Vaccine Research e direttore del Penn Institute for RNA Innovation
+            presso la Perelman School of Medicine.
+          </p>
+        </div>
+
+        <div class="image footer">
+          <div class="imageIn">
+            <img src="/images/uniSRFooter.png" alt="uniSR" />
+          </div>
+        </div>
+      </div>
+    </div>
+    <img src="/images/decoration.svg" alt="decoration" class="decoration" />
+    <%- include('overlayMenuNew.ejs') %>
+    <script src="/js/index.js"></script>
+    <% if(typeof hide !== 'undefined'){ %>
+      <script src="/js/totem.js"></script>
+    <% } %>
+  </body>
+</html>

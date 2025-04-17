@@ -1,0 +1,242 @@
+<% 
+  let backgroundColor = '';
+  let uniSRLogo = '/images/uniSRFooter.png';
+  let title = '';
+  let image = '';
+  let color = '#ffffff';
+  let content;
+  // Default values if faction is empty or undefined
+  if (!faction) {
+    backgroundColor = '#f8f9fa';  // Light gray background
+    title = 'WELCOME DAY';
+    content = 'WELCOME DAY';
+    image = 'unisr.svg';  // University logo
+    color = '#000000';  // Black text
+    uniSRLogo = '/images/uniSRFooter.png';
+  }
+  
+  switch(faction) {
+    // Corso di Laurea in Fisioterapia
+    case "10129":
+    // rosso
+      backgroundColor = '#D51126';
+      title = 'PHYSIOTHERAPY';
+      content = 'PHYSIOTHERAPY';
+      image = 'heartBeaters.svg';
+      break;
+    // Corso di Laurea in Igiene Dentale
+    case "10128":
+    // giallo
+      backgroundColor = '#FFCF21';
+      title = 'DENTAL HYGIENE';
+      content = 'DENTAL HYGIENE';
+      image = 'mindBlowers.svg';
+      break;
+    // Corso di Laurea in Ostetricia
+    case "10230":
+    // blu azzurro
+      backgroundColor = '#0096D6';
+      title = 'MIDWIFERY';
+      content = 'MIDWIFERY';
+      image = 'truthSeekers.svg';
+      break;
+    // Corso di Laurea in Ricerca biotecnologica in medicina
+    case "10212":
+    // bianco 
+      backgroundColor = '#FFFFFF';
+      title = 'BIOTECHNOLOGICAL RESEARCH IN MEDICINE';
+      content = 'BIOTECHNOLOGICAL RESEARCH IN MEDICINE';
+      image = 'fastThinkersInverted.svg';
+      color = '#000000';
+      uniSRLogo = '/images/uniSRInverted.png';      
+      break;
+      
+    // 7 ottobre gruppo 1 
+    case "10120":
+      backgroundColor = '#d51126';
+      title = 'NURSING';
+      content = 'NURSING';
+      image = 'heart.svg';
+      break;
+    case "10235":
+      backgroundColor = '#0096d6';
+      title = 'NURSING<br/>AND MIDWIFERY SCIENCES';
+      content = 'NURSING AND MIDWIFERY SCIENCES';
+      image = 'leonardo.svg';
+      break;
+    case "10130":
+      backgroundColor = '#ffcf21';
+      title = 'DENTISTRY AND<br/>DENTAL PROSTHODONTICS';
+      content = 'DENTISTRY AND >DENTAL PROSTHODONTICS';
+      image = 'brain.svg';
+      break;
+    case "10124":
+      backgroundColor = '#ffffff';
+      title = 'INTERNATIONAL<br/>MEDICAL DOCTOR<br/>PROGRAM';
+      content = 'INTERNATIONAL MEDICAL DOCTOR PROGRAM';
+      image = 'atom.svg';
+      color = '#000000';
+      uniSRLogo = '/images/uniSRInverted.png';      
+      break;
+    case "10213":
+      backgroundColor = '#333333';
+      title = 'BIOTECHNOLOGY<br/>AND MEDICAL<br/>BIOLOGY';
+      content = 'BIOTECHNOLOGY AND MEDICAL BIOLOGY';
+      image = 'microscope.svg';
+      break;
+    case "10114":
+      backgroundColor = '#d51126';
+      title = 'PSYCHOLOGICAL<br/>SCIENCES AND TECHNIQUES';
+      content = 'PSYCHOLOGICAL SCIENCES AND TECHNIQUES';
+      image = 'heart.svg';
+      break;
+    case "10242":
+      backgroundColor = '#0096d6';
+      title = 'POLITICAL SCIENCE<br/>AND GLOBAL<br/>STRATEGIES';
+      content = 'POLITICAL SCIENCE AND GLOBAL STRATEGIES';
+      image = 'leonardo.svg';
+      break;
+    case "10123":
+      backgroundColor = '#ffcf21';
+      title = 'PSYCHOLOGY';
+      content = 'PSYCHOLOGY';
+      image = 'brain.svg';
+      break;
+    case "10121":
+    backgroundColor = '#ffffff';
+      title = 'PHILOSOPHY';
+      content = 'PHILOSOPHY';
+      color = '#000000';
+      image = 'book.svg';
+      uniSRLogo = '/images/uniSRInverted.png';   
+      break;
+    case "10185":
+      backgroundColor = '#333333';
+      title = 'PHILOSOPHY OF<br/>THE CONTEMPORARY<br/>WORLD';
+      content = 'PHILOSOPHY OF THE CONTEMPORARY WORLD';
+      image = 'world.svg';
+      break;
+    case "10236":
+      backgroundColor = '#727272';
+      title = 'PHILOSOPHY HISTORY<br/>ART AND IMAGE';
+      content = 'PHILOSOPHY HISTORY ART AND IMAGE';
+      image = 'hands.svg';
+      break;
+
+
+
+    // Casate
+
+    case "1":
+      title = 'HEART BEATERS';
+      content = 'HEART BEATERS';
+      backgroundColor = '#F45E00';
+      image = 'heart.svg';
+      break;
+    case "2":
+      title = 'MIND BLOWERS';
+      content = 'MIND BLOWERS';
+      backgroundColor = '#7FBC9E';
+      image = 'brain.svg'; 
+      break;
+    case "3":
+      title = 'TRUTH SEEKERS';
+      content = 'TRUTH SEEKERS';
+      backgroundColor = '#14163E';
+      image = 'leonardo.svg';
+      break;
+    case "4":
+      title = 'FAST THINKERS';
+      content = 'FAST THINKERS';
+      backgroundColor = '#7C4FE3';
+      image = 'atomWhite.svg';  
+      break;
+  }
+  const currentLang = lang;
+  const newLang = currentLang === 'it' ? 'en' : 'it';
+  const langFlag = newLang;
+
+%>
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Thanks</title>
+    <link rel="stylesheet" href="/css/reset.css" />
+    <link rel="stylesheet" href="/css/common.css" />
+    <link rel="stylesheet" href="/css/thanks.css" />
+  </head>
+  <body style="color:<%= color %>;background-color:<%= backgroundColor %>;">
+    <div class="main">
+      <div class="container">
+        <h1><%- title %></h1>
+
+        <div class="image">
+          <div class="imageIn">
+            <img src="/images/<%= image %>" alt="<%= title %>" />
+          </div>
+        </div>
+
+        <h2>Hello <%= name %>,<br />welcome to UniSR!</h2>
+
+        <div class="image qrCode">
+          <div class="imageIn">
+            <img src="<%= qrCode %>" alt="QrCode" />
+          </div>
+        </div>
+
+
+        <p>
+          We look forward to seeing you on <%= date %>, at the UniSR Campus, Via Olgettina 58 – Milan.</p>
+
+          <p>On this occasion, you’ll have the chance to explore the campus and meet the faculty, and all your new colleagues!
+        </p>
+
+<br/>
+        <p><strong>You are part of the <%= content.replace("<br/>"," ") %></strong>.</p>
+
+        <p>
+          <strong>At the entrance, look for your group colors and present this QR Code at the registration desk.</strong>
+        </p>
+<br/>
+
+        <p>We have sent you a copy in your inbox as well.</p>
+
+        <p>
+          We can't wait to meet you and create change together.
+        </p>
+
+        <div class="image footer" style="border-color:<%= color %>;">
+          <div class="imageIn">
+            <img src="<%= uniSRLogo %>" alt="uniSR" />
+          </div>
+        </div>
+      </div>
+      <div class="language-switcher">
+  <form action="thanks" method="POST" style="display: inline;">
+    <input type="hidden" name="email" value="<%= email %>">
+    <input type="hidden" name="name" value="<%= name %>">
+    <input type="hidden" name="date" value="<%= date %>">
+    <input type="hidden" name="faction" value="<%= faction %>">
+    <input type="hidden" name="qrCode" value="<%= qrCode %>">
+    <input type="hidden" name="lang" value="<%= newLang %>">
+<button type="submit" class="switchLang">
+  <img src="/images/<%= langFlag %>.png" alt="Language Flag" width="20" height="20">
+</button>
+
+  </form>
+</div>
+
+    </div>
+    <script src="/js/indexThanks.js"></script>
+    <% if(typeof hide !== 'undefined'){ %>
+      <script src="/js/totem.js"></script>
+    <% } %>
+  </body>
+</html>

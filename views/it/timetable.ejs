@@ -1,0 +1,178 @@
+<% let queryString = ''; if (typeof totem !== 'undefined' && totem !== null && totem !== '') { queryString = `totem=${totem}`; }
+else if (typeof banner !== 'undefined' && banner !== null && banner !== '') {
+queryString = `banner=${banner}`; } %>
+
+<% 
+
+if (typeof hide !== 'undefined' && hide !== null && hide !== '') { 
+  if(queryString === ''){
+    queryString = `hide=${hide}`;
+  } else {
+    queryString = `${queryString}&hide=${hide}`;
+  }
+}if (typeof qr !== 'undefined' && qr !== null && qr !== '') { 
+  if(queryString === ''){
+    queryString = `qr=${qr}`;
+  } else {
+    queryString = `${queryString}&qr=${qr}`;
+  }
+}
+%>
+
+<% let _totem = ''; if (typeof totem !== 'undefined' && totem !== null && totem !== '') { _totem = `${totem}`; }
+%>
+
+<% const _events = typeof events !== 'undefined' ? events : [
+  {
+    "title": "Check in",
+    "time": "08:30 - 9:30",
+    "content": "Corso di Laurea Magistrale in Medicina e Chirurgia (Corso 1)",
+    "sala": "Front Desk",
+    "edificio": "Dibit 1 - Piano Terra",
+    "location": "dibit1_ingresso"
+  },
+  {
+    "title": "Sessione Plenaria",
+    "time": "09:30 - 11:30",
+    "content": "Corso di Laurea Magistrale in Medicina e Chirurgia (Corso 1)",
+    "sala": "Caravella Santa Maria",
+    "edificio": "Dibit 1, piano 2s",
+    "location": "aula_caravella"
+  },
+  {
+    "title": "Treasure Hunt",
+    "time": "11:30 - 12:30",
+    "content": "",
+    "sala": "",
+    "edificio": "",
+    "location": ""
+  },
+  {
+    "title": "Check in",
+    "time": "12:00 - 13:00",
+    "content": "Corso di Laurea Magistrale in Medicina e Chirurgia (Corso 2)",
+    "sala": "Front Desk",
+    "edificio": "Dibit 1 - Piano Terra",
+    "location": "dibit1_ingresso"
+  },
+  {
+    "title": "Sessione Plenaria",
+    "time": "13:00 - 15:00",
+    "content": "Corso di Laurea Magistrale in Medicina e Chirurgia (Corso 2)",
+    "sala": "Caravella Santa Maria",
+    "edificio": "Dibit 1, piano 2s",
+    "location": "aula_caravella"
+  },
+  {
+    "title": "Treasure Hunt",
+    "time": "15:00 - 16:00",
+    "content": "",
+    "sala": "",
+    "edificio": "",
+    "location": ""
+  },
+  {
+    "title": "Check in",
+    "time": "14:30 - 15:30",
+    "content": "Corso di Laurea Magistrale in Medicina e Chirurgia (Corso 3)",
+    "sala": "Front Desk",
+    "edificio": "Dibit 1 - Piano Terra",
+    "location": "dibit1_ingresso"
+  },
+  {
+    "title": "Sessione Plenaria",
+    "time": "09:30 - 11:30",
+    "content": "Corso di Laurea Magistrale in Medicina e Chirurgia (Corso 3)",
+    "sala": "Caravella Santa Maria",
+    "edificio": "Dibit 1, piano 2s",
+    "location": "aula_caravella"
+  },
+  {
+    "title": "Treasure Hunt",
+    "time": "17:30 - 18:30",
+    "content": "",
+    "sala": "",
+    "edificio": "",
+    "location": ""
+  },
+]
+
+%>
+
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Orari</title>
+    <link rel="stylesheet" href="/css/reset.css" />
+    <link rel="stylesheet" href="/css/common.css" />
+    <link rel="stylesheet" href="/css/timetable.css" />
+  </head>
+  <body class="body timetable">
+    <div class="main">
+      <div class="container">
+        <h1 class="title">
+          <div class="image header">
+            <div class="imageIn">
+              <img src="/images/timetable.svg" alt="Orari" />
+            </div>
+          </div>
+        </h1>
+
+        <!-- <p class="instructions">
+          Scegli un evento per visualizzarlo sulla mappa.
+        </p> -->
+        <div>
+          <div class="events">
+            <ul>
+              <% _events.forEach(function(event) { %>
+              <li>
+                <div class="event">
+                  <div class="eventIn">
+                    <header>
+                      <div class="title"><div><%= event.title %></div></div>
+                        <div class="date">
+                          <div><%= event.time %></div>
+                          </div>                  
+                    </header>
+                    <div class="bottom">
+                      <div class="content"><%- event.content %></div>
+                      <div class="info">
+                        <div class="sala"><%= event.sala %></div>
+                        <div class="edificio"><%= event.edificio %></div>
+                        <% if (event.location) { %>
+                        <a
+                          href="/it/wayfinder?start=totem<%= _totem %>&end=<%= event.location %>&<%- queryString %>"
+                          ><button>Indicazioni</button></a
+                        >
+                        <% } %>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </li>
+              <% }); %>
+            </ul>
+          </div>
+        </div>
+
+        <div class="image footer">
+          <div class="imageIn">
+            <img src="/images/uniSRFooter.png" alt="uniSR" />
+          </div>
+        </div>
+      </div>
+    </div>
+    <%- include('overlayMenu.ejs') %>
+    <script src="/js/index.js"></script>
+    <script src="/js/indexTimetable.js"></script>
+    <% if(typeof hide !== 'undefined'){ %>
+      <script src="/js/totem.js"></script>
+    <% } %>
+  </body>
+</html>

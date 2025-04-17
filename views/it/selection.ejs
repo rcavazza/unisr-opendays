@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seleziona Sessione - UniSR</title>
+    <link rel="stylesheet" href="/css/common-layout.css">
+    <style>
+        @font-face {
+            font-family: 'DINNextLTPro-MediumCond';
+            src: url('/fonts/DINNextLTPro-MediumCond.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        /* Inline CSS as requested */
+        body {
+            background-color: #BD1923;
+            color: white;
+            font-family: 'Poppins', Arial, sans-serif;
+            /* Base flexbox layout is now in common-layout.css */
+        }
+
+        /* Container styles are now in common-layout.css */
+
+        .selection-grid {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 10px;
+            margin: 20px 0;
+        }
+
+        .selection-grid th {
+            background-color: rgba(255, 255, 255, 0.3);
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            border-radius: 5px;
+        }
+
+        .selection-grid td {
+            text-align: center;
+            padding: 10px;
+        }
+
+        .selection-grid td:first-child {
+            background-color: rgba(255, 255, 255, 0.3);
+            font-weight: bold;
+            border-radius: 5px;
+        }
+
+        .select-button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .select-button.available {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .select-button.unavailable {
+            background-color: #a01116;
+            color: white;
+            cursor: not-allowed;
+        }
+
+        .generate-qr-button {
+            background-color: #FFDD33;
+            color: black;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-family: 'DINNextLTPro-MediumCond', sans-serif;
+            font-size: 20pt;
+            font-weight: normal;
+            margin: 10px auto; /* Reduced from 30px to 10px */
+            display: block;
+            width: 80%;
+            max-width: 400px;
+        }
+
+        .back-button {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .future-text {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .gotcha-text {
+            position: absolute;
+            bottom: 100px;
+            left: 100px;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .selection-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 10px;
+            margin: 10px 0; /* Reduced from 40px to 10px */
+            /* Fix the table layout to prevent shifts */
+            table-layout: fixed;
+        }
+
+        .selection-table th {
+            background-color: rgba(255, 255, 255, 0.3);
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            border-radius: 5px;
+            color: white;
+        }
+
+        .selection-table td:first-child {
+            background-color: rgba(255, 255, 255, 0.3);
+            font-weight: bold;
+            border-radius: 5px;
+            padding: 15px;
+            color: white;
+        }
+
+        .selection-table td {
+            text-align: center;
+            padding: 5px;
+        }
+
+        .select-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .select-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+.select-btn.selected {
+    border: 2px solid white;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.7);
+    /* Prevent layout shift by using box-sizing */
+    box-sizing: border-box;
+}
+.container {
+    margin-top: -40px;
+}
+
+        .select-btn.unavailable {
+            background-color: #a01116;
+            cursor: not-allowed;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .date-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .date-button {
+                width: 80%;
+            }
+            /* h1, h2 font-size is now controlled by common-layout.css */
+            
+            .generate-qr-button {
+                font-size: 30pt;
+            }
+        }
+    </style>
+    <style>
+        /* Style for pickup time information */
+        .pickup-time-info {
+            text-align: center;
+            font-size: 1rem; /* Much smaller than the h1 */
+            margin-top: -10px; /* Negative margin to bring it closer to the h1 */
+            margin-bottom: 0px; /* Reduced from 20px to 0px to minimize space */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .pickup-time-info {
+                font-size: 0.8rem;
+            }
+        }
+        /* Stile per il testo dei posti rimanenti */
+        .remaining-text {
+            font-size: 0.8rem;
+            color: #FFDD33;
+            margin-top: 5px;
+            display: block;
+        }
+
+        /* Responsive design per la tabella */
+        @media (max-width: 768px) {
+            .selection-table {
+                font-size: 0.8rem;
+            }
+            
+            .select-btn {
+                padding: 10px 5px;
+                font-size: 0.8rem;
+            }
+            
+            .remaining-text {
+                font-size: 0.7rem;
+            }
+        }
+        
+        /* Add tablet-specific styling */
+        @media (min-width: 577px) and (max-width: 992px) {
+            .generate-qr-button {
+                font-size: 40pt;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="/images/uniSR.png" alt="UniSR Logo" class="logo">
+        <h1>Seleziona la sessione</h1>
+        <p class="pickup-time-info">Il ritiro potra' essere effettuato tra le 10:00 e le 16:00</p>
+    </div>
+
+    <div class="container">
+        <form id="reservation-form" action="/submit-reservation" method="POST">
+            <input type="hidden" name="contactID" value="<%= contactId %>">
+            <input type="hidden" name="lang" value="it">
+            <input type="hidden" name="customObjectLocation" value="<%= location %>">
+            
+            <div id="selection-table-container">
+                <!-- La tabella di selezione sarà generata dinamicamente -->
+            </div>
+            
+            <button id="submit-button" type="submit" class="generate-qr-button" disabled>Seleziona</button>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get the options from the server
+            const options = <%- JSON.stringify(options) %>;
+            const fields = options.fields || [];
+            const limits = options.limits || {};
+            const remainingSlots = <%- JSON.stringify(remainingSlots || {}) %>;
+            
+            // Get the location from the template
+            const location = "<%= location %>";
+            
+            // State for current selections
+            const selections = {};
+            
+            // Get the date values from the first field (assuming it's the day field)
+            const dateField = fields[0] || { id: 'day', values: [] };
+            const dateValues = dateField.values || [];
+            
+            // Get the container for the selection table
+            const tableContainer = document.getElementById('selection-table-container');
+            
+            // Create the table element
+            const table = document.createElement('table');
+            table.className = 'selection-table';
+            
+            // Create table header row with days
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            
+            // Add empty cell for the top-left corner
+            const cornerCell = document.createElement('th');
+            cornerCell.textContent = '';
+            cornerCell.style.backgroundColor = '#BD1923';
+            cornerCell.style.border = 'none';
+            headerRow.appendChild(cornerCell);
+            
+            // Add day headers
+            dateValues.forEach(dateValue => {
+                const th = document.createElement('th');
+                
+                // Format the date for display
+                let displayText = dateValue;
+                if (dateValue.includes('-')) {
+                    // Try to format as a date if it looks like a date string
+                    try {
+                        const date = new Date(dateValue);
+                        displayText = date.toLocaleDateString('it-IT', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        });
+                    } catch (e) {
+                        // If date parsing fails, use the original value
+                        console.error('Error parsing date:', e);
+                    }
+                }
+                
+                th.textContent = displayText;
+                headerRow.appendChild(th);
+            });
+            
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+            
+            // Create table body with location rows
+            const tbody = document.createElement('tbody');
+            
+            // For now, we only have one location
+            const locationRow = document.createElement('tr');
+            
+            // Add location cell
+            const locationCell = document.createElement('td');
+            locationCell.textContent = location || 'Location';
+            locationRow.appendChild(locationCell);
+            
+            // Add cells for each day
+            dateValues.forEach(dateValue => {
+                const td = document.createElement('td');
+                
+                // Create the key for checking remaining slots
+                // Include both day and location in the key
+                const key = `${dateValue}_${location}`;
+                
+                // Get remaining slots for this combination
+                // If no specific limit for this location, fall back to the default (empty location)
+                const remaining = remainingSlots[key] !== undefined ? remainingSlots[key] : (remainingSlots[`${dateValue}_`] || 0);
+                
+                // Check if this date is available based on remaining slots
+                const isAvailable = remaining > 0;
+                
+                // Create button
+                const button = document.createElement('button');
+                button.type = 'button'; // Prevent form submission on click
+                button.className = isAvailable ? 'select-btn' : 'select-btn unavailable';
+                button.textContent = isAvailable ? 'SELEZIONA' : '';
+                
+                // Add remaining slots text
+                const remainingText = document.createElement('span');
+                remainingText.className = 'remaining-text';
+                remainingText.textContent = isAvailable ?
+                    `${remaining} ${remaining === 1 ? 'posto' : 'posti'} rimanenti` :
+                    'Nessun posto disponibile';
+                
+                button.appendChild(remainingText);
+                button.setAttribute('data-value', dateValue);
+                
+                if (isAvailable) {
+                    button.addEventListener('click', function() {
+                        // Remove selection from all buttons
+                        document.querySelectorAll('.select-btn').forEach(btn => {
+                            btn.classList.remove('selected');
+                        });
+                        
+                        // Add selected class to this button
+                        this.classList.add('selected');
+                        
+                        // Update selections
+                        selections[dateField.id] = this.getAttribute('data-value');
+                        
+                        // Update hidden form inputs
+                        let input = document.getElementById(`${dateField.id}-input`);
+                        if (!input) {
+                            input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.id = `${dateField.id}-input`;
+                            input.name = dateField.id;
+                            document.getElementById('reservation-form').appendChild(input);
+                        }
+                        input.value = selections[dateField.id];
+                        
+                        // Enable submit button
+                        document.getElementById('submit-button').disabled = false;
+                    });
+                }
+                
+                td.appendChild(button);
+                locationRow.appendChild(td);
+            });
+            
+            tbody.appendChild(locationRow);
+            table.appendChild(tbody);
+            tableContainer.appendChild(table);
+            
+            // Form validation
+            const form = document.getElementById('reservation-form');
+            form.addEventListener('submit', function(e) {
+                // Check if a date has been selected
+                if (!selections[dateField.id]) {
+                    e.preventDefault();
+                    alert('Seleziona una data per la sessione.');
+                    return;
+                }
+                
+                // Check if the selected date is available
+                const selectedValue = selections[dateField.id];
+                const key = `${selectedValue}_${location}`;
+                // If no specific limit for this location, fall back to the default (empty location)
+                const remaining = remainingSlots[key] !== undefined ? remainingSlots[key] : (remainingSlots[`${selectedValue}_`] || 0);
+                if (remaining <= 0) {
+                    e.preventDefault();
+                    alert('L\'opzione selezionata non è disponibile. Scegli un\'altra opzione.');
+                }
+            });
+        });
+    </script>
+    
+    <!-- Footer with image -->
+    <div class="page-footer">
+        <img src="/images/selectionform.png" alt="Selection Form Footer">
+    </div>
+</body>
+</html>

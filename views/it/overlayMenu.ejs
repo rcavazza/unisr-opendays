@@ -1,0 +1,70 @@
+<% let queryString = ''; if (typeof totem !== 'undefined' && totem !== null && totem !== '') { queryString = `?totem=${totem}`; }
+else if (typeof banner !== 'undefined' && banner !== null && banner !== '') {
+queryString = `?banner=${banner}`; } %>
+
+<% 
+
+if (typeof hide !== 'undefined' && hide !== null && hide !== '') { 
+  if(queryString === ''){
+    queryString = `?hide=${hide}`;
+  } else {
+    queryString = `${queryString}&hide=${hide}`;
+  }
+}if (typeof qr !== 'undefined' && qr !== null && qr !== '') { 
+  if(queryString === ''){
+    queryString = `?qr=${qr}`;
+  } else {
+    queryString = `${queryString}&qr=${qr}`;
+  }
+}
+%>
+<div class="hamburger-icon" id="icon">
+  <div class="icon-1" id="a"></div>
+  <div class="icon-2" id="b"></div>
+  <div class="icon-3" id="c"></div>
+  <div class="clear"></div>
+</div>
+
+<div class="overlayMenuBackground"></div>
+
+<div class="overlayMenu">
+  <div class="overlayContent">
+    <div>
+      <div class="image logoTop">
+        <div class="imageIn">
+          <img src="/images/unisr.svg" alt="UNISR" />
+        </div>
+      </div>
+
+      <ul>
+        <li>
+          <a href="/it/openday<%= queryString %>" id="openday"
+            ><button>✍🏻 registrazione</button></a
+          >
+        </li>
+        <li>
+          <a href="/it/map<%= queryString %>" id="map"
+            ><button>📍 mappa del campus</button></a
+          >
+        </li>
+        <li>
+          <a href="/it/timetable<%= queryString %>" id="timetable"
+            ><button>🕰️ orari</button></a
+          >
+        </li>
+        <!--
+        <% if(typeof hide === 'undefined'){ %>
+          <li id="treasureHuntLinkOverlay" style="display: none;">
+          <a href="https://changemakers.unisr.org:5555/dist<%= queryString %>"><button>💎 caccia al tesoro</button></a>
+        </li>
+        <% } %>
+      -->
+      </ul>
+    </div>
+    <div class="image logoBottom">
+      <div class="imageIn">
+        <img src="/images/uniSRFooter.png" alt="uniSR" />
+      </div>
+    </div>
+  </div>
+</div>

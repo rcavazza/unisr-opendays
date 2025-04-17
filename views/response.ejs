@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Email ricevuta</title>
+    <link rel="stylesheet" href="/css/xstyles.css">
+</head>
+<body>
+    <div class="response-container">
+        <h2>Ciao <%= firstname %>, grazie per aver risposto al nostro invito.</h2>
+        <p>Ti aspettiamo a uniSR il <%= date %></p>      
+        <p>Sei stato assegnato al gruppo di <%= faction %></p>
+        <p>Quando arrivi cerca l'ingresso per gli appartenenti al tuo gruppo e presenta il QR qui sotto</p>
+        <p>Trovi una copia di questo messaggio nella inbox della tua email uniSR</p>
+        
+        <!-- Aggiunta dell'immagine QR code dinamica -->
+        <div class="qr-code-container">
+            <img src="<%= qrCode %>" alt="QR Code per l'ingresso" class="qr-code-image">
+        </div>
+    </div>
+</body>
+</html>

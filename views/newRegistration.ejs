@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome Day Registration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Prenota consegna zaini</h1>
+    <form action="/submit-registration" method="POST">
+        <input type="hidden" name="contactID" value="<%= contactId %>">
+        <div class="form-group">
+            <label for="day">Select Day:</label>
+            <select name="day" id="day" required>
+                <option value="">Choose a day</option>
+                <% options.days.forEach(day => { %>
+                    <option value="<%= day %>"><%= day %></option>
+                <% }); %>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="location">Select Location:</label>
+            <select name="location" id="location" required>
+                <option value="">Choose a location</option>
+                <% options.locations.forEach(location => { %>
+                    <option value="<%= location %>"><%= location %></option>
+                <% }); %>
+            </select>
+        </div>
+
+        <button type="submit">Register</button>
+    </form>
+
+    <script>
+        // Add client-side validation if needed
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const day = document.getElementById('day').value;
+            const location = document.getElementById('location').value;
+            
+            if (!day || !location) {
+                e.preventDefault();
+                alert('Please fill in all fields');
+            }
+        });
+    </script>
+</body>
+</html>

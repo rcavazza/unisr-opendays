@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>uniSR QR scanner</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #webcam-container {
+            display: inline-block;
+            position: relative;
+            margin-top: 20px;
+        }
+        #webcam-border {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 4px solid transparent;
+        }
+        #snapshot {
+            margin-top: 10px;
+            display: none; /* Inizialmente nascosta */
+        }
+        #result {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        #take-photo-btn, #toggle-camera-btn, #reset-btn {
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+<div>Teachable Machine Image Model</div>
+<div id='webcam-container'>
+    <div id='webcam-border'></div>
+</div>
+<img id='snapshot' />
+<div id='result'></div>
+<button id="toggle-camera-btn" type='button' onclick='toggleCamera()'>Cambia fotocamera</button>
+<button id="take-photo-btn" type='button' onclick='takeSnapshot()'>Scatta Foto</button>
+<button id="reset-btn" type='button' onclick='reset()'>Reset</button>
+<div id='label-container'></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.3/dist/teachablemachine-image.min.js"></script>
+<script type="text/javascript">
+    const URL = 'https://teachablemachine.withgoogle.com/models/qWv15UiwG/';
+    const thresh = 0.2;
+    let model, webcam, labelContainer, maxPredictions;
+    let isIos = false; 
+    let isFrontCamera = true;
+    let class1Prediction = 0; // Valore della predizione per "Class 1"
+    
+    if (window.navigator.userAgent.indexOf('iPhone') > -1 || window.navigator.userAgent.indexOf('iPad') > -1) {
+      isIos = true;
+    }
+
+    async function init() {
+        const modelURL = URL + 'model.json';
+        const metadataURL = URL + 'metadata.json';
+        model = await tmImage.load(modelURL, metadataURL);
+        maxPredictions = model.getTotalClasses();
+        const flip = isFrontCamera;
+        const width = 200;
+        const height = 200;
+        webcam = new tmImage.Webcam(width, height, flip);
+        await webcam.setup({ facingMode: isFrontCamera ? "user" : "environment" });
+        if (isIos) {
+            document.getElementById('webcam-container').appendChild(webcam.webcam);
+            const webCamVideo = document.getElementsByTagName('video')[0];
+            webCamVideo.setAttribute("playsinline", true);
+            webCamVideo.muted = "true";
+            webCamVideo.style.width = width + 'px';
+            webCamVideo.style.height = height + 'px';
+        } else {
+            document.getElementById("webcam-container").appendChild(webcam.canvas);
+        }
+        labelContainer = document.getElementById('label-container');
+        webcam.play();
+        window.requestAnimationFrame(loop);
+    }
+
+    async function loop() {
+        webcam.update();
+        await predict();
+        window.requestAnimationFrame(loop);
+    }
+
+    async function predict() {
+        let prediction;
+        if (isIos) {
+            prediction = await model.predict(webcam.webcam);
+        } else {
+            prediction = await model.predict(webcam.canvas);
+        }
+
+        // Visualizza solo la predizione di "Class 1"
+        for (let i = 0; i < maxPredictions; i++) {
+            if (prediction[i].className === "Class 1") {
+                class1Prediction = prediction[i].probability.toFixed(2);
+                labelContainer.innerHTML = `Class 1: ${class1Prediction}`;
+                updateBorder(prediction[i].probability);
+            }
+        }
+    }
+
+    function updateBorder(probability) {
+        const border = document.getElementById('webcam-border');
+        if (probability > thresh) {
+            border.style.borderColor = 'green';
+        } else {
+            border.style.borderColor = 'red';
+        }
+    }
+
+async function takeSnapshot() {
+    // Prendi l'immagine dalla webcam
+    const imageData = webcam.canvas.toDataURL('image/png');
+    
+    // Mostra l'immagine scattata
+    const snapshot = document.getElementById('snapshot');
+    snapshot.src = imageData; // Qui mostra la foto
+    snapshot.style.display = 'block';
+
+    // Nascondi la webcam
+    webcam.stop();
+    document.getElementById('webcam-container').style.display = 'none';
+
+    // Controlla se "Class 1" è superiore alla soglia
+    const result = document.getElementById('result');
+    if (class1Prediction > thresh) {
+        result.innerHTML = "HAI VINTO";
+        result.style.color = 'green';
+    } else {
+        result.innerHTML = "HAI PERSO";
+        result.style.color = 'red';
+    }
+
+        // // Invia la foto al server
+        // const blob = dataURItoBlob(imageData);
+        // const formData = new FormData();
+        // formData.append('file', blob, 'snapshot.png');
+        
+        // fetch('YOUR_UPLOAD_URL', {
+        //     method: 'POST',
+        //     body: formData
+        // }).then(response => response.json())
+        // .then(data => {
+        //     console.log('Foto inviata con successo', data);
+        // }).catch(error => {
+        //     console.error('Errore durante l\'invio della foto', error);
+        // });
+    }
+
+    function dataURItoBlob(dataURI) {
+        const byteString = atob(dataURI.split(',')[1]);
+        const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
+        return new Blob([ab], { type: mimeString });
+    }
+
+    async function toggleCamera() {
+        await webcam.stop();
+        const webcamContainer = document.getElementById('webcam-container');
+        const videoOrCanvas = webcamContainer.querySelector('video') || webcamContainer.querySelector('canvas');
+        if (videoOrCanvas) {
+            webcamContainer.removeChild(videoOrCanvas);
+        }
+        isFrontCamera = !isFrontCamera;
+        await init();
+    }
+
+ function reset() {
+    // Nascondi la foto e il risultato
+    const snapshot = document.getElementById('snapshot');
+    const result = document.getElementById('result');
+
+    // Nascondi la foto
+    snapshot.style.display = 'none';
+    snapshot.src = ''; // Reset dell'immagine
+    result.innerHTML = ''; // Pulisci il messaggio
+
+    // Ripristina la webcam
+    document.getElementById('webcam-container').style.display = 'inline-block';
+
+    // Riavvia la webcam
+    init(); // Ri-inizializza la webcam
+}
+
+
+
+
+    window.addEventListener('load', init);
+</script>
+</body>
+</html>

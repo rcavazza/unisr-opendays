@@ -1,0 +1,158 @@
+/* Common layout styles for header and footer */
+
+/* CSS Variables for consistent sizing */
+:root {
+  --header-height: 15vh;
+  --footer-max-height: 20vh;
+  --content-padding: 2rem;
+  --content-footer-gap: 0.005rem; /* Reduced gap between content and footer */
+}
+
+/* Base page structure */
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Header styles */
+.header {
+  flex: 0 0 auto;
+  padding: 1rem 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.logo {
+  max-width: 100px;
+  margin: 0 auto;
+  display: block;
+}
+
+h1, h2 {
+  font-family: 'DINNextLTPro-MediumCond', sans-serif;
+  font-size: 60pt;
+  margin: 30px 0 15px 0; /* Reduced bottom margin from 30px to 15px */
+  text-align: center;
+  font-weight: normal;
+  line-height: 0.8; /* Reduce spacing between lines */
+}
+
+/* Specific style for selection page */
+#selection-table-container {
+  margin-top: 0; /* Remove top margin */
+  padding-top: 0; /* Remove top padding */
+}
+
+.selection-table {
+  margin-top: 5px !important; /* Minimal top margin */
+}
+
+/* Content area */
+.container {
+  flex: 1 0 auto;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: var(--content-padding);
+  padding-bottom: var(--content-footer-gap); /* Reduced bottom padding */
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
+}
+
+/* Footer styles */
+.page-footer {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  text-align: center;
+  overflow: hidden;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+  max-height: var(--footer-max-height);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.page-footer img {
+  max-height: var(--footer-max-height);
+  width: auto;
+  max-width: 100%;
+  display: block;
+  margin: 0 auto;
+  object-fit: contain;
+  vertical-align: bottom;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1992px) {
+  :root {
+    --footer-max-height: 45vh;
+  }
+}
+
+/* Common button styles */
+.generate-qr-button,
+button[type="submit"] {
+  margin: 10px auto !important; /* Reduced margin, with !important to override page-specific styles */
+}
+
+@media (max-width: 776px) {
+  :root {
+    --header-height: 12vh;
+    --footer-max-height: 1000px; /* Fixed pixel value instead of vh units for more consistent behavior */
+    --content-padding: 1rem;
+    --content-footer-gap: 0; /* No gap for mobile devices */
+  }
+  
+  h1, h2 {
+    font-size: 40pt;
+  }
+  
+  /* Smaller button margins for mobile */
+  .generate-qr-button,
+  button[type="submit"] {
+    margin: 5px auto !important; /* Even smaller margin for mobile */
+  }
+  
+  /* Footer adjustments for mobile */
+  .page-footer {
+    position: fixed; /* Keep fixed positioning */
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 0; /* Use 0 instead of -1 to improve visibility while still keeping it behind content */
+    max-height: var(--footer-max-height);
+    width: 130%; Full width on mobile
+    overflow: visible; /* Allow overflow to be visible */
+  }
+  
+  .page-footer img {
+    max-height: var(--footer-max-height);
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+  }
+  
+  /* Add padding to container to prevent content from being hidden behind footer */
+  .container {
+    padding-bottom: 160px !important; /* Fixed padding slightly larger than footer height */
+    position: relative;
+    z-index: 1; /* Ensure content stays above footer */
+  }
+  
+  /* Reduce bottom margin for selection table on mobile */
+  .selection-table {
+    margin-bottom: 0 !important;
+  }
+}

@@ -1,0 +1,17 @@
+.form-check-input[type=checkbox] {
+  border-radius: 0px !important;
+  width: 13px;
+  height: 13px;
+  margin-top: 0px;
+}
+
+.form-switch .form-check-input {
+  border-radius: 2em!important;
+  width: 25px!important;
+}
+
+.form-select {
+  border-radius: 0px;
+}
+
+

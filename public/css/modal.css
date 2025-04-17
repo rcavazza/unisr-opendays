@@ -1,0 +1,35 @@
+.modal-content{
+  border-radius: 0px;
+}
+
+.modal {
+  z-index: 99992;
+}
+
+.modal-backdrop {
+  z-index: 99991;
+}
+
+.modal-header {
+  padding: 0.5rem 1rem;
+  font-size: large;
+  font-weight: 900;
+}
+
+.modal-body {
+  max-height: 400px;
+  overflow: auto;
+}
+
+@media screen and (max-width: 768px) {
+  .modal-dialog {
+    margin:0px;
+  }
+  .modal-content {
+    height: 100vh;
+  }
+  .modal-body {
+    max-height: none;
+    flex-grow: 1;
+  }
+}

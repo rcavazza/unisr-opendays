@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Mappa del campus</title>
+    <link rel="stylesheet" href="/css/reset.css" />
+    <link rel="stylesheet" href="/css/common.css" />
+    <link rel="stylesheet" href="/css/map.css" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  </head>
+  <body class="body">
+    <div class="main">
+      <div class="container">
+        <div>
+          <h1 class="title">
+            <div class="image header">
+              <div class="imageIn">
+                <img src="/images/campusMap.svg" alt="Mappa del campus" />
+              </div>
+            </div>
+          </h1>
+        </div>
+
+        <div class="imageContainer">
+          <img
+            src="/images/legenda.svg"
+            alt="Scrollable Image"
+            class="scrollable-image"
+          />
+          <div class="legend">
+            <div class="legendIn">
+              <div><a href="#">DIBIT 1</a></div>
+              <div><a href="#">METRO</a></div>
+              <div><a href="#">PARCHEGGIO 1</a></div>
+              <div><a href="#">DIBIT 2</a></div>
+              <div><a href="#">TAXI</a></div>
+              <div><a href="#">PARCHEGGIO 2</a></div>
+            </div>
+          </div>
+        </div>
+        <div class="image footer">
+          <div class="imageIn">
+            <img src="/images/uniSRFooter.png" alt="uniSR" />
+          </div>
+        </div>
+      </div>
+    </div>
+    <%- include('overlayMenu.ejs') %>
+    <script src="/js/index.js"></script>
+    <script src="/js/indexMap.js"></script>
+    <% if(typeof hide !== 'undefined'){ %>
+    <script src="/js/totem.js"></script>
+    <% } %>
+  </body>
+</html>

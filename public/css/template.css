@@ -1,0 +1,114 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: Play, sans-serif;
+}
+
+.wrapper {
+  min-height: 100%;
+  display: grid;
+  grid-template-areas:
+    "sidebar__header mainmap"
+    "sidebar__body mainmap"
+    "sidebar__footer mainmap";
+  grid-template-rows: calc(2rem + 38px) 1fr calc(1rem + 38px);
+  grid-template-columns: 250px 1fr;
+  grid-template-columns: 0px 1fr;
+}
+
+.sidebar__header {
+  grid-area: sidebar__header;
+  background-color: #fff;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.sidebar__body {
+  grid-area: sidebar__body;
+  background-color: #fff;
+  overflow: auto;
+}
+
+.mainmap {
+  grid-area: mainmap;
+  background-color: #fff;
+}
+
+.sidebar__footer {
+  grid-area: sidebar__footer;
+  background-color: #fff;
+  display: flex;
+  align-items: flex-end;
+  padding: 0.5rem;
+}
+
+.siderbar__open--box {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  display: none;
+  padding: 1rem;
+}
+
+.siderbar__close--box {
+  display: none;
+}
+
+/* Media query to hide .c and .e on mobile devices */
+@media (max-width: 768px) {
+  .sidebar__header,
+  .sidebar__body,
+  .sidebar__footer {
+    display: none;
+  }
+  .wrapper {
+    grid-template-columns: 0px 1fr;
+  }
+  .siderbar__open--box {
+    /* display: block; */
+  }
+}
+
+.bottomButtons {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  padding: 1rem;
+  width: 100%;
+}
+
+.bottomButtons .bottomButtonDb1,
+.bottomButtons .bottomButtonDb2{
+  display: flex;
+  gap: 0.25rem;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.bottomButtons button {
+  position: relative;
+  background-color: #ffffff;
+  /* padding: 0.75rem 0; */
+  margin: 1em 0;
+  cursor: pointer;
+  width: 100%;
+  border-radius: 1rem;
+  transition: all 0.24s;
+  color: #000000;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: .85rem;
+  text-align: center;
+  border: none;
+  transition: all 0.24s;
+  display: none;
+}
+
+
+.bottomButtons button.active {
+  background-color: #6ebb5b ;
+}

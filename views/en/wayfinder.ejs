@@ -1,0 +1,186 @@
+<% const _events = typeof events !== 'undefined' ? events : [
+{
+  title: "Evento 1",
+  time: "12:00",
+  content:
+    "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation",
+  sala: "Sala 2",
+  edificio: "Quella grande",
+},
+{
+  title: "Evento 1",
+  time: "12:00",
+  content:
+    "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation",
+  sala: "Sala 2",
+  edificio: "Quella grande",
+},
+{
+  title: "Evento 1",
+  time: "12:00",
+  content:
+    "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation",
+  sala: "Sala 2",
+  edificio: "Quella grande",
+},
+]
+%>
+
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Wayfinder</title>
+    <link rel="stylesheet" href="/css/reset.css" />
+    <link rel="stylesheet" href="/css/common.css" />
+    <link rel="stylesheet" href="/css/timetable.css" />
+
+        <!-- CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"  type="text/css" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"  type="text/css"  >
+        <link href="https://viglino.github.io/font-gis/css/font-gis.css" rel="stylesheet"  type="text/css"  >
+        <link href="https://fonts.googleapis.com" rel="preconnect"  type="text/css"  >
+        <link href="https://fonts.gstatic.com" rel="preconnect"  type="text/css"  >
+        <link href="https://fonts.googleapis.com/css2?family=Play:wght@400;700&display=swap" rel="stylesheet"  type="text/css"  >
+        <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"  type="text/css"  >
+        <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,900;1,200;1,300;1,400;1,500;1,600;1,700;1,900&display=swap" rel="stylesheet"  type="text/css"  >
+        <link href="https://unpkg.com/maplibre-gl@4.5.0/dist/maplibre-gl.css" rel="stylesheet"  type="text/css"  >
+        <link href="/css/template.css" rel="stylesheet"  type="text/css"  >
+        <link href="/css/mapPj.css" rel="stylesheet"  type="text/css"  >
+        <link href="/css/_style.css" rel="stylesheet"  type="text/css"  >
+        <link href="/css/tocbox.css" rel="stylesheet"  type="text/css"  >
+        <link href="/css/buttons.css" rel="stylesheet"  type="text/css"  >
+        <link href="/css/forms.css" rel="stylesheet"  type="text/css"  >
+        <link href="/css/modal.css" rel="stylesheet"  type="text/css"  >
+        <link href="/css/icons.css" rel="stylesheet"  type="text/css"  >
+        <link href="/css/widget.css" rel="stylesheet"  type="text/css"  >
+        <link href="/css/_style__custom.css" rel="stylesheet"  type="text/css"  >
+  </head>
+  <body class="body">
+    <!-- <div class="main">
+      <div class="container"> -->
+       
+        <div class="wrapper">
+          <div class="sidebar__header">
+          </div>
+          <div class="sidebar__body">
+              
+                  <div class="tocbox_building" 
+                  toc_token="dibit1"
+                      >
+                      <div class="tocbox_building__label">DIBIT1</div>
+                      <div class="tocbox_building__btn_group">
+                      <div class="btn-group building__btn_group" 
+                          token="dibit1"
+                          role="group" aria-label="Basic example" 
+                          style="width: 100%;">
+                          <button toc_token="dibit1_2s" class="tocbox__check__btn btn btn-light btn-sm">2S</button>
+                          <button toc_token="dibit1_1s" class="tocbox__check__btn btn btn-light btn-sm">1S</button>
+                          <button toc_token="dibit1_pt" class="tocbox__check__btn btn btn-light btn-sm">PT</button>
+                          <button toc_token="dibit1_1p" class="tocbox__check__btn btn btn-light btn-sm">1P</button>
+                          </div>
+                      </div>
+                  </div>
+                  <div class="tocbox_building" 
+                  toc_token="dibit2"
+                      >
+                      <div class="tocbox_building__label">DIBIT2</div>
+                      <div class="tocbox_building__btn_group">
+                      <div class="btn-group building__btn_group" 
+                          token="dibit2"
+                          role="group" aria-label="Basic example" 
+                          style="width: 100%;">
+                          <button toc_token="dibit2_1s" class="tocbox__check__btn btn btn-light btn-sm">1S</button>
+                          <button toc_token="dibit2_pt" class="tocbox__check__btn btn btn-light btn-sm">PT</button>
+                          <button toc_token="dibit2_1p" class="tocbox__check__btn btn btn-light btn-sm">1P</button>
+                          </div>
+                      </div>
+                  </div>
+                      <div class="tocbox__pois"
+              style="padding:0.5rem 0"></div>
+          </div>
+          <div class="sidebar__footer">
+          </div>
+          <div class="mainmap">
+              <div class="siderbar__open--box">
+              <button class="btn btn-light siderbar__open--btn">
+                  <i class="bi bi-layout-sidebar-inset"></i></button>
+              </div>
+              <div id="mapid"></div>
+          </div>
+          <div class="wrapper__topright_space no-sidebar--container">
+          </div>
+          <div class="wrapper__bottomright_space no-sidebar--container">
+          </div>
+          <div class="wrapper__bottomright_widget no-sidebar--container">
+          </div>
+      </div><!-- /.wrapper -->
+            
+      <div class="bottomButtons">
+        <div class="bottomButtonDb1">
+          <button class="btn btn-light" id="btn__zoomin" data-name="Bibit1 2S" data-building="Bibit1" data-floor="2S">
+            DIBIT 1<br/>-2
+          </button>
+          <button class="btn btn-light" id="btn__zoomin" data-name="Bibit1 1S" data-building="Bibit1" data-floor="1S">
+            DIBIT 1<br/>-1
+          </button>
+          <button class="btn btn-light" id="btn__zoomin" data-name="Bibit1 PT" data-building="Bibit1" data-floor="PT">
+            DIBIT 1<br/>G
+          </button>
+          <button class="btn btn-light" id="btn__zoomin" data-name="Bibit1 P" data-building="Bibit1" data-floor="P">
+            DIBIT 1<br/>1
+          </button>
+        </div>
+        <div class="bottomButtonDb2">
+          <button class="btn btn-light" id="btn__zoomin" data-name="Bibit2 1S" data-building="Bibit2" data-floor="1S">
+            DIBIT 2<br/>-1
+          </button>
+          <button class="btn btn-light" id="btn__zoomin" data-name="Bibit2 PT"  data-building="Bibit2" data-floor="PT">
+            DIBIT 2<br/>G
+          </button>
+          <button class="btn btn-light" id="btn__zoomin" data-name="Bibit2 P"  data-building="Bibit2" data-floor="P">
+            DIBIT 2<br/>1
+          </button>
+        </div>
+        
+      </div>
+      
+      <script>
+          const PROJECT_PID = 6;
+          const PROJECT_FROM = "<%= start %>";
+          const PROJECT_TO = "<%= end %>";
+      </script> 
+  
+      <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+      <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+      <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+  
+      <script src='https://unpkg.com/maplibre-gl@4.5.0/dist/maplibre-gl.js'></script>
+  
+      <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/numbro@2.3.6/dist/numbro.min.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.2/moment.min.js"></script>
+      <script type="text/javascript" src='https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js'></script>
+  
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.7.2/axios.min.js" 
+          integrity="sha512-JSCFHhKDilTRRXe9ak/FJ28dcpOJxzQaCd3Xg8MyF6XFjODhy/YMCM8HW0TFDckNHWUewW+kfvhin43hKtJxAw==" 
+      crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  
+      
+      <script src="/js/template.js"></script>
+      <script type="module" src="/js/_script.js"></script>
+
+      <!-- </div>
+    </div> -->
+    <%- include('overlayMenuNew.ejs') %>
+    <script src="/js/index.js"></script>
+    <% if(typeof hide !== 'undefined'){ %>
+      <script src="/js/totem.js"></script>
+    <% } %>
+  </body>
+</html>

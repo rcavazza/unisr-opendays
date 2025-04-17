@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>uniSR QR scanner</title>
+    <script src="qr-scanner.umd.min.js"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        #video {
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+            margin-top: 20px;
+        }
+        #result, #qrContent {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: white;
+            word-break: break-all;
+            max-width: 300px;
+            overflow-y: auto;
+            max-height: 200px;
+        }
+        .button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #scannerControls, #resultControls, #locationSelection {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 300px;
+        }
+        #debugInfo {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #ffeeaa;
+            border-radius: 5px;
+            max-width: 300px;
+            overflow-y: auto;
+            max-height: 150px;
+        }
+        .location-button {
+            width: 80%;
+            margin: 10px;
+            padding: 15px;
+            font-size: 18px;
+            background-color: #4CAF50;
+        }
+        .location-button:hover {
+            background-color: #45a049;
+        }
+        .warning-message {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #ffcc00;
+            border-radius: 5px;
+            color: #333;
+            font-weight: bold;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="locationSelection">
+        <h2>Seleziona Ubicazione</h2>
+        <p>Seleziona l'ubicazione in cui ti trovi:</p>
+        <button id="milano2Button" class="button location-button">Milano2</button>
+        <button id="olgettinaButton" class="button location-button">Olgettina</button>
+    </div>
+    <div id="scannerControls" style="display: none;">
+        <video id="video"></video>
+        <button id="switchCamera" class="button">Cambia fotocamera</button>
+    </div>
+    <div id="resultControls" style="display: none;">
+        <div id="qrContent"></div>
+        <button id="confirmButton" class="button">Confirm</button>
+        <div id="result"></div>
+        <button id="restartScanner" class="button">Riavvia scanner</button>
+    </div>
+    <div id="debugInfo"></div>
+
+    <script>
+        const video = document.getElementById('video');
+        const qrContentDiv = document.getElementById('qrContent');
+        const resultDiv = document.getElementById('result');
+        const switchCameraButton = document.getElementById('switchCamera');
+        const confirmButton = document.getElementById('confirmButton');
+        const restartScannerButton = document.getElementById('restartScanner');
+        const scannerControls = document.getElementById('scannerControls');
+        const resultControls = document.getElementById('resultControls');
+        const locationSelection = document.getElementById('locationSelection');
+        const milano2Button = document.getElementById('milano2Button');
+        const olgettinaButton = document.getElementById('olgettinaButton');
+        const debugInfo = document.getElementById('debugInfo');
+        let qrScanner;
+        let currentCamera = 'environment';
+        let lastQrContent = '';
+        let lastScannedId = '';
+        let selectedLocation = '';
+
+        function updateDebugInfo(message) {
+            debugInfo.innerHTML += `<p>${message}</p>`;
+            debugInfo.scrollTop = debugInfo.scrollHeight;
+        }
+
+        async function fetchApiData(id) {
+            updateDebugInfo('Chiamata API in corso...');
+            try {
+                const response = await fetch(`/docheckin/${encodeURIComponent(id)}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                updateDebugInfo('Risposta API ricevuta');
+                return data;
+            } catch (error) {
+                updateDebugInfo(`Errore nella chiamata API: ${error.message}`);
+                return { error: 'Errore nel recupero dei dati dall\'API' };
+            }
+        }
+
+        function displayJsonResult(jsonData) {
+            if (jsonData.result === 'success') {
+                resultDiv.innerHTML = '<p style="color: green;">Check In OK</p>';
+            } else {
+                resultDiv.innerHTML = '<h3>Risposta API:</h3>';
+                resultDiv.innerHTML += `<pre>${JSON.stringify(jsonData, null, 2)}</pre>`;
+            }
+        }
+
+        async function startScanner() {
+            try {
+                updateDebugInfo('Avvio dello scanner...');
+                qrScanner = new QrScanner(
+                    video,
+                    async result => {
+                        qrScanner.stop();
+                        scannerControls.style.display = 'none';
+                        resultControls.style.display = 'flex';
+                        lastQrContent = result.data;
+
+                        try {
+                            const response = await fetch('/decodeqr', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ qrContent: lastQrContent })
+                            });
+
+                            if (!response.ok) {
+                                throw new Error(`Errore API: ${response.statusText}`);
+                            }
+
+                            const apiResult = await response.json();
+                            
+                            // Salva l'ID per la successiva chiamata API
+                            lastScannedId = apiResult.id || '';
+
+                            // Visualizza il risultato come una lista nel blocco in alto
+                            let resultHtml = '<h3>Risultato:</h3><ul>';
+                            
+                            // Mappa per tradurre i nomi dei campi in italiano
+                            const fieldTranslations = {
+                                'firstname': 'Nome',
+                                'lastname': 'Cognome',
+                                'email': 'Email',
+                                'location': 'Ubicazione',
+                                'ritiro_avvenuto': 'Ritiro avvenuto',
+                                'data_ritiro_text': 'Data ritiro'
+                            };
+                            
+                            // Verifica se l'ubicazione selezionata corrisponde a quella del QR code
+                            const qrLocation = apiResult.location || '';
+                            const locationMismatch = selectedLocation && qrLocation && selectedLocation !== qrLocation;
+                            
+                            // Formatta i valori in modo più leggibile
+                            for (const [key, value] of Object.entries(apiResult)) {
+                                if (key !== 'error' && key !== 'id') {
+                                    // Ottieni il nome tradotto del campo o usa il nome originale
+                                    const fieldName = fieldTranslations[key] || key;
+                                    
+                                    // Formatta i valori booleani
+                                    let displayValue = value;
+                                    if (value === 'true') {
+                                        displayValue = 'Sì';
+                                    } else if (value === 'false') {
+                                        displayValue = 'No';
+                                    }
+                                    
+                                    // Evidenzia l'ubicazione se c'è una discrepanza
+                                    if (key === 'location' && locationMismatch) {
+                                        resultHtml += `<li><strong>${fieldName}:</strong> <span style="color: red;">${displayValue}</span></li>`;
+                                    } else {
+                                        resultHtml += `<li><strong>${fieldName}:</strong> ${displayValue}</li>`;
+                                    }
+                                }
+                            }
+                            resultHtml += '</ul>';
+                            // Verifica se c'è una discrepanza nell'ubicazione e imposta come errore
+                            if (locationMismatch) {
+                                apiResult.error = `ATTENZIONE: L'ubicazione selezionata (${selectedLocation}) non corrisponde a quella del QR code (${qrLocation}).`;
+                            }
+                            
+                            qrContentDiv.innerHTML = resultHtml;
+
+                            // Gestisce la visualizzazione del pulsante Confirm e degli errori
+                            if (apiResult.ritiro_avvenuto === 'true') {
+                                // Se il ritiro è già avvenuto, mostra un errore e nascondi il pulsante
+                                resultDiv.innerHTML = `<p style="color: red;">Il ritiro è già avvenuto.</p>`;
+                                confirmButton.style.display = 'none';
+                            } else {
+                                // Per tutti gli altri casi, mostra il pulsante
+                                confirmButton.style.display = 'block';
+                                
+                                // Se c'è un errore, mostralo ma mantieni il pulsante visibile
+                                if (apiResult.error) {
+                                    resultDiv.innerHTML = `<p style="color: orange;">${apiResult.error}</p>`;
+                                } else {
+                                    resultDiv.innerHTML = '';
+                                }
+                            }
+
+                        } catch (apiError) {
+                            // Mostra l'errore ma mantieni il pulsante visibile
+                            resultDiv.innerHTML = `<p style="color: orange;">Codice non trovato</p>`;
+                            confirmButton.style.display = 'block';
+                        }
+                    },
+                    { preferredCamera: currentCamera }
+                );
+
+                await qrScanner.start();
+                updateDebugInfo('Scanner avviato con successo');
+
+                // Resetta i contenuti dei blocchi quando si torna allo scanner
+                qrContentDiv.innerHTML = '';
+                resultDiv.innerHTML = '';
+                lastScannedId = ''; // Resetta anche l'ID salvato
+
+            } catch (error) {
+                updateDebugInfo('Errore nell\'avvio dello scanner: ' + error.message);
+                alert('Impossibile accedere alla fotocamera. Assicurati di aver concesso i permessi necessari.');
+            }
+        }
+// Event listeners per i pulsanti di ubicazione
+milano2Button.addEventListener('click', () => {
+    selectedLocation = 'Milano2';
+    locationSelection.style.display = 'none';
+    scannerControls.style.display = 'flex';
+    startScanner();
+    updateDebugInfo(`Ubicazione selezionata: ${selectedLocation}`);
+});
+
+olgettinaButton.addEventListener('click', () => {
+    selectedLocation = 'Olgettina';
+    locationSelection.style.display = 'none';
+    scannerControls.style.display = 'flex';
+    startScanner();
+    updateDebugInfo(`Ubicazione selezionata: ${selectedLocation}`);
+});
+
+switchCameraButton.addEventListener('click', () => {
+    currentCamera = currentCamera === 'environment' ? 'user' : 'environment';
+    qrScanner.setCamera(currentCamera);
+    updateDebugInfo(`Fotocamera cambiata a: ${currentCamera}`);
+});
+
+confirmButton.addEventListener('click', async () => {
+    updateDebugInfo('Pulsante Confirm premuto');
+    confirmButton.style.display = 'none'; // Nasconde il pulsante Confirm
+    if (lastScannedId) {
+        const apiResponse = await fetchApiData(lastScannedId);
+        displayJsonResult(apiResponse);
+    } else {
+        updateDebugInfo('Nessun ID disponibile per la chiamata API');
+        alert('Nessun ID disponibile. Scansiona nuovamente il QR code.');
+    }
+});
+
+restartScannerButton.addEventListener('click', () => {
+    updateDebugInfo('Riavvio scanner...');
+    resultControls.style.display = 'none';
+    // Non mostrare più la selezione dell'ubicazione
+    // locationSelection.style.display = 'flex';
+    // Non resettare l'ubicazione selezionata
+    // selectedLocation = '';
+    
+    // Mostra direttamente lo scanner con l'ubicazione già selezionata
+    scannerControls.style.display = 'flex';
+    startScanner();
+});
+
+// Non avviare lo scanner automaticamente, aspetta la selezione dell'ubicazione
+// startScanner();
+        startScanner();
+    </script>
+</body>
+</html>

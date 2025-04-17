@@ -1,0 +1,99 @@
+<% let queryString = ''; if (typeof totem !== 'undefined' && totem !== null && totem !== '') { queryString = `?totem=${totem}`; }
+else if (typeof banner !== 'undefined' && banner !== null && banner !== '') {
+queryString = `?banner=${banner}`; } %>
+
+<% 
+
+if (typeof hide !== 'undefined' && hide !== null && hide !== '') { 
+  if(queryString === ''){
+    queryString = `?hide=${hide}`;
+  } else {
+    queryString = `${queryString}&hide=${hide}`;
+  }
+}if (typeof qr !== 'undefined' && qr !== null && qr !== '') { 
+  if(queryString === ''){
+    queryString = `?qr=${qr}`;
+  } else {
+    queryString = `${queryString}&qr=${qr}`;
+  }
+}
+%>
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Menu</title>
+    <link rel="stylesheet" href="/css/reset.css" />
+    <link rel="stylesheet" href="/css/common.css" />
+    <link rel="stylesheet" href="/css/aboutNew.css" />
+  </head>
+  <body class="body">
+    <div class="main">
+      <div class="container">
+        <h1 class="title">
+          ABOUT
+          <div class="image header">
+            <div class="imageIn">
+              <img src="/images/drew.png" alt="Drew Weissman" />
+            </div>
+          </div>
+        </h1>
+
+        <div>
+          <p>
+            <strong>Drew Weissman</strong>, MD, PhD, Is recognized globally for
+            his work alongside Katalin Karikó in discovering the modified mRNA
+            technology, which has launched a new era of vaccine development.
+            Their mRNA research breakthrough has been used in both the
+            BioNTech/Pfizer and Moderna COVID-19 vaccines and has revolutionised
+            the field of vaccine development.  
+          </p>
+          <p>
+            “Through their groundbreaking discoveries, which have radically
+            changed our understanding of how mRNA interacts with our immune
+            system, the winners have contributed to the unprecedented pace of
+            vaccine development during one of the greatest threats to human
+            health in modern times,” reads the explanation published on the
+            Nobel website.
+          </p>
+          <p>
+            Dr. Weissman’s current research focuses on developing a
+            pan-coronavirus vaccine to stop the next coronavirus epidemic, a
+            universal flu vaccine, cancer therapeutics, and a vaccine to prevent
+            herpes. Beyond infectious disease vaccines, his lab is developing
+            vaccines for autoimmune diseases and food and aero allergens. 
+          </p>
+          <p>
+            Dr. Weissman has published over 300 papers. He has been recognized
+            with numerous awards including the Lasker-DeBakey Clinical Medical
+            Research Award, the Breakthrough Prize in Life Sciences, the Albany
+            Medical Center Prize in Medicine and Biomedical Research, and the
+            Nobel Prize in Medicine or Physiology.
+          </p>
+          <p>
+            He currently carries out his activity as the Roberts Family
+            Professor in Vaccine Research and director of the Penn Institute for
+            RNA Innovation at the Perelman School of Medicine.
+          </p>
+        </div>
+
+        <div class="image footer">
+          <div class="imageIn">
+            <img src="/images/uniSRFooter.png" alt="uniSR" />
+          </div>
+        </div>
+      </div>
+    </div>
+    <img src="/images/decoration.svg" alt="decoration" class="decoration" />
+    <%- include('overlayMenuNew.ejs') %>
+    <script src="/js/index.js"></script>
+    <% if(typeof hide !== 'undefined'){ %>
+       <script src="/js/totem.js"></script>
+     <% } %>
+  </body>
+</html>

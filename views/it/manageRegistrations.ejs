@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Opzioni di Registrazione</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #444;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        input[type="text"], input[type="number"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button.remove {
+            background-color: #dc3545;
+        }
+        button.remove:hover {
+            background-color: #c82333;
+        }
+        .limits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .limit-item {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .save-button {
+            margin-top: 20px;
+            padding: 12px 24px;
+            font-size: 16px;
+            background-color: #28a745;
+        }
+        .save-button:hover {
+            background-color: #218838;
+        }
+        .error {
+            color: #dc3545;
+            margin-top: 10px;
+        }
+        .success {
+            color: #28a745;
+            margin-top: 10px;
+        }
+        .language-switcher {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        .language-switcher a {
+            display: inline-block;
+            margin-left: 10px;
+            text-decoration: none;
+        }
+        .language-switcher img {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div class="language-switcher">
+        <a href="/manage-registrations?lang=en"><img src="/images/en.png" alt="English"></a>
+    </div>
+    
+    <div class="container">
+        <h1>Gestione Opzioni di Registrazione</h1>
+        
+        <div class="section">
+            <h2>Giorni</h2>
+            <div id="days-container">
+                <div class="input-group">
+                    <input type="text" placeholder="AAAA-MM-GG">
+                    <button onclick="addDay(this)">Aggiungi</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Luoghi</h2>
+            <div id="locations-container">
+                <div class="input-group">
+                    <input type="text" placeholder="Nome del luogo">
+                    <button onclick="addLocation(this)">Aggiungi</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Limiti</h2>
+            <div id="limits-container" class="limits-grid"></div>
+        </div>
+
+        <button class="save-button" onclick="saveAll()">Salva Tutte le Modifiche</button>
+        <div id="message"></div>
+    </div>
+
+    <script>
+        let currentData = JSON.parse('<%- JSON.stringify(data) %>');
+        let currentLang = 'it';
+
+        function showMessage(message, isError = false) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = message;
+            messageDiv.className = isError ? 'error' : 'success';
+            setTimeout(() => {
+                messageDiv.textContent = '';
+                messageDiv.className = '';
+            }, 3000);
+        }
+
+        function createRemovableItem(value, container, type) {
+            const div = document.createElement('div');
+            div.className = 'input-group';
+            div.innerHTML = 
+                '<input type="text" value="' + value + '" readonly>' +
+                '<button class="remove" onclick="removeItem(this, \'' + type + '\')">Rimuovi</button>';
+            container.insertBefore(div, container.lastElementChild);
+        }
+
+        function addDay(button) {
+            const input = button.previousElementSibling;
+            const value = input.value.trim();
+            if (!value) return;
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+                showMessage('Formato data non valido. Usa AAAA-MM-GG', true);
+                return;
+            }
+            if (currentData.days.includes(value)) {
+                showMessage('Questo giorno esiste già', true);
+                return;
+            }
+            currentData.days.push(value);
+            createRemovableItem(value, document.getElementById('days-container'), 'days');
+            input.value = '';
+            updateLimits();
+        }
+
+        function addLocation(button) {
+            const input = button.previousElementSibling;
+            const value = input.value.trim();
+            if (!value) return;
+            if (currentData.locations.includes(value)) {
+                showMessage('Questo luogo esiste già', true);
+                return;
+            }
+            currentData.locations.push(value);
+            createRemovableItem(value, document.getElementById('locations-container'), 'locations');
+            input.value = '';
+            updateLimits();
+        }
+
+        function removeItem(button, type) {
+            const input = button.previousElementSibling;
+            const value = input.value;
+            currentData[type] = currentData[type].filter(item => item !== value);
+            button.parentElement.remove();
+            updateLimits();
+        }
+
+        function updateLimits() {
+            const container = document.getElementById('limits-container');
+            container.innerHTML = '';
+            
+            currentData.days.forEach(day => {
+                currentData.locations.forEach(location => {
+                    const key = `${day}_${location}`;
+                    const div = document.createElement('div');
+                    div.className = 'limit-item';
+                    div.innerHTML = 
+                        '<span>' + day + ' - ' + location + '</span>' +
+                        '<input type="number" min="0" value="' + (currentData.limits[key] || 0) + '"' +
+                        ' onchange="updateLimit(\'' + key + '\', this.value)">';
+                    container.appendChild(div);
+                });
+            });
+        }
+
+        function updateLimit(key, value) {
+            currentData.limits[key] = parseInt(value) || 0;
+        }
+
+        function saveAll() {
+            // Create a form element with proper attributes
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/api/registration-options';
+            form.setAttribute('accept-charset', 'UTF-8');
+            
+            // Add the currentData as hidden inputs
+            const dataInput = document.createElement('input');
+            dataInput.type = 'hidden';
+            dataInput.name = 'days';
+            dataInput.value = JSON.stringify(currentData.days);
+            form.appendChild(dataInput);
+            
+            const locationsInput = document.createElement('input');
+            locationsInput.type = 'hidden';
+            locationsInput.name = 'locations';
+            locationsInput.value = JSON.stringify(currentData.locations);
+            form.appendChild(locationsInput);
+            
+            const limitsInput = document.createElement('input');
+            limitsInput.type = 'hidden';
+            limitsInput.name = 'limits';
+            limitsInput.value = JSON.stringify(currentData.limits);
+            form.appendChild(limitsInput);
+            
+            // Add the language as a hidden input
+            const langInput = document.createElement('input');
+            langInput.type = 'hidden';
+            langInput.name = 'lang';
+            langInput.value = currentLang;
+            form.appendChild(langInput);
+            
+            // Show a message to the user
+            showMessage('Salvataggio in corso...');
+            
+            // Append the form to the body and submit it
+            document.body.appendChild(form);
+            
+            // Log for debugging
+            console.log('Invio del form con i dati:', {
+                days: currentData.days,
+                locations: currentData.locations,
+                limits: currentData.limits,
+                lang: currentLang
+            });
+            
+            form.submit();
+        }
+
+        // Initialize the interface
+        window.onload = function() {
+            currentData.days.forEach(day => {
+                createRemovableItem(day, document.getElementById('days-container'), 'days');
+            });
+            currentData.locations.forEach(location => {
+                createRemovableItem(location, document.getElementById('locations-container'), 'locations');
+            });
+            updateLimits();
+        };
+    </script>
+</body>
+</html>

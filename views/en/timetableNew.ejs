@@ -1,0 +1,145 @@
+<% let queryString = ''; if (typeof totem !== 'undefined' && totem !== null && totem !== '') { queryString = `totem=${totem}`; }
+else if (typeof banner !== 'undefined' && banner !== null && banner !== '') {
+queryString = `banner=${banner}`; } %>
+
+<% 
+
+if (typeof hide !== 'undefined' && hide !== null && hide !== '') { 
+  if(queryString === ''){
+    queryString = `hide=${hide}`;
+  } else {
+    queryString = `${queryString}&hide=${hide}`;
+  }
+}if (typeof qr !== 'undefined' && qr !== null && qr !== '') { 
+  if(queryString === ''){
+    queryString = `qr=${qr}`;
+  } else {
+    queryString = `${queryString}&qr=${qr}`;
+  }
+}
+%>
+
+<% let _totem = ''; if (typeof totem !== 'undefined' && totem !== null && totem !== '') { _totem = `${totem}`; }
+%>
+
+<% const _events = typeof events !== 'undefined' ? events : [
+  {
+    "title": "Opening Ceremony",
+    "time": "10:30 - 11:00",
+    "content": "<strong>Inaugural lecture;</strong><br/>Prof. ENRICO GHERLONE<br/>Rector<br/>Vita-Salute San Raffaele University<br/><br/><strong>Speech;</strong><br/>Prof. GUIDO POLI<br/>President of the Degree Course<br/>in Biotechnological Research in Medicine",
+    "sala": "Caravella<br/>Santa Maria",
+    "edificio": "Dibit 1 - 2nd Floor",
+    "location": "aula_caravella"
+  },
+  {
+    "title": "Lectio Magistralis",
+    "time": "11:00 - 11:05",
+    "content": "<strong>Prof. DREW WEISSMAN;</strong><br/>Nucleoside Modified<br/>mRNA-LNPTherapeutics",
+    "sala": "Caravella<br/>Santa Maria",
+    "edificio": "Dibit 1 - 2nd Floor",
+    "location": "aula_caravella"
+  },
+  {
+    "title": "Honorary Master's Degree",
+    "time": "11:05 - 11:45",
+    "content": "",
+    "sala": "Caravella<br/>Santa Maria",
+    "edificio": "Dibit 1 - 2nd Floor",
+    "location": "aula_caravella"
+  },
+  {
+    "title": "Conclusions and Thanks",
+    "time": "11:45 - 12:00",
+    "content": "",
+    "sala": "Caravella<br/>Santa Maria",
+    "edificio": "Dibit 1 - 2nd Floor",
+    "location": "aula_caravella"
+  }
+]
+
+
+%>
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Orari</title>
+    <link rel="stylesheet" href="/css/reset.css" />
+    <link rel="stylesheet" href="/css/common.css" />
+    <link rel="stylesheet" href="/css/timetableNew.css" />
+  </head>
+  <body class="body timetable">
+    <div class="main">
+      <div class="container">
+        <h1 class="title">
+          <p>
+            Awarding of the Honorary Master's Degree in Biotechnological Research in
+            Medicine to Professor <strong>Drew Weissman</strong>, Nobel Prize in
+            Medicine 2023.
+          </p>
+          <p>
+            Monday, October 14, 2024, at 10:00 AM Vita-Salute San Raffaele
+            University Caravella S. Maria Lecture Hall
+          </p>
+        </h1>
+
+        <h2>TIME TABLE</h2>
+
+        <!-- <p class="instructions">
+          Scegli un evento per visualizzarlo sulla mappa.
+        </p> -->
+        <div>
+          <div class="events">
+            <ul>
+              <% _events.forEach(function(event) { %>
+              <li>
+                <div class="event">
+                  <div class="eventIn">
+                    <header>
+                      <div class="title"><div><%= event.title %></div></div>
+                      <div class="date">
+                        <div><%= event.time %></div>
+                      </div>
+                    </header>
+                    <div class="bottom">
+                      <div class="content"><%- event.content %></div>
+                      <div class="info">
+                        <div class="sala"><%- event.sala %></div>
+                        <div class="edificio"><%- event.edificio %></div>
+                        <% if (event.location) { %>
+                        <a
+                          href="/it/wayfinder?start=totem<%= _totem %>&end=<%= event.location %>&<%- queryString %>"
+                          ><button>Indicazioni</button></a
+                        >
+                        <% } %>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </li>
+              <% }); %>
+            </ul>
+          </div>
+        </div>
+
+        <div class="image footer">
+          <div class="imageIn">
+            <img src="/images/uniSRFooter.png" alt="uniSR" />
+          </div>
+        </div>
+      </div>
+    </div>
+    <img src="/images/decoration.svg" alt="decoration" class="decoration" />
+    <%- include('overlayMenuNew.ejs') %>
+    <script src="/js/index.js"></script>
+    <script src="/js/indexTimetable.js"></script>
+    <% if(typeof hide !== 'undefined'){ %>
+    <script src="/js/totem.js"></script>
+    <% } %>
+  </body>
+</html>

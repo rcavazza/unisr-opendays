@@ -1,0 +1,22 @@
+.btn_sm__icon{
+  width: 32px;
+  height: 32px;
+}
+
+.btn{
+  border-radius: 0px;
+}
+
+.btn-group {
+  border-radius: 0;
+}
+
+.btn-quad{
+  height: 42px;
+  width: 42px;
+}
+
+.btn-sm-quad{
+  height: 38px;
+  width: 38px;
+}

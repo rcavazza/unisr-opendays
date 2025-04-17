@@ -1,0 +1,16 @@
+.hidden {
+  display: none !important;
+}
+
+body {
+  --wd-base-color: #fffbff;
+  --wd-base-color-invert: #7b7768;
+  font-size: 13px;
+  overflow: hidden;
+  font-family: Play;
+}
+
+#mapid {
+  background-color: #009cde;
+  /* background-color: #dee2e7; */
+}

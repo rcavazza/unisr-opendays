@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search and Check-in</title>
+    <script>
+        // Funzione per inviare la richiesta di ricerca
+        function search() {
+            // Recupera i valori degli input
+            const nome = document.getElementById('nome').value;
+            const cognome = document.getElementById('cognome').value;
+            
+            // Effettua la richiesta /find con nome e cognome
+            fetch(`/find?nome=${nome}&cognome=${cognome}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Crea la tabella con i risultati
+                    console.log(data);
+                    createTable(data);
+                })
+                .catch(error => console.error('Errore:', error));
+        }
+
+// Funzione per creare la tabella dei risultati
+// Funzione per creare la tabella dei risultati
+function createTable(data) {
+    const tableDiv = document.getElementById('tableDiv');
+    tableDiv.innerHTML = ''; // Resetta il contenuto della div
+
+    const table = document.createElement('table');
+    table.style.width = '100%'; // Rende la tabella larga quanto la pagina
+    table.style.borderCollapse = 'collapse'; // Unisce i bordi delle celle
+    table.style.textAlign = 'center'; // Centra il testo nelle celle
+
+    // Intestazione della tabella
+    const header = document.createElement('tr');
+    header.innerHTML = `
+        <th>ID</th>
+        <th>Email</th>
+        <th>Nome</th>
+        <th>Cognome</th>
+        <th>Gruppo</th>
+        <th>Is Registered</th>
+        <th>Is Check-in</th>
+        <th>Check-in</th>
+    `;
+    header.style.backgroundColor = '#4CAF50'; // Colore di sfondo verde per l'intestazione
+    header.style.color = 'white'; // Colore del testo bianco
+    header.style.padding = '10px'; // Padding per le celle dell'intestazione
+    table.appendChild(header);
+
+    // Popola la tabella con i dati del JSON
+    data.results.forEach(contact => { // Assicurati di usare 'data.results' se la risposta è strutturata in questo modo
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${contact.id}</td>
+            <td>${contact.properties.email || 'N/A'}</td>
+            <td>${contact.properties.firstname || 'N/A'}</td>
+            <td>${contact.properties.lastname || 'N/A'}</td>
+            <td>${contact.properties.cc_codice_descrittivo_corso_contatto || 'N/A'}</td>
+            <td>${contact.properties.isregistered ? 'Yes' : 'No'}</td>
+            <td>${contact.properties.ischeckin ? 'Yes' : 'No'}</td>
+            <td><button onclick="checkin(${contact.id})">Check-in</button></td>
+        `;
+        row.style.border = '1px solid #ddd'; // Bordo per le righe della tabella
+        row.style.padding = '10px'; // Padding per le celle delle righe
+        table.appendChild(row);
+    });
+
+    tableDiv.appendChild(table);
+}
+
+        // Funzione per il check-in
+        function checkin(contactId) {
+            fetch(`/docheckin/${contactId}`)
+                .then(response => response.text())
+                .then(result => {
+                    alert(`Check-in effettuato per ID ${contactId}`);
+                })
+                .catch(error => console.error('Errore:', error));
+        }
+
+        // Funzione per resettare la pagina
+        function resetPage() {
+            document.getElementById('nome').value = '';
+            document.getElementById('cognome').value = '';
+            document.getElementById('tableDiv').innerHTML = ''; // Resetta la tabella
+        }
+    </script>
+</head>
+<body>
+    <h1>Ricerca e Check-in</h1>
+    <form onsubmit="event.preventDefault(); search();">
+        <label for="nome">Nome:</label>
+        <input type="text" id="nome" name="nome" required>
+        <label for="cognome">Cognome:</label>
+        <input type="text" id="cognome" name="cognome" required>
+        <button type="submit">Invia</button>
+        <button type="button" onclick="resetPage()">Reset</button>
+    </form>
+
+    <div id="tableDiv"></div>
+</body>
+</html>

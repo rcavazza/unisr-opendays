@@ -1,0 +1,319 @@
+body {
+  text-align: center;
+  background-color: #009cde;
+}
+
+.main {
+  display: flex;
+}
+
+.title .image {
+}
+
+.image {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 1rem 0;
+}
+
+.image .imageIn {
+  width: 100%;
+  position: relative;
+  padding-bottom: 100%;
+}
+
+.image .imageIn img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.events ul {
+  margin: 0 auto;
+  width: 100%;
+  margin-top: -2rem;
+  margin-bottom: 2rem;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  height: 2.25rem;
+}
+
+.events li {
+  margin-bottom: 0.5rem;
+}
+
+.event {
+  position: relative;
+  background-color: rgba(255, 255, 255, 0.5);
+  padding: 1rem 1.4em;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  border-radius: 1rem;
+  transition: all 0.24s;
+  box-shadow: 0px 4px 7px 0px rgba(0, 0, 0, 0);
+  height: 5.25rem;
+  display: flex;
+  flex-direction: column;
+  color: #ffffff;
+  height: 3rem;
+  overflow: hidden;
+  color: #ffffff;
+  transition-timing-function: ease-in;
+}
+
+.event.open {
+  background-color: rgba(255, 255, 255, 1);
+  height: 10.25rem;
+  transition-timing-function: ease-out;
+}
+
+.eventIn * {
+  transition: opacity 0.04s 0s;
+}
+
+.event.open .eventIn * {
+  transition: opacity 0.24s 0.2s;
+}
+
+.eventIn:before {
+  content: "";
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  width: 0.875rem;
+  height: 0.875rem;
+  background-image: url("../images/arrowRight.svg");
+  transition: all 0.24s;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+.eventIn.open:before {
+  content: "";
+  position: absolute;
+  transform: rotate(90deg);
+}
+
+.event.open .eventIn:before {
+  content: "";
+  position: absolute;
+  transform: rotate(90deg);
+}
+
+.eventIn {
+  padding-left: 2rem;
+}
+
+.event .title {
+  font-size: 0.8rem;
+  text-align: left;
+  font-weight: 600;
+  width: 70%;
+  margin-top: -1rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+}
+
+.event.open .title {
+  color: #009cde;
+}
+
+.event .content {
+  font-size: 0.5rem;
+  line-height: 1.2em;
+  text-align: left;
+  font-weight: 400;
+  color: #000000;
+  opacity: 0;
+  width: 70%;
+  padding-right: 1rem;
+}
+
+.event .bottom {
+  display: flex;
+  height: 6rem;
+}
+
+.event.open .content {
+  opacity: 1;
+  transition-delay: 0.01s;
+}
+.event.open .sala {
+  opacity: 1;
+}
+.event.open .edificio {
+  opacity: 1;
+}
+
+.event .info {
+  width: 30%;
+  text-align: right;
+}
+
+.event.open .info button {
+  opacity: 1;
+}
+
+.event.open .info {
+  opacity: 1;
+  width: 30%;
+  text-align: right;
+}
+
+.event .sala {
+  color: #009cde;
+  font-size: 0.575rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  opacity: 0;
+  transition: all 1s;
+}
+
+.event .info button {
+  border: 0;
+  border-radius: 10rem;
+  background-color: #6ebb5b;
+  color: #000000;
+  font-weight: 500;
+  font-size: 0.75rem;
+  padding: 0.5em 0.75em;
+  margin-top: 1rem;
+  opacity: 0;
+  transition: all 1s;
+}
+
+.event .edificio {
+  color: #000000;
+  font-size: 0.5rem;
+  font-weight: 400;
+  opacity: 0;
+  transition: all 1s;
+}
+
+.event .date {
+  /* position: absolute;
+  top: 1rem;
+  right: 1.4rem; */
+  font-size: 0.6rem;
+  text-align: right;
+  font-weight: 600;
+  /* height: 3rem; */
+  display: flex;
+}
+
+.event.open .date {
+  color: #000000;
+}
+
+.event:active,
+.event:hover {
+  /* box-shadow: 0px 4px 7px 0px rgba(0, 0, 0, 0.23);
+  background-color: rgba(255, 255, 255, 1);
+  color: #000000; */
+}
+
+.event:active::after,
+.event:hover::after {
+  /* background-color: #ffffff;
+  transition-delay: 0.1s; */
+}
+
+@media only screen and (min-width: 600px) {
+}
+
+@media screen and (orientation: portrait) and (min-height: 1920px) {
+  .event .title {
+    line-height: 2.4rem;
+    font-size: 2rem;
+    margin: 0rem 0;
+    width: 75%;
+    font-family: "Poppins";
+    text-transform: initial;
+    font-weight: 300;
+  }
+
+  .event {
+    height: 8rem;
+  }
+
+  header {
+    height: 8.25rem;
+    /* width: 75%; */
+    display: flex;
+    align-items: center;
+    position: relative;
+    top: -1rem;
+    padding-left: 1rem;
+  }
+
+  .event.open {
+    height: 22.25rem;
+  }
+
+  .event .date {
+    font-size: 1.5rem;
+    top: 3rem;
+  }
+
+  .event .sala {
+    font-size: 1.25rem;
+  }
+
+  .event .edificio {
+    font-size: 1.2rem;
+  }
+  .event .info button {
+    font-size: 1rem;
+    /* background-color: transparent; */
+  }
+
+  .event .content {
+    font-size: 0.85rem;
+    line-height: 1.5em;
+  }
+
+  .eventIn::before {
+    width: 1.7rem;
+    height: 1.7rem;
+    top: 2.8rem;
+  }
+
+  h1.title {
+    font-family: "Poppins";
+    margin-top: 6rem;
+    margin-bottom: 2rem;
+    line-height: 2.5rem;
+    font-size: 2.1rem;
+  }
+
+  h1 p {
+    text-align: left;
+    font-size: 2.75rem;
+    line-height: 1.5em;
+    margin: 0 1rem;
+    font-weight: 200;
+    margin-bottom: 3rem;
+    background-color: rgba(0, 0, 0, 0.24);
+    border-radius: 2rem;
+    text-transform: none !important;
+    padding: 3rem;
+    margin-bottom: 1.5rem;
+  }
+
+  h2 {
+    font-family: "Poppins", sans-serif;
+    line-height: 1.5em;
+    margin-bottom: 0.5em;
+    font-size: 8rem;
+    margin-top: 0rem;
+  }
+}

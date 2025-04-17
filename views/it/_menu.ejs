@@ -1,0 +1,76 @@
+<% let queryString = ''; if (typeof totem !== 'undefined' && totem !== null && totem !== '') { queryString = `?totem=${totem}`; }
+else if (typeof banner !== 'undefined' && banner !== null && banner !== '') {
+queryString = `?banner=${banner}`; } %>
+
+<% 
+
+if (typeof hide !== 'undefined' && hide !== null && hide !== '') { 
+  if(queryString === ''){
+    queryString = `?hide=${hide}`;
+  } else {
+    queryString = `${queryString}&hide=${hide}`;
+  }
+}if (typeof qr !== 'undefined' && qr !== null && qr !== '') { 
+  if(queryString === ''){
+    queryString = `?qr=${qr}`;
+  } else {
+    queryString = `${queryString}&qr=${qr}`;
+  }
+}
+%>
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Menu</title>
+    <link rel="stylesheet" href="/css/reset.css" />
+    <link rel="stylesheet" href="/css/common.css" />
+    <link rel="stylesheet" href="/css/menu.css" />
+  </head>
+  <body class="body">
+    <div class="main">
+      <div class="container">
+        <h1 class="title">
+          <div class="image header">
+            <div class="imageIn">
+              <img src="/images/unisa.svg" alt="Unisa" />
+            </div>
+          </div>
+        </h1>
+
+        <ul>
+          <li>
+            <a href="/it/openday<%= queryString %>"><button>✍🏻 registrazione</button></a>
+          </li>
+          <li>
+            <a href="/it/map<%= queryString %>"><button>📍 mappa del campus</button></a>
+          </li>
+          <li>
+            <a href="/it/timetable<%= queryString %>"><button>🕰️ orari</button></a>
+          </li>
+          
+          <!--
+          <% if(typeof hide === 'undefined'){ %>
+          <li id="treasureHuntLink" style="display: none;">
+            <a href="https://changemakers.unisr.org:5555/dist<%= queryString %>"><button>💎 caccia al tesoro</button></a>
+          </li>
+          <% } %>
+        -->
+        </ul>
+
+        <div class="image footer">
+          <div class="imageIn">
+            <img src="/images/uniSRFooter.png" alt="uniSR" />
+          </div>
+        </div>
+      </div>
+    </div>
+    <%- include('overlayMenu.ejs') %>
+    <script src="/js/index.js"></script>
+  </body>
+</html>

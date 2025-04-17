@@ -1,0 +1,79 @@
+.tocbox{
+  display:grid;
+  width:100%;
+  grid-template-columns: 20px 20px 1fr 16px;
+  grid-template-areas: 'check icon label expand';
+  padding: 0.5rem 1rem 0rem 1rem;
+}
+
+.tocbox_list{
+  display:flex;
+  width:100%;
+  padding-bottom: 8px;
+  padding-top: 8px;
+  padding-left: 0.5rem;
+  flex-direction: column;
+}
+
+.tocbox__sub{
+  display:none;
+  width:100%;
+  padding: 0.5rem 1rem;
+  background-color: #ccc;
+  font-size: small;
+}
+
+.tocbox__check{
+  grid-area:check;
+  text-align: left;
+  display:flex;
+  align-items: center;
+}
+
+.tocbox__label{
+  grid-area:label;
+  display:flex;
+  align-items: center;
+}
+
+.tocbox__icon{
+  grid-area:icon;
+  display:flex;
+  align-items: center;
+}
+
+.tocbox__expand{
+  grid-area:expand;
+  text-align: center;
+  cursor:pointer;
+  display:flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.tocbox_simple{
+  padding:0.5rem 1rem;
+}
+
+.tocbox_building{
+  display: grid;
+  width: 100%;
+  grid-template-columns: 50px 1fr;
+  grid-template-areas: 'label btn_group';
+  padding: 0.5rem 1rem 0rem 1rem;
+  align-items: center;
+}
+
+.tocbox_building__label{
+  grid-area:label;
+  text-align: left;
+  display:flex;
+  align-items: center;
+}
+
+.tocbox_building__btn_group{
+  grid-area:btn_group;
+  text-align: left;
+  display:flex;
+  align-items: center;
+}
