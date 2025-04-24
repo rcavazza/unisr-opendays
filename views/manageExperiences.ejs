@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Esperienze</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #444;
+        }
+        .input-group {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        input[type="text"], input[type="number"], select, textarea {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button.remove {
+            background-color: #dc3545;
+        }
+        button.remove:hover {
+            background-color: #c82333;
+        }
+        .save-button {
+            margin-top: 20px;
+            padding: 12px 24px;
+            font-size: 16px;
+            background-color: #28a745;
+        }
+        .save-button:hover {
+            background-color: #218838;
+        }
+        .error {
+            color: #dc3545;
+            margin-top: 10px;
+        }
+        .success {
+            color: #28a745;
+            margin-top: 10px;
+        }
+        .language-selector {
+            margin-bottom: 20px;
+        }
+        .language-selector button {
+            padding: 6px 12px;
+            margin-right: 5px;
+        }
+        .language-selector button.active {
+            background-color: #0056b3;
+        }
+        .experiences-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .experiences-table th, .experiences-table td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        .experiences-table th {
+            background-color: #f2f2f2;
+            font-weight: 600;
+        }
+        .experiences-table tr:hover {
+            background-color: #f9f9f9;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 800px;
+            border-radius: 8px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: black;
+        }
+        .modal-title {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Gestione Esperienze</h1>
+        
+        <% if (message) { %>
+            <div class="success"><%= message %></div>
+        <% } %>
+        
+        <% if (error) { %>
+            <div class="error"><%= error %></div>
+        <% } %>
+        
+        <div class="language-selector">
+            <span>Lingua: </span>
+            <button onclick="changeLanguage('it')" class="<%= language === 'it' ? 'active' : '' %>">Italiano</button>
+            <button onclick="changeLanguage('en')" class="<%= language === 'en' ? 'active' : '' %>">English</button>
+        </div>
+        
+        <div class="section">
+            <h2>Esperienze (<%= language === 'it' ? 'Italiano' : 'English' %>)</h2>
+            
+            <button onclick="openNewExperienceModal()">Aggiungi Nuova Esperienza</button>
+            
+            <table class="experiences-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Titolo</th>
+                        <th>Corso</th>
+                        <th>Tipo Corso</th>
+                        <th>Luogo</th>
+                        <th>Ora Inizio</th>
+                        <th>Ora Fine</th>
+                        <th>Durata</th>
+                        <th>Max Partecipanti</th>
+                        <th>Partecipanti Attuali</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% experiences.forEach(exp => { %>
+                        <tr>
+                            <td><%= exp.experience_id %></td>
+                            <td><%= exp.title %></td>
+                            <td><%= exp.course %></td>
+                            <td><%= exp.course_type %></td>
+                            <td><%= exp.location %></td>
+                            <td><%= exp.ora_inizio || '' %></td>
+                            <td><%= exp.ora_fine || '' %></td>
+                            <td><%= exp.duration %></td>
+                            <td><%= exp.max_participants %></td>
+                            <td><%= exp.current_participants %></td>
+                            <td class="action-buttons">
+                                <button onclick="openEditModal('<%= exp.id %>')">Modifica</button>
+                                <button class="remove" onclick="deleteExperience('<%= exp.id %>')">Elimina</button>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Modal per modifica esperienza -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('editModal')">&times;</span>
+            <h2 class="modal-title">Modifica Esperienza</h2>
+            
+            <form id="editForm">
+                <input type="hidden" id="edit-id">
+                
+                <div class="form-group">
+                    <label for="edit-experience_id">ID Esperienza:</label>
+                    <input type="text" id="edit-experience_id" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-title">Titolo:</label>
+                    <input type="text" id="edit-title" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-course">Corso:</label>
+                    <input type="text" id="edit-course">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-location">Luogo:</label>
+                    <input type="text" id="edit-location">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-date">Data:</label>
+                    <input type="text" id="edit-date">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-ora_inizio">Ora Inizio:</label>
+                    <input type="time" id="edit-ora_inizio">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-ora_fine">Ora Fine:</label>
+                    <input type="time" id="edit-ora_fine">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-duration">Durata:</label>
+                    <input type="text" id="edit-duration">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-desc">Descrizione:</label>
+                    <textarea id="edit-desc"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-course_type">Tipo Corso:</label>
+                    <input type="text" id="edit-course_type">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-max_participants">Massimo Partecipanti:</label>
+                    <input type="number" id="edit-max_participants" min="0">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-current_participants">Partecipanti Attuali:</label>
+                    <input type="number" id="edit-current_participants" min="0">
+                </div>
+                
+                <button type="submit" class="save-button">Salva Modifiche</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal per nuova esperienza -->
+    <div id="newExperienceModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('newExperienceModal')">&times;</span>
+            <h2 class="modal-title">Aggiungi Nuova Esperienza</h2>
+            
+            <form id="newExperienceForm">
+                <div class="form-group">
+                    <label for="new-experience_id">ID Esperienza:</label>
+                    <input type="text" id="new-experience_id" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="new-title">Titolo:</label>
+                    <input type="text" id="new-title" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="new-course">Corso:</label>
+                    <input type="text" id="new-course">
+                </div>
+                
+                <div class="form-group">
+                    <label for="new-location">Luogo:</label>
+                    <input type="text" id="new-location">
+                </div>
+                
+                <div class="form-group">
+                    <label for="new-date">Data:</label>
+                    <input type="text" id="new-date">
+                </div>
+                
+                <div class="form-group">
+                    <label for="new-ora_inizio">Ora Inizio:</label>
+                    <input type="time" id="new-ora_inizio">
+                </div>
+                
+                <div class="form-group">
+                    <label for="new-ora_fine">Ora Fine:</label>
+                    <input type="time" id="new-ora_fine">
+                </div>
+                
+                <div class="form-group">
+                    <label for="new-duration">Durata:</label>
+                    <input type="text" id="new-duration">
+                </div>
+                
+                <div class="form-group">
+                    <label for="new-desc">Descrizione:</label>
+                    <textarea id="new-desc"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="new-course_type">Tipo Corso:</label>
+                    <input type="text" id="new-course_type">
+                </div>
+                
+                <div class="form-group">
+                    <label for="new-max_participants">Massimo Partecipanti:</label>
+                    <input type="number" id="new-max_participants" min="0" value="0">
+                </div>
+                
+                <input type="hidden" id="new-language" value="<%= language %>">
+                
+                <button type="submit" class="save-button">Crea Esperienza</button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // Cambia lingua
+        function changeLanguage(lang) {
+            window.location.href = `/?lang=${lang}`;
+        }
+        
+        // Apri modal per modifica
+        function openEditModal(id) {
+            fetch(`/api/experience/${id}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Errore nel recupero dei dati');
+                    }
+                    return response.json();
+                })
+                .then(experience => {
+                    document.getElementById('edit-id').value = experience.id;
+                    document.getElementById('edit-experience_id').value = experience.experience_id;
+                    document.getElementById('edit-title').value = experience.title || '';
+                    document.getElementById('edit-course').value = experience.course || '';
+                    document.getElementById('edit-location').value = experience.location || '';
+                    document.getElementById('edit-date').value = experience.date || '';
+                    document.getElementById('edit-ora_inizio').value = experience.ora_inizio || '';
+                    document.getElementById('edit-ora_fine').value = experience.ora_fine || '';
+                    document.getElementById('edit-duration').value = experience.duration || '';
+                    document.getElementById('edit-desc').value = experience.desc || '';
+                    document.getElementById('edit-course_type').value = experience.course_type || '';
+                    document.getElementById('edit-max_participants').value = experience.max_participants || 0;
+                    document.getElementById('edit-current_participants').value = experience.current_participants || 0;
+                    
+                    document.getElementById('editModal').style.display = 'block';
+                })
+                .catch(error => {
+                    alert('Errore: ' + error.message);
+                });
+        }
+        
+        // Apri modal per nuova esperienza
+        function openNewExperienceModal() {
+            document.getElementById('newExperienceModal').style.display = 'block';
+        }
+        
+        // Chiudi modal
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+        
+        // Elimina esperienza
+        function deleteExperience(id) {
+            if (confirm('Sei sicuro di voler eliminare questa esperienza?')) {
+                fetch(`/api/experience/${id}`, {
+                    method: 'DELETE'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Errore nell\'eliminazione');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    window.location.href = `/?lang=<%= language %>&message=${encodeURIComponent('Esperienza eliminata con successo')}`;
+                })
+                .catch(error => {
+                    alert('Errore: ' + error.message);
+                });
+            }
+        }
+        
+        // Gestisci form di modifica
+        document.getElementById('editForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('edit-id').value;
+            const data = {
+                title: document.getElementById('edit-title').value,
+                course: document.getElementById('edit-course').value,
+                location: document.getElementById('edit-location').value,
+                date: document.getElementById('edit-date').value,
+                ora_inizio: document.getElementById('edit-ora_inizio').value,
+                ora_fine: document.getElementById('edit-ora_fine').value,
+                duration: document.getElementById('edit-duration').value,
+                desc: document.getElementById('edit-desc').value,
+                language: '<%= language %>',
+                course_type: document.getElementById('edit-course_type').value,
+                max_participants: parseInt(document.getElementById('edit-max_participants').value) || 0,
+                current_participants: parseInt(document.getElementById('edit-current_participants').value) || 0
+            };
+            
+            fetch(`/api/experience/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Errore nell\'aggiornamento');
+                }
+                return response.json();
+            })
+            .then(data => {
+                window.location.href = `/?lang=<%= language %>&message=${encodeURIComponent('Esperienza aggiornata con successo')}`;
+            })
+            .catch(error => {
+                alert('Errore: ' + error.message);
+            });
+        });
+        
+        // Gestisci form per nuova esperienza
+        document.getElementById('newExperienceForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const data = {
+                experience_id: document.getElementById('new-experience_id').value,
+                title: document.getElementById('new-title').value,
+                course: document.getElementById('new-course').value,
+                location: document.getElementById('new-location').value,
+                date: document.getElementById('new-date').value,
+                ora_inizio: document.getElementById('new-ora_inizio').value,
+                ora_fine: document.getElementById('new-ora_fine').value,
+                duration: document.getElementById('new-duration').value,
+                desc: document.getElementById('new-desc').value,
+                language: document.getElementById('new-language').value,
+                course_type: document.getElementById('new-course_type').value,
+                max_participants: parseInt(document.getElementById('new-max_participants').value) || 0,
+                current_participants: 0
+            };
+            
+            fetch('/api/experience', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || 'Errore nella creazione');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                window.location.href = `/?lang=<%= language %>&message=${encodeURIComponent('Esperienza creata con successo')}`;
+            })
+            .catch(error => {
+                alert('Errore: ' + error.message);
+            });
+        });
+        
+        // Chiudi modal quando si clicca fuori
+        window.onclick = function(event) {
+            if (event.target.className === 'modal') {
+                event.target.style.display = 'none';
+            }
+        };
+    </script>
+</body>
+</html>

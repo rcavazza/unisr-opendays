@@ -4,13 +4,6 @@ const reservationOptions = require('./reservationOptions.json');
 const { getRemainingSlots } = require('./remainingSlots');
 const app = express();
 
-// Add CORS middleware
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-    next();
-});
-
 // Variabile globale per memorizzare i posti rimanenti
 let globalRemainingSlots = {};
 
@@ -18,29 +11,6 @@ let globalRemainingSlots = {};
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
-
-// Serve static assets from the frontend build
-app.use('/assets', express.static(path.join(__dirname, 'front/dist/assets')));
-
-// Handle missing SVG files
-const handleMissingSvg = (req, res) => {
-    // Send an empty SVG as fallback
-    res.setHeader('Content-Type', 'image/svg+xml');
-    res.send('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"></svg>');
-};
-
-app.use('/vite.svg', handleMissingSvg);
-app.use('/Group_96.svg', handleMissingSvg);
-app.use('/Frame_94-3.svg', handleMissingSvg);
-app.use('/Frame_94-2.svg', handleMissingSvg);
-
-// Serve the frontend app for language-specific routes and root
-app.get(['/en/front', '/it/front', '/front'], (req, res) => {
-    if (req.path === '/front') {
-        return res.redirect('/en/front');
-    }
-    res.sendFile(path.join(__dirname, 'front/dist/index.html'));
-});
 const fs = require('fs');
 const https = require('https');
 require('dotenv').config();
@@ -75,9 +45,8 @@ axios.interceptors.request.use(request => {
 
 const xorCipher = require('./xorCipher');
 const xorKey = process.env.XOR_SECRET;
-const port = process.env.PORT || 3000; // Use port 3001 as fallback
+const port = process.env.PORT;
 const siteName = process.env.SITE_NAME;
-const courseExperienceService = require('./courseExperienceService');
 
 const SENDMAIL = process.env.SENDMAIL;
 var placeavailable = process.env.PLACEAVAILABLE;
@@ -152,64 +121,6 @@ db.serialize(() => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(logger.middleware());
-
-// Import the HubSpot experience service
-const hubspotExperienceService = require('./hubspot_experience_service');
-
-// Endpoint to get experiences based on contactID and language
-app.get('/api/get_experiences', async (req, res) => {
-    const { contactID, lang } = req.query;
-    
-    // Default to Italian if no language specified
-    const language = lang === 'en' ? 'en' : 'it';
-    
-    if (!contactID) {
-        return res.status(400).json({
-            error: language === 'en' ? 'Contact ID is required' : 'ID contatto richiesto'
-        });
-    }
-    
-    try {
-        logger.info(`Getting experiences for contact ID: ${contactID} in language: ${language}`);
-        
-        // Load the list of course IDs and names
-        const courses = require('./corsi.json');
-        const courseIds = courses.map(course => course.id);
-        
-        // Get all custom objects associated with the contact
-        const customObjects = await hubspotExperienceService.getAllCustomObjects(contactID);
-        
-        if (customObjects.error) {
-            logger.error(`Error getting custom objects: ${customObjects.error}`);
-            return res.status(500).json({
-                error: language === 'en' ? 'Error retrieving custom objects' : 'Errore nel recupero degli oggetti personalizzati'
-            });
-        }
-        
-        // Extract IDs from custom objects
-        const customObjectIds = customObjects.map(obj => obj.id);
-        
-        // Filter IDs to only include those in our corsi.json file
-        const filteredObjectIds = customObjectIds.filter(id => courseIds.includes(id));
-        
-        // If no matching custom objects found, return an empty array
-        if (filteredObjectIds.length === 0) {
-            logger.info(`No matching custom objects found for contact ID: ${contactID}`);
-            return res.json([]);
-        }
-        
-        // Get experiences from the database based on the filtered IDs and language
-        const experiences = await courseExperienceService.getExperiencesByCustomObjectIds(db, filteredObjectIds, language);
-        
-        // Return the experiences as JSON
-        res.json(experiences);
-    } catch (error) {
-        logger.error('Error in /api/get_experiences:', error);
-        res.status(500).json({
-            error: language === 'en' ? 'Internal server error' : 'Errore interno del server'
-        });
-    }
-});
 
 // Test endpoint to reset database (only in development)
 app.post('/reset-database', async (req, res) => {

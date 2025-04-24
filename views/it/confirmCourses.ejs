@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conferma Corsi - UniSR</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .course-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .course-card h3 {
+            margin-top: 0;
+            color: #003366;
+        }
+        
+        .course-info {
+            margin-bottom: 15px;
+        }
+        
+        .course-info p {
+            margin: 5px 0;
+        }
+        
+        .confirmation-checkbox {
+            display: flex;
+            align-items: center;
+            margin-top: 15px;
+        }
+        
+        .confirmation-checkbox input {
+            margin-right: 10px;
+        }
+        
+        .btn-primary {
+            background-color: #003366;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        
+        .btn-primary:hover {
+            background-color: #002244;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #003366;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Conferma la tua partecipazione ai corsi</h1>
+            <p>Seleziona i corsi a cui desideri partecipare durante l'Open Day UniSR.</p>
+        </div>
+        
+        <form action="/submit-course-confirmation" method="POST">
+            <input type="hidden" name="contactID" value="<%= contactId %>">
+            <input type="hidden" name="lang" value="it">
+            
+            <% if (courses && courses.length > 0) { %>
+                <% courses.forEach(course => { %>
+                    <div class="course-card">
+                        <h3><%= course.title %></h3>
+                        <div class="course-info">
+                            <p><strong>Data:</strong> <%= course.date %></p>
+                            <p><strong>Luogo:</strong> <%= course.location %></p>
+                        </div>
+                        <div class="confirmation-checkbox">
+                            <input type="checkbox" id="course-<%= course.id %>" name="courses" value="<%= course.id %>" checked>
+                            <label for="course-<%= course.id %>">Confermo la partecipazione a questo corso</label>
+                        </div>
+                    </div>
+                <% }); %>
+                
+                <button type="submit" class="btn-primary">Continua alla selezione delle esperienze</button>
+            <% } else { %>
+                <div class="empty-state">
+                    <p>Non ci sono corsi disponibili al momento.</p>
+                    <a href="/register?lang=it" class="btn-primary">Torna alla registrazione</a>
+                </div>
+            <% } %>
+        </form>
+    </div>
+</body>
+</html>

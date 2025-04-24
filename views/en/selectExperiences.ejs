@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Experiences - UniSR</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .experience-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .experience-card h3 {
+            margin-top: 0;
+            color: #003366;
+        }
+        
+        .experience-info {
+            margin-bottom: 15px;
+        }
+        
+        .experience-info p {
+            margin: 5px 0;
+        }
+        
+        .selection-checkbox {
+            display: flex;
+            align-items: center;
+            margin-top: 15px;
+        }
+        
+        .selection-checkbox input {
+            margin-right: 10px;
+        }
+        
+        .btn-primary {
+            background-color: #003366;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        
+        .btn-primary:hover {
+            background-color: #002244;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #003366;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 0;
+        }
+        
+        .empty-state p {
+            margin-bottom: 20px;
+            font-size: 18px;
+            color: #666;
+        }
+        
+        .experience-count {
+            margin-bottom: 20px;
+            font-style: italic;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Select Experiences</h1>
+            <p>Choose one or more experiences you wish to participate in during the UniSR Open Day.</p>
+        </div>
+        
+        <form action="/submit-experiences" method="POST">
+            <input type="hidden" name="contactID" value="<%= contactId %>">
+            <input type="hidden" name="lang" value="en">
+            
+            <% if (confirmedCourses && confirmedCourses.length > 0) { %>
+                <% confirmedCourses.forEach(course => { %>
+                    <input type="hidden" name="confirmedCourses" value="<%= course %>">
+                <% }); %>
+            <% } %>
+            
+            <% if (experiences && experiences.length > 0) { %>
+                <div class="experience-count">
+                    <p>There are <%= experiences.length %> experiences available based on your selected courses.</p>
+                </div>
+                
+                <% experiences.forEach(exp => { %>
+                    <div class="experience-card">
+                        <h3><%= exp.title %></h3>
+                        <div class="experience-info">
+                            <p><strong>Date:</strong> <%= exp.date %></p>
+                            <p><strong>Location:</strong> <%= exp.location %></p>
+                        </div>
+                        <div class="selection-checkbox">
+                            <input type="checkbox" id="exp-<%= exp.id %>" name="experiences" value="<%= exp.id %>">
+                            <label for="exp-<%= exp.id %>">Select this experience</label>
+                        </div>
+                    </div>
+                <% }); %>
+                
+                <button type="submit" class="btn-primary">Continue to Summary</button>
+            <% } else { %>
+                <div class="empty-state">
+                    <p>There are no experiences available for your selected courses.</p>
+                    <button type="submit" class="btn-primary">Continue to Summary</button>
+                </div>
+            <% } %>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,53 @@
+{
+  "welcome": "Benvenuti all'Open Day",
+  "intro": "Unisciti a noi per un emozionante Open Day presso la nostra Università di Medicina! Questa è la tua opportunità per sperimentare la formazione medica pratica ed esplorare le nostre strutture. Ogni attività ha posti limitati disponibili, quindi consigliamo di registrarsi in anticipo per le sessioni preferite. Seleziona le attività che ti interessano e scegli la fascia oraria preferita per assicurarti il tuo posto.",
+  "location": "Posizione",
+  "duration": "Durata",
+  "availableTimeSlots": "Fasce Orarie Disponibili",
+  "spotsAvailable": "{{count}} posti disponibili",
+  "registeredFor": "Sei registrato per la sessione delle {{time}}",
+  "selectTimeSlot": "Seleziona una fascia oraria per registrarti a questa attività.",
+  "booked": "Prenotato",
+  "submitRegistration": "Invia Registrazione",
+  "registrationSuccess": "Registrazione inviata con successo!",
+  "loading": "Caricamento esperienze...",
+  "error": "Errore nel caricamento delle esperienze",
+  "contactIdRequired": "ID contatto richiesto. Accedi a questa pagina con un ID contatto valido nell'URL.",
+  "activities": {
+    "1": {
+      "title": "Manichino con ascolto e visione del timpano",
+      "course": "Diagnostica Medica",
+      "location": "Laboratorio Medico A",
+      "duration": "45 minuti",
+      "desc": "Pratica tecniche diagnostiche su un manichino medico"
+    },
+    "2": {
+      "title": "Piccola chirurgia, sutura",
+      "course": "Chirurgia di Base",
+      "location": "Laboratorio Chirurgico B",
+      "duration": "60 minuti",
+      "desc": "Impara le tecniche di sutura di base su materiali di pratica"
+    },
+    "3": {
+      "title": "Manovra di disostruzione delle vie aeree con manichino",
+      "course": "Medicina d'Emergenza",
+      "location": "Laboratorio di Emergenza C",
+      "duration": "30 minuti",
+      "desc": "Pratica tecniche di gestione delle vie aeree in emergenza"
+    },
+    "4": {
+      "title": "Semiotica",
+      "course": "Diagnostica Medica",
+      "location": "Stanza 101",
+      "duration": "45 minuti",
+      "desc": "Impara a interpretare segni e sintomi nella diagnosi medica"
+    },
+    "5": {
+      "title": "Estrazione DNA",
+      "course": "Medicina di Laboratorio",
+      "location": "Laboratorio D",
+      "duration": "90 minuti",
+      "desc": "Esperienza pratica con tecniche di estrazione del DNA"
+    }
+  }
+}

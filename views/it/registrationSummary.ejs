@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riepilogo Registrazione - UniSR</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .summary-section {
+            margin-bottom: 40px;
+        }
+        
+        .summary-section h2 {
+            color: #003366;
+            border-bottom: 2px solid #003366;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .summary-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .summary-card h3 {
+            margin-top: 0;
+            color: #003366;
+        }
+        
+        .summary-info {
+            margin-bottom: 15px;
+        }
+        
+        .summary-info p {
+            margin: 5px 0;
+        }
+        
+        .qr-section {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            border: 2px solid #003366;
+            border-radius: 8px;
+            background-color: #f0f5ff;
+        }
+        
+        .qr-container {
+            margin: 20px auto;
+            max-width: 250px;
+        }
+        
+        .qr-container img {
+            width: 100%;
+            height: auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #003366;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .btn-primary {
+            background-color: #003366;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary:hover {
+            background-color: #002244;
+        }
+        
+        .email-note {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e6f7ff;
+            border-left: 4px solid #1890ff;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Riepilogo della tua registrazione</h1>
+            <p>Grazie per aver completato la registrazione all'Open Day UniSR.</p>
+        </div>
+        
+        <div class="summary-section">
+            <h2>Corsi confermati</h2>
+            <% if (courses && courses.length > 0) { %>
+                <% courses.forEach(course => { %>
+                    <div class="summary-card">
+                        <h3><%= course.title %></h3>
+                        <div class="summary-info">
+                            <p><strong>Data:</strong> <%= course.date %></p>
+                            <p><strong>Luogo:</strong> <%= course.location %></p>
+                        </div>
+                    </div>
+                <% }); %>
+            <% } else { %>
+                <div class="empty-state">
+                    <p>Nessun corso confermato.</p>
+                </div>
+            <% } %>
+        </div>
+        
+        <div class="summary-section">
+            <h2>Esperienze selezionate</h2>
+            <% if (experiences && experiences.length > 0) { %>
+                <% experiences.forEach(exp => { %>
+                    <div class="summary-card">
+                        <h3><%= exp.title %></h3>
+                        <div class="summary-info">
+                            <p><strong>Data:</strong> <%= exp.date %></p>
+                            <p><strong>Luogo:</strong> <%= exp.location %></p>
+                        </div>
+                    </div>
+                <% }); %>
+            <% } else { %>
+                <div class="empty-state">
+                    <p>Nessuna esperienza selezionata.</p>
+                </div>
+            <% } %>
+        </div>
+        
+        <div class="qr-section">
+            <h2>Il tuo QR Code</h2>
+            <p>Mostra questo QR code all'ingresso dell'evento per confermare la tua partecipazione:</p>
+            <div class="qr-container">
+                <img src="<%= qrCode %>" alt="QR Code">
+            </div>
+            
+            <div class="email-note">
+                <p>Ti abbiamo inviato una email con tutte le informazioni e il QR code. Controlla la tua casella di posta.</p>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="/" class="btn-primary">Torna alla home</a>
+        </div>
+    </div>
+</body>
+</html>

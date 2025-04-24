@@ -1,0 +1,197 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="it">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Registrazione Open Day Confermata</title>
+    <style type="text/css">
+      @font-face {
+        font-family: "Poppins";
+        src: url("https://changemakers.unisr.org/fonts/Poppins-Regular.ttf") format("truetype");
+        font-weight: 400;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: "Poppins";
+        src: url("https://changemakers.unisr.org/fonts/Poppins-Medium.ttf") format("truetype");
+        font-weight: 500;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: "Poppins";
+        src: url("https://changemakers.unisr.org/fonts/Poppins-SemiBold.ttf") format("truetype");
+        font-weight: 600;
+        font-style: normal;
+      }
+      body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+      table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+      img { -ms-interpolation-mode: bicubic; }
+      img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+      table { border-collapse: collapse !important; }
+      body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
+      a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; font-size: inherit !important; font-family: inherit !important; font-weight: inherit !important; line-height: inherit !important; }
+      @media screen and (max-width: 525px) {
+        .wrapper { width: 100% !important; max-width: 100% !important; }
+        .responsive-table { width: 100% !important; }
+        .padding { padding: 10px 5% 15px 5% !important; }
+        .section-padding { padding: 0 15px 50px 15px !important; }
+        .qr-code { width: 150px !important; height: 150px !important; }
+        .event-card { padding: 15px !important; }
+        .event-title { font-size: 18px !important; }
+        .event-detail { font-size: 14px !important; }
+      }
+      @media (prefers-color-scheme: dark) {
+        body { background-color: #333333 !important; }
+        .email-container { background-color: #333333 !important; }
+        p, h1, h2, h3, span, a { color: #ffffff !important; }
+      }
+      
+      .event-card {
+        background-color: #FFFFFF;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 15px;
+      }
+      
+      .event-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 20px;
+        font-weight: 600;
+        color: #003366;
+        margin: 0 0 10px 0;
+      }
+      
+      .event-detail {
+        font-family: 'Poppins', sans-serif;
+        font-size: 16px;
+        font-weight: 400;
+        color: #333333;
+        margin: 5px 0;
+      }
+      
+      .section-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 22px;
+        font-weight: 700;
+        color: #FFFFFF;
+        margin: 30px 0 15px 0;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body style="margin: 0 !important; padding: 0 !important; background-color: #FFC72D; color: #FFFFFF;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed;">
+      <tr>
+        <td bgcolor="#FFC72D" align="center" style="padding: 45px 15px 45px 15px;" class="section-padding">
+          <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 700px;" class="responsive-table">
+            <tr>
+              <td>
+                <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td>
+                      <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                        <tr>
+                          <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 28px; font-weight: 700; color: #FFFFFF; text-transform: uppercase; padding-bottom: 12px;">
+                            Registrazione Open Day Confermata
+                          </td>
+                        </tr>
+                        
+                        <tr>
+                          <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 400; color: #FFFFFF; line-height: 25px; padding-bottom: 24px;">
+                            <p style="margin: 0;">Grazie <%= name %> per aver completato la registrazione all'Open Day UniSR.</p>
+                          </td>
+                        </tr>
+                        
+                        <!-- QR Code Section -->
+                        <% if (typeof qrCode !== 'undefined' && qrCode) { %>
+                        <tr>
+                          <td align="center" style="padding: 0 0 24px 0;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="200" height="200" style="background-color: white; margin: 0 auto;">
+                              <tr>
+                                <td align="center" valign="middle">
+                                  <img src="https://zaini.unisr.org/<%= qrCode %>" width="200" height="200" border="0" alt="Codice QR" style="display: block; width: 200px; height: 200px; max-width: 200px;" class="qr-code">
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                        
+                        <tr>
+                          <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 400; color: #FFFFFF; line-height: 24px; padding-bottom: 24px;">
+                            <p style="margin: 0;">Mostra questo QR code all'ingresso dell'evento per confermare la tua partecipazione.</p>
+                          </td>
+                        </tr>
+                        <% } %>
+                        
+                        <!-- Courses Section -->
+                        <% if (typeof fieldData !== 'undefined' && fieldData.courses && fieldData.courses.length > 0) { %>
+                        <tr>
+                          <td>
+                            <h2 class="section-title">Corsi Confermati</h2>
+                            
+                            <% fieldData.courses.forEach(course => { %>
+                            <div class="event-card">
+                              <h3 class="event-title"><%= course.title %></h3>
+                              <p class="event-detail"><strong>Data:</strong> <%= course.date %></p>
+                              <p class="event-detail"><strong>Luogo:</strong> <%= course.location %></p>
+                            </div>
+                            <% }); %>
+                          </td>
+                        </tr>
+                        <% } %>
+                        
+                        <!-- Experiences Section -->
+                        <% if (typeof fieldData !== 'undefined' && fieldData.experiences && fieldData.experiences.length > 0) { %>
+                        <tr>
+                          <td>
+                            <h2 class="section-title">Esperienze Selezionate</h2>
+                            
+                            <% fieldData.experiences.forEach(exp => { %>
+                            <div class="event-card">
+                              <h3 class="event-title"><%= exp.title %></h3>
+                              <p class="event-detail"><strong>Data:</strong> <%= exp.date %></p>
+                              <p class="event-detail"><strong>Luogo:</strong> <%= exp.location %></p>
+                            </div>
+                            <% }); %>
+                          </td>
+                        </tr>
+                        <% } else { %>
+                        <tr>
+                          <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 400; color: #FFFFFF; line-height: 24px; padding: 15px 0;">
+                            <p style="margin: 0;">Non hai selezionato nessuna esperienza.</p>
+                          </td>
+                        </tr>
+                        <% } %>
+                        
+                        <!-- Additional Information -->
+                        <tr>
+                          <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 400; color: #FFFFFF; line-height: 24px; padding: 30px 0 24px 0;">
+                            <p style="margin: 0;">Ti aspettiamo all'Open Day UniSR!</p>
+                            <p style="margin: 10px 0 0 0;">Per qualsiasi informazione, contattaci all'indirizzo <a href="mailto:info.unisr@unisr.it" style="color: #FFFFFF; text-decoration: underline;">info.unisr@unisr.it</a></p>
+                          </td>
+                        </tr>
+                        
+                        <!-- Footer -->
+                        <tr>
+                          <td style="padding: 24px 0 0 0; border-top: 1px solid #000000;">
+                            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                              <tr>
+                                <td align="center">
+                                  <img src="https://zaini.unisr.org/images/uniSRFooter.png" width="200" height="auto" border="0" alt="uniSR" style="display: block; width: 200px; height: auto;">
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

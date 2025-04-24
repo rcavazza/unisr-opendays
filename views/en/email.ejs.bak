@@ -1,23 +1,9 @@
-<%
-// Questo file è un patch per il file email.ejs
-// Aggiunge il supporto per il nuovo tipo di email (type: 2) per la modalità di registrazione con corsi ed esperienze
-// Per applicare il patch, sostituire il contenuto del file email.ejs con il seguente codice:
-
-// Controlla il tipo di email
-if (typeof type !== 'undefined' && type === 2) {
-    // Tipo 2: Email per la nuova modalità di registrazione con corsi ed esperienze
-    // Reindirizza al nuovo template email_courses.ejs
-    include('email_courses');
-} else {
-    // Tipo 1 o non specificato: Email per la modalità di registrazione esistente
-    // Mantieni il codice esistente
-%>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="it">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Prenotazione Confermata</title>
+    <title>Reservation Confirmed</title>
     <style type="text/css">
       @font-face {
         font-family: "Poppins";
@@ -74,7 +60,7 @@ if (typeof type !== 'undefined' && type === 2) {
                       <table width="100%" border="0" cellspacing="0" cellpadding="0">
                         <tr>
                           <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 28px; font-weight: 700; color: #FFFFFF; text-transform: uppercase; padding-bottom: 12px;">
-                            Prenotazione Confermata
+                            Reservation Confirmed
                           </td>
                         </tr>
                         
@@ -85,7 +71,7 @@ if (typeof type !== 'undefined' && type === 2) {
                             <table border="0" cellpadding="0" cellspacing="0" width="200" height="200" style="background-color: white; margin: 0 auto;">
                               <tr>
                                 <td align="center" valign="middle">
-                                  <img src="https://zaini.unisr.org/<%= qrCode %>" width="200" height="200" border="0" alt="Codice QR" style="display: block; width: 200px; height: 200px; max-width: 200px;" class="qr-code">
+                                  <img src="https://zaini.unisr.org/<%= qrCode %>" width="200" height="200" border="0" alt="QR Code" style="display: block; width: 200px; height: 200px; max-width: 200px;" class="qr-code">
                                 </td>
                               </tr>
                             </table>
@@ -95,7 +81,7 @@ if (typeof type !== 'undefined' && type === 2) {
                         <!-- Pickup Information -->
                         <tr>
                           <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; color: #FFFFFF; line-height: 25px; padding-bottom: 12px;" class="pickup-info">
-                            <p style="margin: 0;">Puoi ritirare il tuo zaino</p>
+                            <p style="margin: 0;">You can pick up your backpack</p>
                           </td>
                         </tr>
                         
@@ -112,7 +98,7 @@ if (typeof type !== 'undefined' && type === 2) {
                           <tr>
                             <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 400; color: #FFFFFF; line-height: 24px; padding-bottom: 12px;" class="pickup-detail">
                               <p style="margin: 0;"><strong>location:</strong> <!-- Custom text for Olgettina -->
-                              Olgettina: Ingresso Dibit 1, lato Olgettina 58</p>
+                              Olgettina: Dibit 1 Entrance, Olgettina 58 side</p>
                             </td>
                           </tr>
                           <% } else { %>
@@ -125,7 +111,7 @@ if (typeof type !== 'undefined' && type === 2) {
                           <% } else { %>
                           <tr>
                             <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 400; color: #FFFFFF; line-height: 24px; padding-bottom: 12px;" class="pickup-detail">
-                              <p style="margin: 0;"><strong>location:</strong> Campus Principale</p>
+                              <p style="margin: 0;"><strong>location:</strong> Main Campus</p>
                             </td>
                           </tr>
                           <% } %>
@@ -145,19 +131,19 @@ if (typeof type !== 'undefined' && type === 2) {
                           <% } else { %>
                           <tr>
                             <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 700; color: #FFFFFF; line-height: 28px; padding-bottom: 24px;" class="pickup-time">
-                              <p style="margin: 0;"><strong>data:</strong> Lunedì alle 13:00</p>
+                              <p style="margin: 0;"><strong>data:</strong> Monday at 01:00pm</p>
                             </td>
                           </tr>
                           <% } %>
                         <% } else { %>
                           <tr>
-                            <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 400; color: #FFFFFF; line-height: 24px; padding-bottom: 12px;" class="pickup-detail">
-                              <p style="margin: 0;"><strong>location:</strong> Campus Principale</p>
+                            <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 400; color: #000000; line-height: 24px; padding-bottom: 12px;" class="pickup-detail">
+                              <p style="margin: 0;"><strong>location:</strong> Main Campus</p>
                             </td>
                           </tr>
                           <tr>
-                            <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 700; color: #FFFFFF; line-height: 28px; padding-bottom: 24px;" class="pickup-time">
-                              <p style="margin: 0;"><strong>data:</strong> Lunedì alle 13:00</p>
+                            <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 700; color: #000000; line-height: 28px; padding-bottom: 24px;" class="pickup-time">
+                              <p style="margin: 0;"><strong>data:</strong> Monday at 01:00pm</p>
                             </td>
                           </tr>
                         <% } %>
@@ -168,8 +154,8 @@ if (typeof type !== 'undefined' && type === 2) {
                           <td align="center" style="padding: 0 0 24px 0;">
                             <table border="0" cellpadding="0" cellspacing="0" width="200" height="200" style="background-color: white; margin: 0 auto;">
                               <tr>
-                                <td align="center" valign="middle" style="font-family: 'Poppins', sans-serif; font-size: 16px; color: #FFFFFF;">
-                                  Codice QR non disponibile
+                                <td align="center" valign="middle" style="font-family: 'Poppins', sans-serif; font-size: 16px; color: #000000;">
+                                  QR Code not available
                                 </td>
                               </tr>
                             </table>
@@ -177,14 +163,14 @@ if (typeof type !== 'undefined' && type === 2) {
                         </tr>
                         
                         <tr>
-                          <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; color: #FFFFFF; line-height: 25px; padding-bottom: 12px;">
-                            <p style="margin: 0;">Prenotazione confermata</p>
+                          <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; color: #000000; line-height: 25px; padding-bottom: 12px;">
+                            <p style="margin: 0;">Reservation confirmed</p>
                           </td>
                         </tr>
                         
                         <tr>
-                          <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 700; color: #FFFFFF; line-height: 28px; padding-bottom: 24px;">
-                            <p style="margin: 0;">Grazie!</p>
+                          <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 700; color: #000000; line-height: 28px; padding-bottom: 24px;">
+                            <p style="margin: 0;">Thank you!</p>
                           </td>
                         </tr>
                         <% } %>
@@ -192,7 +178,7 @@ if (typeof type !== 'undefined' && type === 2) {
                         <!-- Additional Information -->
                         <tr>
                           <td align="center" style="font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 400; color: #FFFFFF; line-height: 24px; padding-bottom: 24px;">
-                            <p style="margin: 0;">Il ritiro potra' essere effetutato tra le 10:00 e le 16:00.</p>
+                            <p style="margin: 0;">Il ritiro potra' essere effettuato tra le 10:00 e le 16:00</p>
                           </td>
                         </tr>
                         
@@ -220,4 +206,3 @@ if (typeof type !== 'undefined' && type === 2) {
     </table>
   </body>
 </html>
-<% } %>
