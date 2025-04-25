@@ -1,0 +1,14 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+@font-face {
+  font-family: 'Viridian College';
+  //src: url('https://db.onlinewebfonts.com/t/d591b615d0c0d4e4a5c85cc74f9c499c.woff2') format('woff2');
+  src: local('Viridian College'), url('https://fonts.cdnfonts.com/s/20820/Viridian College.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+.font-viridian {
+  font-family: 'Viridian College', sans-serif;
+}

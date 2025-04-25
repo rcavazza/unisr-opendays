@@ -311,57 +311,235 @@ async function getExperiencesByCustomObjectIds(db, customObjectIds, language) {
         // Create placeholders for the SQL query
         const placeholders = customObjectIds.map(() => '?').join(',');
         
+        // Log the custom object IDs being used in the query
+        logger.info(`Custom object IDs for query: ${JSON.stringify(customObjectIds)}`);
+        
+        // Query the database to see what course_type values are available
+        db.all("SELECT DISTINCT course_type FROM experiences", (err, rows) => {
+            if (err) {
+                logger.error(`Error retrieving course_type values: ${err.message}`);
+            } else {
+                logger.info(`Available course_type values: ${JSON.stringify(rows.map(row => row.course_type))}`);
+            }
+        });
+        
+        // Query the database to see what experiences have ora_inizio and ora_fine values
+        db.all("SELECT id, experience_id, title, course_type, ora_inizio, ora_fine FROM experiences WHERE ora_inizio != '' OR ora_fine != ''", (err, rows) => {
+            if (err) {
+                logger.error(`Error retrieving experiences with time values: ${err.message}`);
+            } else {
+                logger.info(`Experiences with time values: ${JSON.stringify(rows)}`);
+            }
+        });
+        
         return new Promise((resolve, reject) => {
+            // First, get all experience_ids that match the course_type
             db.all(
-                `SELECT experience_id, title, course, location, desc, max_participants, current_participants, duration
+                `SELECT DISTINCT experience_id
                  FROM experiences
                  WHERE course_type IN (${placeholders}) AND language = ?`,
                 [...customObjectIds, language],
-                (err, rows) => {
+                (err, experienceIds) => {
                     if (err) {
-                        logger.error(`Error retrieving experiences: ${err.message}`);
+                        logger.error(`Error retrieving experience IDs: ${err.message}`);
                         reject(err);
-                    } else {
-                        logger.info(`Retrieved ${rows.length} experiences`);
-                        
-                        // Transform the results into the desired format with timeSlots
-                        const experiences = rows.map(row => {
-                            // Create a basic experience object
-                            const experience = {
-                                id: row.experience_id,
-                                title: row.title,
-                                course: row.course || '',
-                                location: row.location,
-                                duration: row.duration,
-                                desc: row.desc,
-                                timeSlots: []
-                            };
-                            
-                            // Add time slots (this would be retrieved from another table in a real implementation)
-                            // For now, we'll add mock time slots
-                            experience.timeSlots = [
-                                {
-                                    id: `${row.experience_id}-1`,
-                                    time: '09:00 AM',
-                                    available: Math.max(0, row.max_participants - row.current_participants)
-                                },
-                                {
-                                    id: `${row.experience_id}-2`,
-                                    time: '11:00 AM',
-                                    available: Math.max(0, row.max_participants - row.current_participants - 2)
-                                },
-                                {
-                                    id: `${row.experience_id}-3`,
-                                    time: '02:00 PM',
-                                    available: Math.max(0, row.max_participants - row.current_participants - 1)
-                                }
-                            ];
-                            
-                            return experience;
-                        });
-                        
-                        resolve(experiences);
+                        return;
                     }
+                    
+                    // If no experiences found, return empty array
+                    if (experienceIds.length === 0) {
+                        logger.info(`No experiences found for the given course types`);
+                        resolve([]);
+                        return;
+                    }
+                    
+                    // Extract the experience_ids
+                    const ids = experienceIds.map(row => row.experience_id);
+                    logger.info(`Found experience IDs: ${JSON.stringify(ids)}`);
+                    
+                    // Create placeholders for the experience_ids
+                    const experiencePlaceholders = ids.map(() => '?').join(',');
+                    
+                    // Get the course_type for each experience_id
+                    db.all(
+                        `SELECT experience_id, course_type FROM experiences WHERE experience_id IN (${experiencePlaceholders})`,
+                        [...ids],
+                        (err, courseTypeRows) => {
+                            if (err) {
+                                logger.error(`Error retrieving course types: ${err.message}`);
+                                reject(err);
+                                return;
+                            }
+                            
+                            // Create a map of experience_id to course_type
+                            const courseTypeMap = {};
+                            courseTypeRows.forEach(row => {
+                                courseTypeMap[row.experience_id] = row.course_type;
+                            });
+                            
+                            logger.info(`Course type map: ${JSON.stringify(courseTypeMap)}`);
+                            
+                            // Extract base experience IDs (without the number suffix)
+                            const baseIds = ids.map(id => id.replace(/-\d+$/, ''));
+                            logger.info(`Base experience IDs: ${JSON.stringify(baseIds)}`);
+                            
+                            // Create a SQL LIKE condition for each base ID with its corresponding course_type
+                            const whereClauses = [];
+                            const whereParams = [];
+                            
+                            ids.forEach(id => {
+                                const baseId = id.replace(/-\d+$/, '');
+                                const courseType = courseTypeMap[id];
+                                
+                                if (baseId && courseType) {
+                                    whereClauses.push('(experience_id LIKE ? AND course_type = ?)');
+                                    whereParams.push(`${baseId}-%`, courseType);
+                                }
+                            });
+                            
+                            // If no valid clauses, return empty array
+                            if (whereClauses.length === 0) {
+                                logger.info(`No valid experience IDs with course types found`);
+                                resolve([]);
+                                return;
+                            }
+                            
+                            const whereClause = whereClauses.join(' OR ');
+                            
+                            logger.info(`WHERE clauses: ${whereClause}`);
+                            logger.info(`WHERE params: ${JSON.stringify(whereParams)}`);
+                            
+                            // Now get all rows where experience_id starts with any of these base names AND has the same course_type
+                            db.all(
+                                `SELECT experience_id, title, course, location, desc, max_participants, current_participants, duration, ora_inizio, ora_fine
+                                 FROM experiences
+                                 WHERE (${whereClause}) AND language = ?
+                                 ORDER BY experience_id, ora_inizio`,
+                                [...whereParams, language],
+                                (err, rows) => {
+                                    if (err) {
+                                        logger.error(`Error retrieving experiences: ${err.message}`);
+                                        reject(err);
+                                        return;
+                                    }
+                                    
+                                    logger.info(`Retrieved ${rows.length} experiences`);
+                                    
+                                    // Log per debug
+                                    logger.info(`Numero totale di righe: ${rows.length}`);
+                                    
+                                    // Conteggio delle righe per experience_id
+                                    const countByExperienceId = {};
+                                    rows.forEach(row => {
+                                        countByExperienceId[row.experience_id] = (countByExperienceId[row.experience_id] || 0) + 1;
+                                    });
+                                    logger.info(`Conteggio righe per experience_id: ${JSON.stringify(countByExperienceId)}`);
+                                    
+                                    // Log all rows to see what fields are present
+                                    rows.forEach((row, index) => {
+                                        logger.info(`Row ${index}: ${JSON.stringify(row)}`);
+                                        logger.info(`Row ${index} ora_inizio: ${row.ora_inizio}, type: ${typeof row.ora_inizio}`);
+                                        logger.info(`Row ${index} ora_fine: ${row.ora_fine}, type: ${typeof row.ora_fine}`);
+                                    });
+                                    
+                                    // Group the rows by base experience_id (without the number suffix)
+                                    const experienceMap = new Map();
+                                    
+                                    rows.forEach(row => {
+                                        logger.info(`Elaborazione riga per experience_id: ${row.experience_id}, ora_inizio: ${row.ora_inizio}`);
+                                        
+                                        // Extract the base name from the experience_id (e.g., "imdp-e-medicina-chirurgia-mani" from "imdp-e-medicina-chirurgia-mani-2")
+                                        const baseExperienceId = row.experience_id.replace(/-\d+$/, '');
+                                        logger.info(`Base experience ID: ${baseExperienceId}`);
+                                        
+                                        if (!experienceMap.has(baseExperienceId)) {
+                                            logger.info(`Creazione nuova esperienza per base ${baseExperienceId}`);
+                                            experienceMap.set(baseExperienceId, {
+                                                id: baseExperienceId, // Use the base ID as the experience ID
+                                                title: row.title,
+                                                course: row.course || '',
+                                                location: row.location,
+                                                duration: row.duration,
+                                                desc: row.desc,
+                                                timeSlots: []
+                                            });
+                                        }
+                                        
+                                        const experience = experienceMap.get(baseExperienceId);
+                                        
+                                        // Add time slot if ora_inizio exists and is not an empty string
+                                        logger.info(`Checking ora_inizio for ${row.experience_id}: ${row.ora_inizio}, type: ${typeof row.ora_inizio}`);
+                                        
+                                        // Check if timeSlots array exists
+                                        if (!experience.timeSlots) {
+                                            logger.info(`Creating timeSlots array for ${row.experience_id}`);
+                                            experience.timeSlots = [];
+                                        }
+                                        
+                                        // Log the current state of timeSlots
+                                        logger.info(`Current timeSlots for ${row.experience_id}: ${JSON.stringify(experience.timeSlots)}`);
+                                        
+                                        if (row.ora_inizio && row.ora_inizio.trim() !== '') {
+                                            logger.info(`Adding time slot for ${row.experience_id} with ora_inizio: ${row.ora_inizio} and ora_fine: ${row.ora_fine}`);
+                                            experience.timeSlots.push({
+                                                id: `${row.experience_id}-${experience.timeSlots.length + 1}`,
+                                                time: formatTime(row.ora_inizio),
+                                                endTime: formatTime(row.ora_fine),
+                                                available: Math.max(0, row.max_participants - row.current_participants)
+                                            });
+                                            logger.info(`After adding time slot, timeSlots length: ${experience.timeSlots.length}`);
+                                        }
+                                        // No else clause - we don't add default timeslots anymore
+                                    });
+                                    
+                                    // Log finale per verificare il numero di timeslot per ogni esperienza
+                                    experienceMap.forEach((exp, id) => {
+                                        logger.info(`Esperienza ${id} ha ${exp.timeSlots.length} timeslots`);
+                                    });
+                                    
+                                    // Convert the map to an array
+                                    const experiences = Array.from(experienceMap.values());
+                                    
+                                    // Sort timeslots for each experience by time (earliest to latest)
+                                    experiences.forEach(experience => {
+                                        if (experience.timeSlots && experience.timeSlots.length > 0) {
+                                            experience.timeSlots.sort((a, b) => {
+                                                // Parse the time strings to compare them
+                                                const timeA = a.time.replace(/[APM]/g, '').trim();
+                                                const timeB = b.time.replace(/[APM]/g, '').trim();
+                                                
+                                                // Extract hours and minutes
+                                                const [hoursA, minutesA] = timeA.split(':').map(Number);
+                                                const [hoursB, minutesB] = timeB.split(':').map(Number);
+                                                
+                                                // Convert to 24-hour format for comparison
+                                                const isPMA = a.time.includes('PM') && hoursA !== 12;
+                                                const isPMB = b.time.includes('PM') && hoursB !== 12;
+                                                const isAMA = a.time.includes('AM') && hoursA === 12;
+                                                const isAMB = b.time.includes('AM') && hoursB === 12;
+                                                
+                                                const hours24A = isPMA ? hoursA + 12 : (isAMA ? 0 : hoursA);
+                                                const hours24B = isPMB ? hoursB + 12 : (isAMB ? 0 : hoursB);
+                                                
+                                                // Compare hours first, then minutes if hours are equal
+                                                if (hours24A !== hours24B) {
+                                                    return hours24A - hours24B;
+                                                }
+                                                return minutesA - minutesB;
+                                            });
+                                            
+                                            // Reassign IDs to maintain sequential numbering after sorting
+                                            experience.timeSlots.forEach((slot, index) => {
+                                                slot.id = `${experience.id}-${index + 1}`;
+                                            });
+                                        }
+                                    });
+                                    
+                                    resolve(experiences);
+                                }
+                            );
+                        }
+                    );
                 }
             );
         });
@@ -371,9 +549,42 @@ async function getExperiencesByCustomObjectIds(db, customObjectIds, language) {
     }
 }
 
+/**
+ * Formats time from 24-hour format to AM/PM format
+ * @param {string} time - Time in HH:MM format
+ * @returns {string} - Formatted time string
+ */
+function formatTime(time) {
+    if (!time) return '';
+    
+    // Parse the time - handle both colon and period separators
+    let hours, minutes;
+    if (time.includes(':')) {
+        [hours, minutes] = time.split(':').map(Number);
+    } else if (time.includes('.')) {
+        [hours, minutes] = time.split('.').map(Number);
+    } else {
+        // If no separator is found, assume it's just hours
+        hours = Number(time);
+        minutes = 0;
+    }
+    
+    // Ensure hours and minutes are valid numbers
+    hours = isNaN(hours) ? 0 : hours;
+    minutes = isNaN(minutes) ? 0 : minutes;
+    
+    // Convert to 12-hour format
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const hours12 = hours % 12 || 12; // Convert 0 to 12
+    
+    // Format the time
+    return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
+}
+
 module.exports = {
     getContactDetails,
     saveConfirmedCourses,
+    formatTime,
     getAvailableExperiences,
     saveSelectedExperiences,
     getConfirmedCourses,

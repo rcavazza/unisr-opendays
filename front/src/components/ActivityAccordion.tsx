@@ -32,7 +32,12 @@ export const ActivityAccordion = ({
             {activity.title}
             {selectedSlot && (
               <span className="ml-2 text-sm text-yellow-300 font-normal">
-                ({t('booked')}: {activity.timeSlots.find(slot => slot.id === selectedSlot)?.time})
+                ({t('booked')}: {
+                  (() => {
+                    const slot = activity.timeSlots.find(slot => slot.id === selectedSlot);
+                    return slot?.endTime ? `${slot.time} - ${slot.endTime}` : slot?.time;
+                  })()
+                })
               </span>
             )}
           </span>
@@ -75,7 +80,9 @@ export const ActivityAccordion = ({
                       onChange={() => onTimeSlotSelect(activity.id, slot.id)} 
                       className="h-4 w-4 text-yellow-300 border-white/30" 
                     />
-                    <span className="text-white">{slot.time}</span>
+                    <span className="text-white">
+                      {slot.endTime ? `${slot.time} - ${slot.endTime}` : slot.time}
+                    </span>
                     <span className="text-sm text-white/70">
                       ({t('spotsAvailable', { count: slot.available })})
                     </span>
@@ -86,7 +93,11 @@ export const ActivityAccordion = ({
             {selectedSlot ? (
               <div className="bg-white/10 p-3 rounded-md">
                 <p className="text-yellow-300 text-sm">
-                  {t('registeredFor', { time: activity.timeSlots.find(slot => slot.id === selectedSlot)?.time })}
+                  {(() => {
+                    const slot = activity.timeSlots.find(slot => slot.id === selectedSlot);
+                    const timeDisplay = slot?.endTime ? `${slot.time} - ${slot.endTime}` : slot?.time;
+                    return t('registeredFor', { time: timeDisplay });
+                  })()}
                 </p>
               </div>
             ) : (

@@ -373,7 +373,7 @@ async function getContactInfo() {
             };
         } else {
             // Make the API request to HubSpot
-            const response = await axios.get(`https://api.hubapi.com/crm/v3/objects/contacts/${effectiveContactId}`);
+            const response = await axios.get(`https://api.hubapi.com/crm/v3/objects/contacts/${effectiveContactId}?properties=open_day__conferma_partecipazione_corsi_08_05_2025`);
             contact = response.data;
         }
         
@@ -396,6 +396,14 @@ async function getContactInfo() {
                 console.log(`${propName}: ${value}`);
             }
         });
+        
+        // Check specifically for the open_day__conferma_partecipazione_corsi_08_05_2025 property
+        console.log("\n=== CONFERMA PARTECIPAZIONE CORSI OPEN DAY 08/05/2025 ===\n");
+        if (properties.open_day__conferma_partecipazione_corsi_08_05_2025) {
+            console.log(`Conferma Partecipazione: ${properties.open_day__conferma_partecipazione_corsi_08_05_2025}`);
+        } else {
+            console.log("Proprietà 'open_day__conferma_partecipazione_corsi_08_05_2025' non trovata per questo contatto.");
+        }
         
         // Fetch and display all custom objects
         console.log("\n=== TUTTI I CUSTOM OBJECTS ===\n");

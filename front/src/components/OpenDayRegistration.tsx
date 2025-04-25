@@ -33,12 +33,14 @@ export const OpenDayRegistration = () => {
     const loadExperiences = async () => {
       try {
         setLoading(true);
+        console.log('Fetching experiences for contactID:', contactID, 'language:', i18n.language);
         const data = await fetchExperiences(contactID, i18n.language);
+        console.log('Received experiences data:', data);
         setActivities(data);
         setError(null);
       } catch (err) {
         setError('Failed to load experiences');
-        console.error(err);
+        console.error('Error loading experiences:', err);
       } finally {
         setLoading(false);
       }

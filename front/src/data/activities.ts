@@ -3,6 +3,7 @@ import { TFunction } from 'i18next';
 export interface TimeSlot {
   id: string;
   time: string;
+  endTime?: string; // Added endTime field (optional for backward compatibility)
   available: number;
 }
 
