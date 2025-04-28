@@ -107,11 +107,17 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
+            table-layout: auto;
         }
         .experiences-table th, .experiences-table td {
             padding: 10px;
             border: 1px solid #ddd;
             text-align: left;
+            min-width: 80px;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .experiences-table th {
             background-color: #f2f2f2;
@@ -194,7 +200,8 @@
                         <th>Ora Fine</th>
                         <th>Durata</th>
                         <th>Max Partecipanti</th>
-                        <th>Partecipanti Attuali</th>
+                        <th>Prenotazioni</th>
+                        <th>Posti Rimanenti</th>
                         <th>Azioni</th>
                     </tr>
                 </thead>
@@ -210,7 +217,8 @@
                             <td><%= exp.ora_fine || '' %></td>
                             <td><%= exp.duration %></td>
                             <td><%= exp.max_participants %></td>
-                            <td><%= exp.current_participants %></td>
+                            <td><%= exp.reservationCount || 0 %></td>
+                            <td><%= exp.remainingSpots %></td>
                             <td class="action-buttons">
                                 <button onclick="openEditModal('<%= exp.id %>')">Modifica</button>
                                 <button class="remove" onclick="deleteExperience('<%= exp.id %>')">Elimina</button>
@@ -282,13 +290,15 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="edit-max_participants">Massimo Partecipanti:</label>
+                    <label for="edit-max_participants">Massimo Partecipanti (Capacità Totale):</label>
                     <input type="number" id="edit-max_participants" min="0">
+                    <small style="display: block; margin-top: 5px; color: #666;">Questo valore determina il numero massimo di posti disponibili per questa esperienza.</small>
                 </div>
                 
                 <div class="form-group">
-                    <label for="edit-current_participants">Partecipanti Attuali:</label>
+                    <label for="edit-current_participants">Partecipanti Attuali (Solo per riferimento):</label>
                     <input type="number" id="edit-current_participants" min="0">
+                    <small style="display: block; margin-top: 5px; color: #666;">Questo valore è solo per riferimento. I posti disponibili sono calcolati in base alle prenotazioni effettive.</small>
                 </div>
                 
                 <button type="submit" class="save-button">Salva Modifiche</button>
@@ -354,8 +364,9 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="new-max_participants">Massimo Partecipanti:</label>
+                    <label for="new-max_participants">Massimo Partecipanti (Capacità Totale):</label>
                     <input type="number" id="new-max_participants" min="0" value="0">
+                    <small style="display: block; margin-top: 5px; color: #666;">Questo valore determina il numero massimo di posti disponibili per questa esperienza.</small>
                 </div>
                 
                 <input type="hidden" id="new-language" value="<%= language %>">

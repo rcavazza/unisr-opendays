@@ -1,5 +1,7 @@
 {
   "welcome": "Welcome to Open Day",
+  "welcomeToOpenDays": "Welcome to Open Days",
+  "emailRecapSent": "You received this recap also by email",
   "intro": "Join us for an exciting Open Day at our Medical University! This is your opportunity to experience hands-on medical training and explore our facilities. Each activity has limited seats available, so we recommend registering early for your preferred sessions. Select the activities you're interested in and choose your preferred time slot to secure your spot.",
   "location": "Location",
   "duration": "Duration",
@@ -13,6 +15,14 @@
   "loading": "Loading experiences...",
   "error": "Error loading experiences",
   "contactIdRequired": "Contact ID is required. Please access this page with a valid Contact ID in the URL.",
+  "alreadyBusy": "You are already busy at this time",
+  "noSpotsAvailable": "No spots available",
+  "noSpotsAvailableForActivity": "No spots available for {{activity}}. Please select a different time slot.",
+  "reserve": "Reserve",
+  "reserving": "Reserving...",
+  "reserved": "Reserved",
+  "tryAgain": "Try Again",
+  "processingRegistration": "Processing your registration...",
   "activities": {
     "1": {
       "title": "Mannequin with listening and viewing of the eardrum",

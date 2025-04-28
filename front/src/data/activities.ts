@@ -8,7 +8,7 @@ export interface TimeSlot {
 }
 
 export interface ActivityDetails {
-  id: number;
+  id: number | string;
   title: string;
   course: string;
   location: string;

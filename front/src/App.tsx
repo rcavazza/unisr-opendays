@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { OpenDayRegistration } from './components/OpenDayRegistration';
+import { ConfirmationPage } from './components/ConfirmationPage';
 import { LanguageProvider } from './components/LanguageProvider';
 import './i18n'; // Import i18n configuration
 
@@ -9,6 +10,18 @@ const DefaultRedirect = () => {
   const location = useLocation();
   // Preserve query parameters when redirecting to default language
   return <Navigate to={`/en/front${location.search}`} replace />;
+};
+
+// Helper component to handle the confirmation page with location state
+const ConfirmationPageWrapper = () => {
+  const location = useLocation();
+  const activities = location.state?.activities || [];
+  
+  return (
+    <LanguageProvider>
+      <ConfirmationPage activities={activities} />
+    </LanguageProvider>
+  );
 };
 
 export const App = () => {
@@ -23,6 +36,10 @@ export const App = () => {
               <OpenDayRegistration />
             </LanguageProvider>
           }
+        />
+        <Route
+          path="/:lang/front/confirmation"
+          element={<ConfirmationPageWrapper />}
         />
       </Routes>
     </BrowserRouter>
