@@ -413,11 +413,16 @@
                 <td>${experience.experience_id}</td>
                 <td>${experience.title}</td>
                 <td>${experience.course}</td>
+                <td>${experience.course_type || ''}</td>
                 <td>${experience.location}</td>
                 <td>${experience.date}</td>
+                <td>${experience.duration || ''}</td>
+                <td>${experience.ora_inizio || ''}</td>
+                <td>${experience.ora_fine || ''}</td>
                 <td>${experience.language}</td>
                 <td>${experience.max_participants}</td>
                 <td>${experience.current_participants}</td>
+                <td>${experience.desc || ''}</td>
                 <td class="action-buttons">
                   <button class="edit" data-id="${experience.id}">Edit</button>
                   <button class="delete" data-id="${experience.id}">Delete</button>
