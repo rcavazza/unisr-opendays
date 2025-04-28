@@ -487,7 +487,8 @@ async function getExperiencesByCustomObjectIds(db, customObjectIds, language) {
                                                 id: `${row.experience_id}-${experience.timeSlots.length + 1}`,
                                                 time: formatTime(row.ora_inizio),
                                                 endTime: formatTime(row.ora_fine),
-                                                available: Math.max(0, row.max_participants - row.current_participants)
+                                                available: Math.max(0, row.max_participants - row.current_participants),
+                                                reserved: row.current_participants || 0
                                             });
                                             logger.info(`After adding time slot, timeSlots length: ${experience.timeSlots.length}`);
                                         }
