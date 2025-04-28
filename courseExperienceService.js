@@ -1,15 +1,17 @@
 /**
  * Servizio per la gestione di corsi ed esperienze
- * 
+ *
  * Questo modulo fornisce funzioni per:
  * - Recuperare i dettagli del contatto da HubSpot
  * - Salvare i corsi confermati nel database
  * - Recuperare le esperienze disponibili in base ai corsi confermati
  * - Salvare le esperienze selezionate nel database
+ * - Gestire i contatori di prenotazioni per gli slot orari
  */
 
 const axios = require('axios');
 const logger = require('./logger');
+const reservationService = require('./reservationService');
 
 /**
  * Recupera i dettagli del contatto da HubSpot
@@ -485,7 +487,8 @@ async function getExperiencesByCustomObjectIds(db, customObjectIds, language) {
                                                 id: `${row.experience_id}-${experience.timeSlots.length + 1}`,
                                                 time: formatTime(row.ora_inizio),
                                                 endTime: formatTime(row.ora_fine),
-                                                available: Math.max(0, row.max_participants - row.current_participants)
+                                                available: Math.max(0, row.max_participants - row.current_participants),
+                                                reserved: row.current_participants || 0
                                             });
                                             logger.info(`After adding time slot, timeSlots length: ${experience.timeSlots.length}`);
                                         }
@@ -535,7 +538,32 @@ async function getExperiencesByCustomObjectIds(db, customObjectIds, language) {
                                         }
                                     });
                                     
-                                    resolve(experiences);
+                                    // Get reservation counts for all time slots
+                                    reservationService.getReservationCounts(db)
+                                        .then(reservationCounts => {
+                                            logger.info(`Retrieved reservation counts: ${JSON.stringify(reservationCounts)}`);
+                                            
+                                            // Update the available slots for each time slot based on reservation counts
+                                            experiences.forEach((experience) => {
+                                                if (experience.timeSlots && experience.timeSlots.length > 0) {
+                                                    experience.timeSlots.forEach((slot) => {
+                                                        const key = `${experience.id}_${slot.id}`;
+                                                        const reservationCount = reservationCounts[key] || 0;
+                                                        // Calculate available slots (max - current)
+                                                        const originalAvailable = slot.available;
+                                                        slot.available = Math.max(0, originalAvailable - reservationCount);
+                                                        logger.info(`Slot ${key}: original=${originalAvailable}, reservations=${reservationCount}, available=${slot.available}`);
+                                                    });
+                                                }
+                                            });
+                                            
+                                            resolve(experiences);
+                                        })
+                                        .catch(error => {
+                                            logger.error(`Error getting reservation counts: ${error.message}`);
+                                            // Continue without updating counts if there's an error
+                                            resolve(experiences);
+                                        });
                                 }
                             );
                         }

@@ -1,5 +1,7 @@
 {
   "welcome": "Benvenuti all'Open Day",
+  "welcomeToOpenDays": "Benvenuti agli Open Days",
+  "emailRecapSent": "Hai ricevuto questo riepilogo anche via email",
   "intro": "Unisciti a noi per un emozionante Open Day presso la nostra Università di Medicina! Questa è la tua opportunità per sperimentare la formazione medica pratica ed esplorare le nostre strutture. Ogni attività ha posti limitati disponibili, quindi consigliamo di registrarsi in anticipo per le sessioni preferite. Seleziona le attività che ti interessano e scegli la fascia oraria preferita per assicurarti il tuo posto.",
   "location": "Posizione",
   "duration": "Durata",
@@ -13,6 +15,14 @@
   "loading": "Caricamento esperienze...",
   "error": "Errore nel caricamento delle esperienze",
   "contactIdRequired": "ID contatto richiesto. Accedi a questa pagina con un ID contatto valido nell'URL.",
+  "alreadyBusy": "Sei già impegnato in questo orario",
+  "noSpotsAvailable": "Nessun posto disponibile",
+  "noSpotsAvailableForActivity": "Nessun posto disponibile per {{activity}}. Seleziona un altro orario.",
+  "reserve": "Prenota",
+  "reserving": "Prenotazione in corso...",
+  "reserved": "Prenotato",
+  "tryAgain": "Riprova",
+  "processingRegistration": "Elaborazione della tua registrazione...",
   "activities": {
     "1": {
       "title": "Manichino con ascolto e visione del timpano",

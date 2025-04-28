@@ -1,7 +1,62 @@
 const path = require('path');
 const express = require('express');
-const reservationOptions = require('./reservationOptions.json');
 const { getRemainingSlots } = require('./remainingSlots');
+
+// Create a replacement for reservationOptions that gets data from the database
+const reservationOptions = {
+    fields: [],
+    limits: {}
+};
+
+/**
+ * Load reservation options from the database
+ * @param {Object} db - Database instance
+ * @returns {Promise<void>}
+ */
+async function loadReservationOptions(db) {
+    try {
+        console.log('Loading reservation options from database...');
+        
+        // Load experience limits
+        const experiences = await new Promise((resolve, reject) => {
+            db.all(
+                "SELECT experience_id, max_participants FROM experiences",
+                (err, rows) => {
+                    if (err) {
+                        console.error('Error loading experience limits:', err.message);
+                        reject(err);
+                    } else {
+                        resolve(rows);
+                    }
+                }
+            );
+        });
+        
+        // Initialize the limits object
+        for (const exp of experiences) {
+            // Create keys for each time slot of the experience
+            // Assuming there are up to 5 time slots per experience
+            for (let i = 1; i <= 5; i++) {
+                const key = `${exp.experience_id}_${exp.experience_id}-${i}`;
+                reservationOptions.limits[key] = exp.max_participants;
+            }
+        }
+        
+        // For backward compatibility, add some default fields
+        reservationOptions.fields = [
+            {
+                id: "day",
+                name: "Day",
+                type: "date",
+                values: ["2025-04-07", "2025-04-08", "2025-04-09"]
+            }
+        ];
+        
+        console.log('Reservation options loaded from database');
+    } catch (error) {
+        console.error('Error loading reservation options:', error);
+    }
+}
 const app = express();
 
 // Add CORS middleware
@@ -95,7 +150,7 @@ let transporter = nodemailer.createTransport({
 // Funzione per aggiornare i posti rimanenti
 async function updateRemainingSlots() {
     try {
-        globalRemainingSlots = await getRemainingSlots(db, reservationOptions);
+        globalRemainingSlots = await getRemainingSlots(db);
         
         // Assicurati che nessun valore sia negativo
         for (const key in globalRemainingSlots) {
@@ -113,11 +168,14 @@ async function updateRemainingSlots() {
 const ISOPEN = false;
 console.log("--- STARTING UNISR SERVER ON PORT " + port);
 
-const db = new sqlite3.Database("fcfs.sqlite", (err) => {
+const db = new sqlite3.Database("fcfs.sqlite", async (err) => {
     if (err) {
         return console.error(err.message);
     }
     console.log(`Setup del database fcfs.sqlite`);
+    
+    // Load reservation options from the database
+    await loadReservationOptions(db);
 });
 
 db.serialize(() => {
@@ -155,6 +213,8 @@ app.use(logger.middleware());
 
 // Import the HubSpot experience service
 const hubspotExperienceService = require('./hubspot_experience_service');
+const reservationService = require('./reservationService');
+const experiencesService = require('./experiencesService');
 
 // Endpoint to get experiences based on contactID and language
 app.get('/api/get_experiences', async (req, res) => {
@@ -229,6 +289,146 @@ app.post('/reset-database', async (req, res) => {
     } catch (error) {
         logger.error('Error resetting database:', error);
         res.status(500).send('Error resetting database');
+    }
+});
+
+// Endpoint to make a reservation
+app.post('/api/reserve', async (req, res) => {
+    const { contactID, experienceId, timeSlotId } = req.body;
+    
+    if (!contactID || !experienceId || !timeSlotId) {
+        return res.status(400).json({
+            error: 'Missing required fields'
+        });
+    }
+    
+    try {
+        // Check if the slot is still available
+        const isAvailable = await reservationService.isSlotAvailable(db, experienceId, timeSlotId);
+        
+        if (!isAvailable) {
+            // No spots available, return an error
+            logger.warn(`No spots available for experience ${experienceId}, time slot ${timeSlotId}`);
+            return res.status(409).json({
+                success: false,
+                error: 'No spots available',
+                errorCode: 'NO_SPOTS_AVAILABLE'
+            });
+        }
+        
+        // Save the reservation
+        await reservationService.saveReservation(db, contactID, experienceId, timeSlotId);
+        
+        // Update the current_participants field in the experiences table
+        // Extract the base experience ID
+        const baseExperienceId = experienceId.replace(/-\d+$/, '');
+        
+        // Increment the current_participants field
+        await new Promise((resolve, reject) => {
+            db.run(
+                "UPDATE experiences SET current_participants = current_participants + 1 WHERE experience_id LIKE ?",
+                [`${baseExperienceId}%`],
+                (err) => {
+                    if (err) {
+                        logger.error(`Error updating current_participants: ${err.message}`);
+                        reject(err);
+                    } else {
+                        logger.info(`Updated current_participants for experience ${baseExperienceId}`);
+                        resolve();
+                    }
+                }
+            );
+        });
+        
+        // Update the remaining slots
+        await updateRemainingSlots();
+        
+        // Return success
+        res.json({
+            success: true
+        });
+    } catch (error) {
+        logger.error('Error in /api/reserve:', error);
+        res.status(500).json({
+            error: 'Internal server error'
+        });
+    }
+});
+
+// Endpoint to get all reservation counters
+app.get('/api/reservation-counters', async (req, res) => {
+    try {
+        const counters = await reservationService.getReservationCounts(db);
+        res.json(counters);
+    } catch (error) {
+        logger.error('Error in /api/reservation-counters:', error);
+        res.status(500).json({
+            error: 'Internal server error'
+        });
+    }
+});
+
+// Endpoint to cancel a reservation
+app.post('/api/cancel-reservation', async (req, res) => {
+    const { contactID, experienceId, timeSlotId } = req.body;
+    
+    if (!contactID || !experienceId || !timeSlotId) {
+        return res.status(400).json({
+            error: 'Missing required fields'
+        });
+    }
+    
+    try {
+        // Delete the reservation
+        await new Promise((resolve, reject) => {
+            db.run(
+                "DELETE FROM opend_reservations WHERE contact_id = ? AND experience_id = ? AND time_slot_id = ?",
+                [contactID, experienceId, timeSlotId],
+                (err) => {
+                    if (err) {
+                        logger.error(`Error deleting reservation: ${err.message}`);
+                        reject(err);
+                    } else {
+                        logger.info(`Deleted reservation for contact ${contactID}, experience ${experienceId}, time slot ${timeSlotId}`);
+                        resolve();
+                    }
+                }
+            );
+        });
+        
+        // Update the current_participants field in the experiences table
+        // Extract the base experience ID
+        const baseExperienceId = experienceId.replace(/-\d+$/, '');
+        
+        // Decrement the current_participants field
+        await new Promise((resolve, reject) => {
+            db.run(
+                "UPDATE experiences SET current_participants = MAX(0, current_participants - 1) WHERE experience_id LIKE ?",
+                [`${baseExperienceId}%`],
+                (err) => {
+                    if (err) {
+                        logger.error(`Error updating current_participants: ${err.message}`);
+                        reject(err);
+                    } else {
+                        logger.info(`Updated current_participants for experience ${baseExperienceId}`);
+                        resolve();
+                    }
+                }
+            );
+        });
+        
+        // Update the remaining slots
+        await updateRemainingSlots();
+        
+        // Return success
+        res.json({
+            success: true
+        });
+    } catch (error) {
+        logger.error('Error in /api/cancel-reservation:', error);
+        res.status(500).json({
+            error: 'Internal server error'
+        });
     }
 });
 
@@ -1304,6 +1504,84 @@ app.get('/docheckin/:contactID', async (req, res) => {
     }
 });
 
+
+// Experiences Management Admin Panel Routes
+// GET route to display the admin panel
+app.get('/admin/experiences', async (req, res) => {
+  try {
+    const experiences = await experiencesService.getAllExperiences(db);
+    res.render('manageExperiences', { experiences });
+  } catch (error) {
+    logger.error('Error loading experiences admin panel:', error);
+    res.status(500).send('Error loading experiences admin panel');
+  }
+});
+
+// API routes for CRUD operations
+// GET all experiences
+app.get('/api/experiences', async (req, res) => {
+  try {
+    const { language, orderBy } = req.query;
+    const experiences = await experiencesService.getAllExperiences(db, language, orderBy);
+    res.json(experiences);
+  } catch (error) {
+    logger.error('Error getting experiences:', error);
+    res.status(500).json({ error: 'Error getting experiences' });
+  }
+});
+
+// GET a single experience
+app.get('/api/experiences/:id', async (req, res) => {
+  try {
+    const experience = await experiencesService.getExperienceById(db, req.params.id);
+    if (!experience) {
+      return res.status(404).json({ error: 'Experience not found' });
+    }
+    res.json(experience);
+  } catch (error) {
+    logger.error('Error getting experience:', error);
+    res.status(500).json({ error: 'Error getting experience' });
+  }
+});
+
+// POST a new experience
+app.post('/api/experiences', async (req, res) => {
+  try {
+    const result = await experiencesService.createExperience(db, req.body);
+    res.status(201).json(result);
+  } catch (error) {
+    logger.error('Error creating experience:', error);
+    res.status(500).json({ error: 'Error creating experience' });
+  }
+});
+
+// PUT (update) an experience
+app.put('/api/experiences/:id', async (req, res) => {
+  try {
+    const result = await experiencesService.updateExperience(db, req.params.id, req.body);
+    if (!result.success) {
+      return res.status(404).json(result);
+    }
+    res.json(result);
+  } catch (error) {
+    logger.error('Error updating experience:', error);
+    res.status(500).json({ error: 'Error updating experience' });
+  }
+});
+
+// DELETE an experience
+app.delete('/api/experiences/:id', async (req, res) => {
+  try {
+    const result = await experiencesService.deleteExperience(db, req.params.id);
+    if (!result.success) {
+      return res.status(404).json(result);
+    }
+    res.json(result);
+  } catch (error) {
+    logger.error('Error deleting experience:', error);
+    res.status(500).json({ error: 'Error deleting experience' });
+  }
+});
 
 // Server configuration
 const RUNLOCAL = process.env.RUNLOCAL === '1';
