@@ -29,10 +29,10 @@ const handleMissingSvg = (req, res) => {
     res.send('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"></svg>');
 };
 
-app.use('/vite.svg', handleMissingSvg);
-app.use('/Group_96.svg', handleMissingSvg);
-app.use('/Frame_94-3.svg', handleMissingSvg);
-app.use('/Frame_94-2.svg', handleMissingSvg);
+// app.use('/vite.svg', handleMissingSvg);
+// app.use('/Group_96.svg', handleMissingSvg);
+// app.use('/Frame_94-3.svg', handleMissingSvg);
+// app.use('/Frame_94-2.svg', handleMissingSvg);
 
 // Serve the frontend app for language-specific routes and root
 app.get(['/en/front', '/it/front', '/front'], (req, res) => {

@@ -77,11 +77,7 @@ export const OpenDayRegistration = () => {
   
   return (
     <main className="min-h-screen bg-[#00A4E4] w-full relative overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none opacity-10">
-        <img src="/Group_96.svg" className="absolute top-0 right-0 w-96 h-96" alt="" />
-        <img src="/Frame_94-3.svg" className="absolute bottom-0 left-0 w-96 h-96" alt="" />
-        <img src="/Frame_94-2.svg" className="absolute top-1/4 left-1/4 w-96 h-96" alt="" />
-      </div>
+   
       <div className="max-w-4xl mx-auto py-12 px-4 relative">
         <div className="text-center mb-12">
           <h1 className="text-6xl font-viridian text-yellow-300 tracking-wide leading-tight inline-block">
@@ -122,14 +118,12 @@ export const OpenDayRegistration = () => {
         )}
         
         {!contactIdMissing && (
-          <div className="flex justify-center">
-            <button
-              onClick={handleSubmit}
+            <div className="flex justify-center mb-16">
+          <button onClick={handleSubmit}
               disabled={!hasSelections || loading}
-              className={`px-8 py-4 rounded-md text-white font-bold tracking-wide transition-colors shadow-lg font-viridian text-6xl font-viridian text-yellow-300 tracking-wide leading-tight ${hasSelections && !loading ? 'bg-[#0082b6]/80 bg-[#0082b6]/60 text-blue-900' : 'bg-white/20 cursor-not-allowed'}`}
-            >
-              {t('submitRegistration')}
-            </button>
+              className={`bg-yellow-300 text-[#00A4E4] font-bold text-xl px-16 py-4 rounded-full hover:bg-yellow-400 transition-colors `}>
+          {t('submitRegistration')}
+          </button>
           </div>
         )}
       </div>
