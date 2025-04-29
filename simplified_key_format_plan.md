@@ -137,7 +137,7 @@ export const makeReservation = async (
     const slotNumber = timeSlotId.split('-').pop();
     
     console.log('Making reservation:', { contactID, experienceId, timeSlotId, slotNumber });
-    const response = await fetch('http://localhost:3000/api/reserve', {
+    const response = await fetch(' /api/reserve', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

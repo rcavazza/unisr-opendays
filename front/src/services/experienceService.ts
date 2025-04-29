@@ -15,9 +15,9 @@ export const fetchExperiences = async (contactID: string, lang: string): Promise
     const timestamp = new Date().getTime();
     
     // Use the full URL including the backend server's port
-    console.log('Making API request to:', `http://localhost:3000/api/get_experiences?contactID=${contactID}&lang=${simpleLang}&_=${timestamp}`);
+    console.log('Making API request to:', ` /api/get_experiences?contactID=${contactID}&lang=${simpleLang}&_=${timestamp}`);
     
-    const response = await fetch(`http://localhost:3000/api/get_experiences?contactID=${contactID}&lang=${simpleLang}&_=${timestamp}`, {
+    const response = await fetch(` /api/get_experiences?contactID=${contactID}&lang=${simpleLang}&_=${timestamp}`, {
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
@@ -72,11 +72,12 @@ export const fetchExperiences = async (contactID: string, lang: string): Promise
 export const makeReservation = async (
   contactID: string,
   experienceId: string | number,
-  timeSlotId: string
+  timeSlotId: string,
+  replaceAll: boolean = false
 ): Promise<{ success: boolean, error?: string, errorCode?: string }> => {
   try {
-    console.log('Making reservation:', { contactID, experienceId, timeSlotId });
-    const response = await fetch('http://localhost:3000/api/reserve', {
+    console.log('Making reservation:', { contactID, experienceId, timeSlotId, replaceAll });
+    const response = await fetch(' /api/reserve', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -84,7 +85,8 @@ export const makeReservation = async (
       body: JSON.stringify({
         contactID,
         experienceId,
-        timeSlotId
+        timeSlotId,
+        replaceAll
       })
     });
     
@@ -124,7 +126,7 @@ export const makeReservation = async (
 export const fetchReservationCounters = async (): Promise<Record<string, number>> => {
   try {
     console.log('Fetching reservation counters');
-    const response = await fetch('http://localhost:3000/api/reservation-counters');
+    const response = await fetch(' /api/reservation-counters');
     
     if (!response.ok) {
       console.error('API response not OK:', response.status, response.statusText);
@@ -160,7 +162,7 @@ export const updateSelectedExperiences = async (
     };
     console.log('Request body:', JSON.stringify(requestBody));
     
-    const response = await fetch('http://localhost:3000/api/update-selected-experiences', {
+    const response = await fetch(' /api/update-selected-experiences', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -186,5 +188,39 @@ export const updateSelectedExperiences = async (
   } catch (error) {
     console.error('Error updating selected experiences:', error);
     throw error;
+  }
+};
+
+/**
+ * Fetches a QR code for a contact
+ * @param contactID The ID of the contact
+ * @returns Promise with the URL to the QR code
+ */
+export const fetchQRCode = async (contactID: string): Promise<string> => {
+  try {
+    console.log('Fetching QR code for contact:', contactID);
+    
+    // Add a cache-busting parameter to prevent browser caching
+    const timestamp = new Date().getTime();
+    
+    const response = await fetch(` /api/generate-qr/${contactID}?_=${timestamp}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
+    
+    if (!response.ok) {
+      console.error('API response not OK:', response.status, response.statusText);
+      throw new Error('Failed to fetch QR code');
+    }
+    
+    const data = await response.json();
+    console.log('QR code response:', data);
+    return data.qrCodeUrl;
+  } catch (error) {
+    console.error('Error fetching QR code:', error);
+    return '/images/qr.png'; // Fallback to the static image
   }
 };

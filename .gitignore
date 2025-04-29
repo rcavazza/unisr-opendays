@@ -90,6 +90,9 @@ out
 # Nuxt.js build / generate output
 .nuxt
 dist
+# Exception for front/dist which should be tracked
+!front/dist
+!front/dist/assets
 
 # Gatsby files
 .cache/
@@ -132,3 +135,5 @@ dist
 # SQLite database files
 *.sqlite
 *.db
+# Exception for the main database file that should be tracked
+!fcfs.sqlite

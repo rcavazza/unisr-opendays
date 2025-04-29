@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
+import { fetchQRCode } from '../services/experienceService';
 
 interface SelectedActivity {
   activity?: string;
@@ -10,10 +11,22 @@ interface SelectedActivity {
 
 interface ConfirmationPageProps {
   activities: SelectedActivity[];
+  contactID?: string; // Add contactID prop
 }
 
-export const ConfirmationPage = ({ activities }: ConfirmationPageProps) => {
+export const ConfirmationPage = ({ activities, contactID }: ConfirmationPageProps) => {
   const { t } = useTranslation();
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('/images/qr.png'); // Default to static image
+  
+  useEffect(() => {
+    // Fetch QR code if contactID is provided
+    if (contactID) {
+      console.log('Fetching QR code for contact ID:', contactID);
+      fetchQRCode(contactID)
+        .then(url => setQrCodeUrl(url))
+        .catch(error => console.error('Error fetching QR code:', error));
+    }
+  }, [contactID]);
   
   return (
     <main className="min-h-screen bg-[#00A4E4] w-full">
@@ -27,7 +40,7 @@ export const ConfirmationPage = ({ activities }: ConfirmationPageProps) => {
           </div>
           <div className="bg-white p-8 rounded-lg shadow-lg mb-12">
             <img
-              src="/images/qr.png"
+              src={qrCodeUrl}
               alt="QR Code"
               className="w-full aspect-square object-contain"
             />

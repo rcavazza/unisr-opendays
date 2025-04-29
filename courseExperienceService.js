@@ -304,17 +304,46 @@ async function getSelectedExperiences(db, contactId) {
  * @param {Object} db - Database instance
  * @param {Array<string>} customObjectIds - Array of custom object IDs
  * @param {string} language - Language code (e.g., 'en', 'it')
+ * @param {string} contactId - Contact ID to check for existing reservations
  * @returns {Promise<Array<Object>>} - Array of experience objects
  */
-async function getExperiencesByCustomObjectIds(db, customObjectIds, language) {
+async function getExperiencesByCustomObjectIds(db, customObjectIds, language, contactId) {
     try {
-        logger.info(`Retrieving experiences for custom object IDs: ${customObjectIds.join(', ')} in language: ${language}`);
+        logger.info(`Retrieving experiences for custom object IDs: ${customObjectIds.join(', ')} in language: ${language} for contact: ${contactId || 'none'}`);
         
         // Create placeholders for the SQL query
         const placeholders = customObjectIds.map(() => '?').join(',');
         
         // Log the custom object IDs being used in the query
         logger.info(`Custom object IDs for query: ${JSON.stringify(customObjectIds)}`);
+        
+        // Fetch user's reservations if contactId is provided
+        let userReservations = [];
+        if (contactId) {
+            userReservations = await reservationService.getReservationsForContact(db, contactId);
+            logger.info(`Found ${userReservations.length} reservations for contact ${contactId}`);
+        }
+        
+        // Create a map for quick lookup of user's reservations
+        const reservationMap = {};
+        // Also create a map of experience_id to array of time_slot_id for easier lookup
+        const userReservationsByExperience = {};
+        
+        userReservations.forEach(reservation => {
+            // Store the original key format
+            const key = `${reservation.experience_id}_${reservation.time_slot_id}`;
+            reservationMap[key] = true;
+            
+            // Also store by experience_id for easier lookup
+            if (!userReservationsByExperience[reservation.experience_id]) {
+                userReservationsByExperience[reservation.experience_id] = [];
+            }
+            userReservationsByExperience[reservation.experience_id].push(reservation.time_slot_id);
+            
+            logger.info(`User has reservation for: ${key}`);
+        });
+        
+        logger.info(`User reservations by experience: ${JSON.stringify(userReservationsByExperience)}`);
         
         // Query the database to see what course_type values are available
         db.all("SELECT DISTINCT course_type FROM experiences", (err, rows) => {
@@ -483,12 +512,38 @@ async function getExperiencesByCustomObjectIds(db, customObjectIds, language) {
                                         
                                         if (row.ora_inizio && row.ora_inizio.trim() !== '') {
                                             logger.info(`Adding time slot for ${row.experience_id} with ora_inizio: ${row.ora_inizio} and ora_fine: ${row.ora_fine}`);
+                                            
+                                            // Create the time slot ID in the same format as stored in the database
+                                            const baseExperienceId = row.experience_id.replace(/-\d+$/, '');
+                                            const slotNumber = experience.timeSlots.length + 1;
+                                            const timeSlotId = `${baseExperienceId}-${slotNumber}`;
+                                            
+                                            // Check if this slot matches any of the user's reservations
+                                            // First try the exact match
+                                            const exactKey = `${baseExperienceId}_${timeSlotId}`;
+                                            let isSelected = reservationMap[exactKey] || false;
+                                            
+                                            // If not found, check if the experience ID has any reservations
+                                            if (!isSelected && userReservationsByExperience[baseExperienceId]) {
+                                                // Check if any of the time slot IDs for this experience match our format
+                                                isSelected = userReservationsByExperience[baseExperienceId].some(slotId => {
+                                                    // Try different formats of the slot ID
+                                                    return slotId === timeSlotId ||
+                                                           slotId === `${baseExperienceId}-${slotNumber}`;
+                                                });
+                                            }
+                                            
+                                            if (isSelected) {
+                                                logger.info(`Marking slot ${timeSlotId} as selected for experience ${baseExperienceId}`);
+                                            }
+                                            
                                             experience.timeSlots.push({
-                                                id: `${row.experience_id}-${experience.timeSlots.length + 1}`,
+                                                id: timeSlotId,
                                                 time: formatTime(row.ora_inizio),
                                                 endTime: formatTime(row.ora_fine),
                                                 available: Math.max(0, row.max_participants - row.current_participants),
-                                                reserved: row.current_participants || 0
+                                                reserved: row.current_participants || 0,
+                                                selected: isSelected
                                             });
                                             logger.info(`After adding time slot, timeSlots length: ${experience.timeSlots.length}`);
                                         }
@@ -531,9 +586,14 @@ async function getExperiencesByCustomObjectIds(db, customObjectIds, language) {
                                                 return minutesA - minutesB;
                                             });
                                             
+                                            // Store the original selected state before reassigning IDs
+                                            const selectedStates = experience.timeSlots.map(slot => slot.selected);
+                                            
                                             // Reassign IDs to maintain sequential numbering after sorting
                                             experience.timeSlots.forEach((slot, index) => {
                                                 slot.id = `${experience.id}-${index + 1}`;
+                                                // Restore the selected state
+                                                slot.selected = selectedStates[index];
                                             });
                                         }
                                     });
@@ -557,8 +617,9 @@ async function getExperiencesByCustomObjectIds(db, customObjectIds, language) {
                                                         const reservationCount = reservationCounts[directKey] !== undefined ? reservationCounts[directKey] : (reservationCounts[key] || 0);
                                                         // Calculate available slots (max - current)
                                                         const originalAvailable = slot.available;
-                                                        slot.available = Math.max(0, originalAvailable - reservationCount);
-                                                        logger.info(`Slot ${directKey} (or ${key}): original=${originalAvailable}, reservations=${reservationCount}, available=${slot.available}`);
+                                                        // Don't subtract reservation count as it's already accounted for in current_participants
+                                                        slot.available = originalAvailable;
+                                                        logger.info(`Slot ${directKey} (or ${key}): available=${slot.available}, reservations=${reservationCount} (already accounted for in current_participants)`);
                                                     });
                                                 }
                                             });

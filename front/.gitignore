@@ -9,6 +9,9 @@ lerna-debug.log*
 
 node_modules
 dist
+# Exception for dist which should be tracked
+!dist
+!dist/assets
 dist-ssr
 *.local
 
