@@ -56,7 +56,7 @@ app.get('/', async (req, res) => {
   
   try {
     // Use the same API as the front-end
-    const response = await axios.get(`http://localhost:3000/api/manage_experiences?lang=${language}`);
+    const response = await axios.get(` /api/manage_experiences?lang=${language}`);
     const experiences = response.data;
     
     // Transform the experiences to match the expected format for the template

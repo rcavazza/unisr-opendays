@@ -11,7 +11,7 @@ const language = 'it'; // or 'en' for English
 logger.info(`Testing /api/get_experiences endpoint with contactID: ${testContactId}, language: ${language}`);
 
 // Make the API request
-axios.get(`http://localhost:3000/api/get_experiences?contactID=${testContactId}&lang=${language}`)
+axios.get(` /api/get_experiences?contactID=${testContactId}&lang=${language}`)
   .then(response => {
     logger.info(`Response status: ${response.status}`);
     

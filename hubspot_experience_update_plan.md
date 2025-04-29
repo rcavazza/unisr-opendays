@@ -103,7 +103,7 @@ export const updateSelectedExperiences = async (
 ): Promise<{ success: boolean, error?: string }> => {
   try {
     console.log('Updating selected experiences:', { contactID, experienceIds });
-    const response = await fetch('http://localhost:3000/api/update-selected-experiences', {
+    const response = await fetch(' /api/update-selected-experiences', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

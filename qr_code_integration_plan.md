@@ -89,7 +89,7 @@ We need to modify the ConfirmationPage component to:
     */
    export const fetchQRCode = async (contactID: string): Promise<string> => {
      try {
-       const response = await fetch(`http://localhost:3000/api/generate-qr/${contactID}`);
+       const response = await fetch(` /api/generate-qr/${contactID}`);
        
        if (!response.ok) {
          console.error('API response not OK:', response.status, response.statusText);

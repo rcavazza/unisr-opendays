@@ -109,7 +109,7 @@ const db = new sqlite3.Database("fcfs.sqlite", async (err) => {
         // 4. Check what the frontend would see
         console.log("\nChecking what the frontend would see...");
         try {
-            const response = await axios.get('http://localhost:3000/api/get_raw_slots');
+            const response = await axios.get(' /api/get_raw_slots');
             const slots = response.data;
             
             console.log("\nSlots visible to frontend:");

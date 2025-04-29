@@ -56,7 +56,7 @@ export const deleteAllReservations = async (
 ): Promise<{ success: boolean, error?: string }> => {
   try {
     console.log('Deleting all reservations for contact:', contactID);
-    const response = await fetch('http://localhost:3000/api/delete-all-reservations', {
+    const response = await fetch(' /api/delete-all-reservations', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

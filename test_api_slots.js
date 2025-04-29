@@ -8,7 +8,7 @@ async function testApiSlots() {
     console.log('Testing API slots with the new direct key format...');
     
     // Get raw slots from the API
-    const response = await axios.get('http://localhost:3000/api/get_raw_slots');
+    const response = await axios.get(' /api/get_raw_slots');
     const slots = response.data;
     
     // Count the number of direct keys vs. legacy keys

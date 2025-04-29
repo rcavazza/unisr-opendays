@@ -86,7 +86,7 @@ export const makeMultipleReservations = async (
 ): Promise<{ success: boolean, error?: string, errorCode?: string, experienceId?: string | number, timeSlotId?: string }> => {
   try {
     console.log('Making multiple reservations:', { contactID, reservations });
-    const response = await fetch('http://localhost:3000/api/reserve-multiple', {
+    const response = await fetch(' /api/reserve-multiple', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
