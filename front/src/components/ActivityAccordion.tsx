@@ -73,9 +73,17 @@ export const ActivityAccordion = ({
               </h3>
               <div className="space-y-2">
                 {activity.timeSlots.map(slot => {
+                  // Debug logging for each time slot
+                  console.log(`Rendering slot ${slot.id} for activity ${activity.id}:`);
+                  console.log(`- Available: ${slot.available}, Type: ${typeof slot.available}`);
+                  console.log(`- Time: ${slot.time}, EndTime: ${slot.endTime || 'N/A'}`);
+                  
                   const isOverlapping = overlappingSlots[slot.id];
                   const isFull = slot.available <= 0;
                   const isDisabled = isOverlapping || isFull;
+                  
+                  // Log the calculated state
+                  console.log(`- isOverlapping: ${isOverlapping}, isFull: ${isFull}, isDisabled: ${isDisabled}`);
                   
                   return (
                     <div
@@ -85,6 +93,8 @@ export const ActivityAccordion = ({
                         isFull ? 'bg-gray-900/20' :
                         'hover:bg-white/5'
                       }`}
+                      data-slot-id={slot.id}
+                      data-available={slot.available}
                     >
                       <div className="flex items-center">
                         <input
@@ -113,7 +123,7 @@ export const ActivityAccordion = ({
                             </span>
                           )}
                         </div>
-                        <span className="text-sm text-white/70">
+                        <span className="text-sm text-white/70 available-slots" data-experience-id={activity.id} data-time-slot-id={slot.id}>
                           ({t('spotsAvailable', { count: slot.available })})
                         </span>
                       </div>

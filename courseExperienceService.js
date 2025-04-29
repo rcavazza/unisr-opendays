@@ -394,8 +394,8 @@ async function getExperiencesByCustomObjectIds(db, customObjectIds, language) {
                                 const courseType = courseTypeMap[id];
                                 
                                 if (baseId && courseType) {
-                                    whereClauses.push('(experience_id LIKE ? AND course_type = ?)');
-                                    whereParams.push(`${baseId}-%`, courseType);
+                                    whereClauses.push('(experience_id = ? AND course_type = ?)');
+                                    whereParams.push(baseId, courseType);
                                 }
                             });
                             
@@ -444,20 +444,20 @@ async function getExperiencesByCustomObjectIds(db, customObjectIds, language) {
                                         logger.info(`Row ${index} ora_fine: ${row.ora_fine}, type: ${typeof row.ora_fine}`);
                                     });
                                     
-                                    // Group the rows by base experience_id (without the number suffix)
+                                    // Group the rows by title instead of base experience_id
                                     const experienceMap = new Map();
                                     
                                     rows.forEach(row => {
-                                        logger.info(`Elaborazione riga per experience_id: ${row.experience_id}, ora_inizio: ${row.ora_inizio}`);
+                                        logger.info(`Elaborazione riga per experience_id: ${row.experience_id}, title: ${row.title}, ora_inizio: ${row.ora_inizio}`);
                                         
-                                        // Extract the base name from the experience_id (e.g., "imdp-e-medicina-chirurgia-mani" from "imdp-e-medicina-chirurgia-mani-2")
-                                        const baseExperienceId = row.experience_id.replace(/-\d+$/, '');
-                                        logger.info(`Base experience ID: ${baseExperienceId}`);
+                                        // Use title as the grouping key
+                                        const groupKey = row.title;
+                                        logger.info(`Group key (title): ${groupKey}`);
                                         
-                                        if (!experienceMap.has(baseExperienceId)) {
-                                            logger.info(`Creazione nuova esperienza per base ${baseExperienceId}`);
-                                            experienceMap.set(baseExperienceId, {
-                                                id: baseExperienceId, // Use the base ID as the experience ID
+                                        if (!experienceMap.has(groupKey)) {
+                                            logger.info(`Creazione nuova esperienza per title ${groupKey}`);
+                                            experienceMap.set(groupKey, {
+                                                id: row.experience_id.replace(/-\d+$/, ''), // Keep the base ID as the experience ID
                                                 title: row.title,
                                                 course: row.course || '',
                                                 location: row.location,
@@ -467,7 +467,7 @@ async function getExperiencesByCustomObjectIds(db, customObjectIds, language) {
                                             });
                                         }
                                         
-                                        const experience = experienceMap.get(baseExperienceId);
+                                        const experience = experienceMap.get(groupKey);
                                         
                                         // Add time slot if ora_inizio exists and is not an empty string
                                         logger.info(`Checking ora_inizio for ${row.experience_id}: ${row.ora_inizio}, type: ${typeof row.ora_inizio}`);
@@ -496,8 +496,8 @@ async function getExperiencesByCustomObjectIds(db, customObjectIds, language) {
                                     });
                                     
                                     // Log finale per verificare il numero di timeslot per ogni esperienza
-                                    experienceMap.forEach((exp, id) => {
-                                        logger.info(`Esperienza ${id} ha ${exp.timeSlots.length} timeslots`);
+                                    experienceMap.forEach((exp, title) => {
+                                        logger.info(`Esperienza "${title}" ha ${exp.timeSlots.length} timeslots`);
                                     });
                                     
                                     // Convert the map to an array
@@ -547,12 +547,18 @@ async function getExperiencesByCustomObjectIds(db, customObjectIds, language) {
                                             experiences.forEach((experience) => {
                                                 if (experience.timeSlots && experience.timeSlots.length > 0) {
                                                     experience.timeSlots.forEach((slot) => {
-                                                        const key = `${experience.id}_${slot.id}`;
-                                                        const reservationCount = reservationCounts[key] || 0;
+                                                        // Extract the slot number from the slot ID (e.g., "1" from "imdp-e-medicina-chirurgia-mani-2-1")
+                                                        const slotNumber = slot.id.split('-').pop();
+                                                        
+                                                        // Try different key formats
+                                                        const directKey = `${slot.id.split('-').slice(0, -1).join('-')}:${slotNumber}`; // New direct format: experienceId:slotNumber
+                                                        const key = `${experience.id}_${slot.id}`; // Original format: baseExperienceId_timeSlotId
+                                                        // Try the direct key format first, then fall back to the original format
+                                                        const reservationCount = reservationCounts[directKey] !== undefined ? reservationCounts[directKey] : (reservationCounts[key] || 0);
                                                         // Calculate available slots (max - current)
                                                         const originalAvailable = slot.available;
                                                         slot.available = Math.max(0, originalAvailable - reservationCount);
-                                                        logger.info(`Slot ${key}: original=${originalAvailable}, reservations=${reservationCount}, available=${slot.available}`);
+                                                        logger.info(`Slot ${directKey} (or ${key}): original=${originalAvailable}, reservations=${reservationCount}, available=${slot.available}`);
                                                     });
                                                 }
                                             });

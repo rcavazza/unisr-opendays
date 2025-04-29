@@ -98,7 +98,10 @@
         <option value="en">English</option>
       </select>
     </div>
-    <button id="add-new-btn">Add New Experience</button>
+    <div style="display: flex; gap: 10px;">
+      <button id="add-new-btn">Add New Experience</button>
+      <a href="/admin/experiences/simple" style="padding: 8px 15px; background-color: #2196F3; color: white; text-decoration: none; border-radius: 4px; display: inline-block;">Switch to Simple View</a>
+    </div>
   </div>
   
   <div id="form-container" class="form-container hidden">
@@ -160,7 +163,7 @@
         </div>
         <div class="form-group">
           <label for="current_participants">Current Participants:</label>
-          <input type="number" id="current_participants" name="current_participants" value="0" required>
+          <input type="number" id="current_participants" name="current_participants" value="0" readonly title="This field is automatically managed by the reservation system">
         </div>
       </div>
       
@@ -290,8 +293,17 @@
         const formData = new FormData(form);
         const experienceData = {};
         formData.forEach((value, key) => {
-          experienceData[key] = value;
+          // Escludiamo current_participants dai dati inviati al server quando si aggiorna un'esperienza
+          // perché questo campo è gestito automaticamente dal sistema di prenotazione
+          if (key !== 'current_participants' || !experienceIdInput.value) {
+            experienceData[key] = value;
+          }
         });
+        
+        // Se stiamo creando una nuova esperienza, impostiamo current_participants a 0
+        if (!experienceIdInput.value) {
+          experienceData.current_participants = 0;
+        }
         
         try {
           let response;

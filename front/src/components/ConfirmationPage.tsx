@@ -27,7 +27,7 @@ export const ConfirmationPage = ({ activities }: ConfirmationPageProps) => {
           </div>
           <div className="bg-white p-8 rounded-lg shadow-lg mb-12">
             <img
-              src="https://uploadthingy.s3.us-west-1.amazonaws.com/kswRPCeWyS9Yj5zTLFPWhb/qr.png"
+              src="/images/qr.png"
               alt="QR Code"
               className="w-full aspect-square object-contain"
             />

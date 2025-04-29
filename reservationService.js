@@ -2,6 +2,7 @@
  * Service for managing reservations
  */
 const logger = require('./logger');
+const slotCalculationService = require('./slotCalculationService');
 
 /**
  * Save a new reservation
@@ -152,55 +153,8 @@ async function isSlotAvailable(db, experienceId, timeSlotId) {
     try {
         logger.info(`Checking availability for experience ${experienceId}, time slot ${timeSlotId}`);
         
-        // Get the base experience ID
-        const baseExperienceId = experienceId.replace(/-\d+$/, '');
-        
-        // Get the max_participants from the experiences table
-        const maxParticipants = await new Promise((resolve, reject) => {
-            db.get(
-                "SELECT max_participants FROM experiences WHERE experience_id LIKE ? LIMIT 1",
-                [`${baseExperienceId}%`],
-                (err, row) => {
-                    if (err) {
-                        logger.error(`Error getting max participants: ${err.message}`);
-                        reject(err);
-                    } else {
-                        if (!row) {
-                            logger.warn(`No experience found with ID like ${baseExperienceId}`);
-                            resolve(0);
-                        } else {
-                            resolve(row.max_participants || 0);
-                        }
-                    }
-                }
-            );
-        });
-        
-        if (maxParticipants === 0) {
-            logger.warn(`Max participants is 0 for experience ${baseExperienceId}`);
-            return false;
-        }
-        
-        // Count existing reservations for this slot
-        const count = await new Promise((resolve, reject) => {
-            db.get(
-                "SELECT COUNT(*) as count FROM opend_reservations WHERE experience_id = ? AND time_slot_id = ?",
-                [experienceId, timeSlotId],
-                (err, row) => {
-                    if (err) {
-                        logger.error(`Error counting reservations: ${err.message}`);
-                        reject(err);
-                    } else {
-                        resolve(row.count);
-                    }
-                }
-            );
-        });
-        
-        logger.info(`Slot ${experienceId}_${timeSlotId}: max=${maxParticipants}, current reservations=${count}`);
-        
-        // Check if there are still spots available
-        return count < maxParticipants;
+        // Use the slot calculation service to check availability
+        return slotCalculationService.isSlotAvailable(db, experienceId, timeSlotId);
     } catch (error) {
         logger.error(`Error in isSlotAvailable: ${error.message}`);
         throw error;
@@ -240,10 +194,44 @@ async function updateQrCodeUrl(db, contactId, experienceId, qrCodeUrl) {
     }
 }
 
+/**
+ * Cancel a reservation
+ * @param {Object} db - Database instance
+ * @param {string} contactId - Contact ID
+ * @param {string} experienceId - Experience ID
+ * @param {string} timeSlotId - Time slot ID
+ * @returns {Promise<boolean>} - True if the reservation was canceled, false otherwise
+ */
+async function cancelReservation(db, contactId, experienceId, timeSlotId) {
+    try {
+        logger.info(`Canceling reservation for contact ${contactId}, experience ${experienceId}, time slot ${timeSlotId}`);
+        
+        return new Promise((resolve, reject) => {
+            db.run(
+                "DELETE FROM opend_reservations WHERE contact_id = ? AND experience_id = ? AND time_slot_id = ?",
+                [contactId, experienceId, timeSlotId],
+                function(err) {
+                    if (err) {
+                        logger.error(`Error canceling reservation: ${err.message}`);
+                        reject(err);
+                    } else {
+                        logger.info(`Reservation canceled successfully, rows affected: ${this.changes}`);
+                        resolve(this.changes > 0);
+                    }
+                }
+            );
+        });
+    } catch (error) {
+        logger.error(`Error in cancelReservation: ${error.message}`);
+        throw error;
+    }
+}
+
 module.exports = {
     saveReservation,
     getReservationsForContact,
     getReservationCounts,
     updateQrCodeUrl,
-    isSlotAvailable
+    isSlotAvailable,
+    cancelReservation
 };
