@@ -667,14 +667,12 @@ export const OpenDayRegistration = () => {
         )}
         
         {!contactIdMissing && (
-          <div className="flex justify-center">
-            <button
-              onClick={handleSubmit}
+            <div className="flex justify-center mb-16">
+          <button onClick={handleSubmit}
               disabled={!hasSelections || loading}
-              className={`px-8 py-4 rounded-md text-white font-bold tracking-wide transition-colors shadow-lg font-viridian text-6xl font-viridian text-yellow-300 tracking-wide leading-tight ${hasSelections && !loading ? 'bg-[#0082b6]/80 bg-[#0082b6]/60 text-blue-900' : 'bg-white/20 cursor-not-allowed'}`}
-            >
-              {t('submitRegistration')}
-            </button>
+              className={`bg-yellow-300 text-[#00A4E4] font-bold text-xl px-16 py-4 rounded-full hover:bg-yellow-400 transition-colors `}>
+          {t('submitRegistration')}
+          </button>
           </div>
         )}
       </div>
