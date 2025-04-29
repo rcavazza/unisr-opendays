@@ -10,7 +10,7 @@ import './i18n'; // Import i18n configuration
 const DefaultRedirect = () => {
   const location = useLocation();
   // Preserve query parameters when redirecting to default language
-  return <Navigate to={`/en/front${location.search}`} replace />;
+  return <Navigate to={`/en/opendays${location.search}`} replace />;
 };
 
 // Helper component to handle the confirmation page with location state
@@ -35,7 +35,7 @@ export const App = () => {
       <Routes>
         <Route path="/" element={<DefaultRedirect />} />
         <Route
-          path="/:lang/front"
+          path="/:lang/opendays"
           element={
             <LanguageProvider>
               <OpenDayRegistration />
@@ -43,7 +43,7 @@ export const App = () => {
           }
         />
         <Route
-          path="/:lang/front/confirmation"
+          path="/:lang/opendays/confirmation"
           element={<ConfirmationPageWrapper />}
         />
         <Route

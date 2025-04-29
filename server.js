@@ -98,9 +98,9 @@ const handleMissingSvg = (req, res) => {
 // app.use('/Frame_94-2.svg', handleMissingSvg);
 
 // Serve the frontend app for language-specific routes and root
-app.get(['/en/front', '/it/front', '/front'], (req, res) => {
-    if (req.path === '/front') {
-        return res.redirect('/en/front');
+app.get(['/en/opendays', '/it/opendays', '/opendays'], (req, res) => {
+    if (req.path === '/opendays') {
+        return res.redirect('/en/opendays');
     }
     res.sendFile(path.join(__dirname, 'front/dist/index.html'));
 });
