@@ -47,7 +47,7 @@ export const App = () => {
           element={<ConfirmationPageWrapper />}
         />
         <Route
-          path="/:lang/front/genitori" // Aggiungi questa nuova route
+          path="/:lang/opendays/genitori" // Aggiungi questa nuova route
           element={
             <LanguageProvider>
               <GenitoriPage />
