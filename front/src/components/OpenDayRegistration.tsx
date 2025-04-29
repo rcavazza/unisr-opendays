@@ -670,19 +670,14 @@ export const OpenDayRegistration = () => {
           </div>
         )}
       </div>
-      <div className="absolute inset-0 pointer-events-none opacity-10">
-        <img src="/Group_96.svg" className="absolute top-0 right-0 w-96 h-96" alt="" />
-        <img src="/Frame_94-3.svg" className="absolute bottom-0 left-0 w-96 h-96" alt="" />
-        <img src="/Frame_94-2.svg" className="absolute top-1/4 left-1/4 w-96 h-96" alt="" />
-      </div>
       <div className="max-w-4xl mx-auto py-12 px-4 relative">
         <div className="text-center mb-12">
-          <h1 className="text-6xl font-viridian text-yellow-300 tracking-wide leading-tight inline-block">
+          <h1 className="text-6xl font-viridian text-white tracking-wide leading-tight inline-block">
             {t('welcome')}
           </h1>
         </div>
         <div className="bg-[#0082b6]/80 backdrop-blur-sm rounded-lg p-6 mb-8 shadow-xl">
-          <p className="text-white/90 leading-relaxed">
+          <p className="font-bold text-white/90 leading-relaxed">
             {t('intro')}
           </p>
         </div>

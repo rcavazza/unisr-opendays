@@ -1,14 +1,25 @@
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
+
+/* Import the Poppins font */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900&display=swap');
+
+/* Define the default font for the project */
+* {
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Define the Viridian font */
 @font-face {
   font-family: 'Viridian College';
-  //src: url('https://db.onlinewebfonts.com/t/d591b615d0c0d4e4a5c85cc74f9c499c.woff2') format('woff2');
   src: local('Viridian College'), url('https://fonts.cdnfonts.com/s/20820/Viridian College.woff') format('woff');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
+
+/* Apply the Viridian font to specific areas */
 .font-viridian {
   font-family: 'Viridian College', sans-serif;
 }
