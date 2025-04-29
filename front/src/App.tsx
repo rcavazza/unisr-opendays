@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { OpenDayRegistration } from './components/OpenDayRegistration';
 import { ConfirmationPage } from './components/ConfirmationPage';
 import { LanguageProvider } from './components/LanguageProvider';
+import { GenitoriPage } from './components/GenitoriPage'; // Importa il nuovo componente
 import './i18n'; // Import i18n configuration
 
 // Helper component to handle default redirect with query parameters
@@ -44,6 +45,14 @@ export const App = () => {
         <Route
           path="/:lang/opendays/confirmation"
           element={<ConfirmationPageWrapper />}
+        />
+        <Route
+          path="/:lang/front/genitori" // Aggiungi questa nuova route
+          element={
+            <LanguageProvider>
+              <GenitoriPage />
+            </LanguageProvider>
+          }
         />
       </Routes>
     </BrowserRouter>
