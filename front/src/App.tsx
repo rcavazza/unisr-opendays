@@ -17,9 +17,13 @@ const ConfirmationPageWrapper = () => {
   const location = useLocation();
   const activities = location.state?.activities || [];
   
+  // Extract contactID from URL query parameters
+  const urlParams = new URLSearchParams(location.search);
+  const contactID = urlParams.get('contactID') || '';
+  
   return (
     <LanguageProvider>
-      <ConfirmationPage activities={activities} />
+      <ConfirmationPage activities={activities} contactID={contactID} />
     </LanguageProvider>
   );
 };

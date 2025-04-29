@@ -170,6 +170,13 @@ async function updateRemainingSlots() {
 const ISOPEN = false;
 console.log("--- STARTING UNISR SERVER ON PORT " + port);
 
+// Ensure the qrimg directory exists
+const qrImgDir = path.join(__dirname, 'public', 'qrimg');
+if (!fs.existsSync(qrImgDir)) {
+    fs.mkdirSync(qrImgDir, { recursive: true });
+    console.log(`Created directory: ${qrImgDir}`);
+}
+
 const db = new sqlite3.Database("fcfs.sqlite", async (err) => {
     if (err) {
         return console.error(err.message);
@@ -264,8 +271,8 @@ app.get('/api/get_experiences', async (req, res) => {
             return res.json([]);
         }
         
-        // Get experiences from the database based on the filtered IDs and language
-        const experiences = await courseExperienceService.getExperiencesByCustomObjectIds(db, filteredObjectIds, language);
+        // Get experiences from the database based on the filtered IDs, language, and contactID
+        const experiences = await courseExperienceService.getExperiencesByCustomObjectIds(db, filteredObjectIds, language, contactID);
         
         // Log the experiences for debugging
         logger.info(`Returning ${experiences.length} experiences to frontend`);
@@ -332,7 +339,7 @@ app.post('/reset-database', async (req, res) => {
 
 // Endpoint to make a reservation
 app.post('/api/reserve', async (req, res) => {
-    const { contactID, experienceId, timeSlotId } = req.body;
+    const { contactID, experienceId, timeSlotId, replaceAll } = req.body;
     
     if (!contactID || !experienceId || !timeSlotId) {
         return res.status(400).json({
@@ -355,7 +362,7 @@ app.post('/api/reserve', async (req, res) => {
         }
         
         // Save the reservation
-        await reservationService.saveReservation(db, contactID, experienceId, timeSlotId);
+        await reservationService.saveReservation(db, contactID, experienceId, timeSlotId, null, replaceAll);
         
         // No need to update current_participants field anymore
         // We're now using the actual reservation counts from the opend_reservations table
@@ -1678,6 +1685,48 @@ app.delete('/api/experiences/:id', async (req, res) => {
     logger.error('Error deleting experience:', error);
     res.status(500).json({ error: 'Error deleting experience' });
   }
+});
+
+// API endpoint to generate QR code for a contact
+app.get('/api/generate-qr/:contactID', async (req, res) => {
+    try {
+        const contactID = req.params.contactID;
+        
+        // Get contact details
+        const contact = await courseExperienceService.getContactDetails(contactID);
+        
+        // Generate QR code content (same as existing implementation)
+        const text2encode = contact.email + '**' + contactID;
+        const encoded = xorCipher.encode(text2encode, xorKey);
+        
+        // Generate QR code
+        QRCode.toDataURL(encoded, (err, qrCode) => {
+            if (err) {
+                logger.error('Error generating QR code:', err);
+                return res.status(500).json({ error: 'Error generating QR code' });
+            }
+            
+            // Generate a unique filename
+            const qrFileName = `${uuidv4()}.png`;
+            const qrFilePath = path.join(__dirname, 'public', 'qrimg', qrFileName);
+            const qrBuffer = Buffer.from(qrCode.split(',')[1], 'base64');
+            
+            // Save the QR code to a file
+            fs.writeFile(qrFilePath, qrBuffer, (err) => {
+                if (err) {
+                    logger.error('Error saving QR code image:', err);
+                    return res.status(500).json({ error: 'Error saving QR code' });
+                }
+                
+                // Return the URL to the QR code
+                const qrCodeUrl = `/qrimg/${qrFileName}`;
+                res.json({ qrCodeUrl });
+            });
+        });
+    } catch (error) {
+        logger.error('Error in /api/generate-qr:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
 
 // Server configuration

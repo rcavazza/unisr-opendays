@@ -97,6 +97,22 @@ export const OpenDayRegistration = () => {
             });
           }
           
+          // Check for any pre-selected slots
+          const preSelectedExperiences = data.filter(exp =>
+            exp.timeSlots.some(slot => slot.selected)
+          );
+          
+          if (preSelectedExperiences.length > 0) {
+            console.log(`Found ${preSelectedExperiences.length} experiences with pre-selected slots:`);
+            preSelectedExperiences.forEach(exp => {
+              console.log(`- Experience ID: ${exp.id}, Title: ${exp.title}`);
+              const selectedSlots = exp.timeSlots.filter(slot => slot.selected);
+              selectedSlots.forEach(slot => {
+                console.log(`  - Slot ID: ${slot.id}, Time: ${slot.time}, Selected: ${slot.selected}`);
+              });
+            });
+          }
+          
           console.log('=== END INSPECTION ===');
           return data;
         };
@@ -107,18 +123,44 @@ export const OpenDayRegistration = () => {
         const inspectedData = inspectExperienceData(data);
         
         // Fix any string available slots by converting them to numbers
+        // Make sure to preserve the selected flag
         const fixedData = inspectedData.map(exp => ({
           ...exp,
           timeSlots: exp.timeSlots.map(slot => ({
             ...slot,
             available: typeof slot.available === 'string'
               ? parseInt(String(slot.available), 10)
-              : slot.available
+              : slot.available,
+            selected: slot.selected || false // Ensure selected flag is preserved
           }))
         }));
         
         console.log('Fixed data:', fixedData);
         setActivities(fixedData);
+        
+        // Initialize selectedTimeSlots with pre-selected slots from the API
+        const initialSelectedSlots: Record<string | number, string> = {};
+        fixedData.forEach(activity => {
+          activity.timeSlots.forEach(slot => {
+            if (slot.selected) {
+              console.log(`Found pre-selected slot: Activity ${activity.id}, Slot ${slot.id}`);
+              initialSelectedSlots[activity.id] = slot.id;
+            }
+          });
+        });
+        
+        console.log('Initial selected slots:', initialSelectedSlots);
+        
+        // Only update selectedTimeSlots if there are pre-selected slots
+        if (Object.keys(initialSelectedSlots).length > 0) {
+          setSelectedTimeSlots(initialSelectedSlots);
+          
+          // Calculate overlapping slots based on initial selections
+          const initialOverlappingSlots = checkTimeSlotOverlaps(initialSelectedSlots, fixedData);
+          setOverlappingSlots(initialOverlappingSlots);
+          console.log('Initial overlapping slots:', initialOverlappingSlots);
+        }
+        
         setError(null);
       } catch (err) {
         setError('Failed to load experiences');
@@ -190,7 +232,7 @@ export const OpenDayRegistration = () => {
   };
   
   // Function to check for time slot overlaps
-  const checkTimeSlotOverlaps = (selectedSlots: Record<string | number, string>) => {
+  const checkTimeSlotOverlaps = (selectedSlots: Record<string | number, string>, activitiesData = activities) => {
     console.log('Checking for overlapping slots with selected slots:', selectedSlots);
     const overlaps: Record<string, boolean> = {};
     
@@ -200,12 +242,18 @@ export const OpenDayRegistration = () => {
       return overlaps;
     }
     
+    // If no activities data, return empty overlaps
+    if (!activitiesData || activitiesData.length === 0) {
+      console.log('No activities data available, returning empty overlaps');
+      return overlaps;
+    }
+    
     // For each selected slot
     Object.entries(selectedSlots).forEach(([activityId, slotId]) => {
       console.log(`Processing selected slot: Activity ${activityId}, Slot ${slotId}`);
       
       // Try to find the activity by ID (could be string or number)
-      const activity = activities.find(a => {
+      const activity = activitiesData.find(a => {
         // Compare as strings to be safe
         return String(a.id) === String(activityId);
       });
@@ -232,7 +280,7 @@ export const OpenDayRegistration = () => {
       console.log(`Selected slot time range: ${selectedStartMinutes} - ${selectedEndMinutes} minutes`);
       
       // Check all other activities for overlaps
-      activities.forEach(otherActivity => {
+      activitiesData.forEach(otherActivity => {
         // Compare as strings to be safe
         if (String(otherActivity.id) !== String(activityId)) {
           console.log(`Checking activity ${otherActivity.id} for overlaps`);
@@ -345,11 +393,17 @@ export const OpenDayRegistration = () => {
     try {
       console.log('Starting to make reservations for selected time slots');
       // Make reservations for all selected time slots
-      for (const [activityId, timeSlotId] of Object.entries(selectedTimeSlots)) {
+      const selectedSlots = Object.entries(selectedTimeSlots);
+      
+      for (let i = 0; i < selectedSlots.length; i++) {
+        const [activityId, timeSlotId] = selectedSlots[i];
         console.log(`Making reservation for activity ${activityId}, time slot ${timeSlotId}`);
         
+        // Set replaceAll to true for the first reservation only
+        const isFirstReservation = i === 0;
+        
         // Make the reservation
-        const result = await makeReservation(contactID, activityId, timeSlotId);
+        const result = await makeReservation(contactID, activityId, timeSlotId, isFirstReservation);
         console.log(`Reservation result for ${activityId}:`, result);
         
         if (!result.success) {
@@ -424,8 +478,8 @@ export const OpenDayRegistration = () => {
       await fetchExperiences(contactID, language);
       
       // Navigate to the confirmation page with the selected activities
-      console.log('Navigation to confirmation page');
-      navigate(`/${lang}/front/confirmation`, { state: { activities: selectedActivities } });
+      console.log('Navigation to confirmation page with contactID:', contactID);
+      navigate(`/${lang}/front/confirmation?contactID=${contactID}`, { state: { activities: selectedActivities } });
     } catch (error) {
       console.error('Error making reservations:', error);
       setReservationError('An error occurred while making the reservations');
