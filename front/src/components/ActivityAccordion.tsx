@@ -43,7 +43,7 @@ export const ActivityAccordion = ({
               </span>
             )}
           </span>
-          <span className="text-sm text-white/80 mt-1">{activity.course}</span>
+          <span className="font-bold text-sm text-yellow-300 mt-1">{activity.course}</span>
         </div>
         <ChevronDownIcon className={`w-5 h-5 text-yellow-300 transition-transform flex-shrink-0 ${isOpen ? 'transform rotate-180' : ''}`} />
       </button>
@@ -54,11 +54,11 @@ export const ActivityAccordion = ({
             <div className="grid grid-cols-2 gap-4 text-sm text-white/90">
               <div>
                 <span className="font-medium text-yellow-300">{t('location')}:</span>{' '}
-                {activity.location}
+                <span className="font-bold">{activity.location}</span>
               </div>
               <div>
                 <span className="font-medium text-yellow-300">{t('duration')}:</span>{' '}
-                {activity.duration}
+                <span className="font-bold"> {activity.duration}</span>
               </div>
             </div>
             
