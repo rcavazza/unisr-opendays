@@ -498,6 +498,12 @@ async function getExperiencesByCustomObjectIds(db, customObjectIds, language, co
                                         
                                         const experience = experienceMap.get(groupKey);
                                         
+                                        // Update description if it's empty in the current experience object but exists in this row
+                                        if (!experience.desc && row.desc) {
+                                            logger.info(`Updating description for ${row.experience_id} from row with ora_inizio: ${row.ora_inizio}`);
+                                            experience.desc = row.desc;
+                                        }
+                                        
                                         // Add time slot if ora_inizio exists and is not an empty string
                                         logger.info(`Checking ora_inizio for ${row.experience_id}: ${row.ora_inizio}, type: ${typeof row.ora_inizio}`);
                                         

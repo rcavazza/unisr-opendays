@@ -11,7 +11,7 @@ export const LanguageSwitcher: React.FC = () => {
   const switchLanguage = (newLang: string) => {
     if (newLang !== lang) {
       // Preserve query parameters when switching languages
-      navigate(`/${newLang}/front${location.search}`, { replace: true });
+      navigate(`/${newLang}/opendays${location.search}`, { replace: true });
     }
   };
 

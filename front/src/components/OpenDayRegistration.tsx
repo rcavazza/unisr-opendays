@@ -454,7 +454,9 @@ export const OpenDayRegistration = () => {
         return {
           activity: activity?.title,
           course: activity?.course,
-          time: timeSlot?.time
+          time: timeSlot?.time,
+          location: activity?.location,  // Add location
+          duration: activity?.duration   // Add duration
         };
       });
       
@@ -479,7 +481,7 @@ export const OpenDayRegistration = () => {
       
       // Navigate to the confirmation page with the selected activities
       console.log('Navigation to confirmation page with contactID:', contactID);
-      navigate(`/${lang}/front/confirmation?contactID=${contactID}`, { state: { activities: selectedActivities } });
+      navigate(`/${lang}/opendays/confirmation?contactID=${contactID}`, { state: { activities: selectedActivities } });
     } catch (error) {
       console.error('Error making reservations:', error);
       setReservationError('An error occurred while making the reservations');
