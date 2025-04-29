@@ -30,7 +30,7 @@ export const ActivityAccordion = ({
         aria-expanded={isOpen}
       >
         <div className="flex flex-col">
-          <span className="text-lg text-white font-bold tracking-wide">
+          <span className="text-lg text-white tracking-wide">
             {activity.title}
             {selectedSlot && (
               <span className="ml-2 text-sm text-yellow-300 font-normal">
