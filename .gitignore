@@ -132,3 +132,5 @@ dist
 # SQLite database files
 *.sqlite
 *.db
+# Exception for the main database file that should be tracked
+!fcfs.sqlite
