@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { ActivityAccordion } from './ActivityAccordion';
 import { ActivityDetails } from '../data/activities';
-import { fetchExperiences, makeReservation } from '../services/experienceService';
+import { fetchExperiences, makeReservation, updateSelectedExperiences } from '../services/experienceService';
 import { LoadingOverlay } from './LoadingOverlay';
 
 export const OpenDayRegistration = () => {
@@ -40,9 +40,85 @@ export const OpenDayRegistration = () => {
         // Use the URL language parameter instead of i18n.language
         const language = lang || 'en';
         console.log('Fetching experiences for contactID:', contactID, 'language:', language);
+        
+        // Add a debug function to inspect the data before setting it
+        const inspectExperienceData = (data: ActivityDetails[]) => {
+          console.log('=== EXPERIENCE DATA INSPECTION ===');
+          console.log(`Total experiences: ${data.length}`);
+          
+          // Check for any experiences with 0 available slots
+          const zeroSlotExperiences = data.filter(exp =>
+            exp.timeSlots.some(slot => slot.available === 0)
+          );
+          
+          if (zeroSlotExperiences.length > 0) {
+            console.log(`Found ${zeroSlotExperiences.length} experiences with zero available slots:`);
+            zeroSlotExperiences.forEach(exp => {
+              console.log(`- Experience ID: ${exp.id}, Title: ${exp.title}`);
+              const zeroSlots = exp.timeSlots.filter(slot => slot.available === 0);
+              zeroSlots.forEach(slot => {
+                console.log(`  - Slot ID: ${slot.id}, Time: ${slot.time}, Available: ${slot.available}`);
+              });
+            });
+          }
+          
+          // Check for any experiences with non-numeric available slots
+          const nonNumericSlotExperiences = data.filter(exp =>
+            exp.timeSlots.some(slot => typeof slot.available !== 'number')
+          );
+          
+          if (nonNumericSlotExperiences.length > 0) {
+            console.log(`Found ${nonNumericSlotExperiences.length} experiences with non-numeric available slots:`);
+            nonNumericSlotExperiences.forEach(exp => {
+              console.log(`- Experience ID: ${exp.id}, Title: ${exp.title}`);
+              const nonNumericSlots = exp.timeSlots.filter(slot => typeof slot.available !== 'number');
+              nonNumericSlots.forEach(slot => {
+                console.log(`  - Slot ID: ${slot.id}, Time: ${slot.time}, Available: ${slot.available}, Type: ${typeof slot.available}`);
+              });
+            });
+          }
+          
+          // Check for any experiences with string available slots that could be parsed as numbers
+          const stringSlotExperiences = data.filter(exp =>
+            exp.timeSlots.some(slot => typeof slot.available === 'string')
+          );
+          
+          if (stringSlotExperiences.length > 0) {
+            console.log(`Found ${stringSlotExperiences.length} experiences with string available slots:`);
+            stringSlotExperiences.forEach(exp => {
+              console.log(`- Experience ID: ${exp.id}, Title: ${exp.title}`);
+              const stringSlots = exp.timeSlots.filter(slot => typeof slot.available === 'string');
+              stringSlots.forEach(slot => {
+                console.log(`  - Slot ID: ${slot.id}, Time: ${slot.time}, Available: ${slot.available}, Type: ${typeof slot.available}`);
+                // Try to parse as number
+                const parsedValue = parseInt(String(slot.available), 10);
+                console.log(`  - Parsed value: ${parsedValue}, isNaN: ${isNaN(parsedValue)}`);
+              });
+            });
+          }
+          
+          console.log('=== END INSPECTION ===');
+          return data;
+        };
+        
         const data = await fetchExperiences(contactID, language);
-        console.log('Received experiences data:', data);
-        setActivities(data);
+        
+        // Inspect the data
+        const inspectedData = inspectExperienceData(data);
+        
+        // Fix any string available slots by converting them to numbers
+        const fixedData = inspectedData.map(exp => ({
+          ...exp,
+          timeSlots: exp.timeSlots.map(slot => ({
+            ...slot,
+            available: typeof slot.available === 'string'
+              ? parseInt(String(slot.available), 10)
+              : slot.available
+          }))
+        }));
+        
+        console.log('Fixed data:', fixedData);
+        setActivities(fixedData);
         setError(null);
       } catch (err) {
         setError('Failed to load experiences');
@@ -261,17 +337,20 @@ export const OpenDayRegistration = () => {
   const navigate = useNavigate();
 
   const handleSubmit = async () => {
+    console.log('handleSubmit called - this should appear in the console when the submit button is clicked');
     // Set submitting state
     setSubmitting(true);
     setReservationError(null);
     
     try {
+      console.log('Starting to make reservations for selected time slots');
       // Make reservations for all selected time slots
       for (const [activityId, timeSlotId] of Object.entries(selectedTimeSlots)) {
         console.log(`Making reservation for activity ${activityId}, time slot ${timeSlotId}`);
         
         // Make the reservation
         const result = await makeReservation(contactID, activityId, timeSlotId);
+        console.log(`Reservation result for ${activityId}:`, result);
         
         if (!result.success) {
           // Check if this is a "no spots available" error
@@ -304,7 +383,16 @@ export const OpenDayRegistration = () => {
         }
       }
       
-      // All reservations successful, prepare data for confirmation page
+      console.log('All reservations completed successfully');
+      
+      // All reservations successful
+      
+      // Extract just the activity IDs from the selected time slots
+      const selectedActivityIds = Object.keys(selectedTimeSlots);
+      console.log('Selected activity IDs for HubSpot update:', selectedActivityIds);
+      console.log('Contact ID for HubSpot update:', contactID);
+      
+      // Prepare data for confirmation page
       const selectedActivities = Object.entries(selectedTimeSlots).map(([activityId, timeSlotId]) => {
         // Use String comparison to handle both string and number IDs
         const activity = activities.find(a => String(a.id) === String(activityId));
@@ -316,11 +404,27 @@ export const OpenDayRegistration = () => {
         };
       });
       
+      // Update the HubSpot contact with the selected experience IDs
+      console.log('Now updating HubSpot contact with selected experiences');
+      try {
+        console.log('Calling updateSelectedExperiences with:', { contactID, selectedActivityIds });
+        const result = await updateSelectedExperiences(contactID, selectedActivityIds);
+        console.log('Result from updateSelectedExperiences:', result);
+        console.log('Successfully updated HubSpot contact with selected experiences');
+      } catch (updateError) {
+        console.error('Error updating HubSpot contact with selected experiences:', updateError);
+        if (updateError instanceof Error) {
+          console.error('Error details:', updateError.message);
+        }
+        // Continue with the flow even if this update fails
+      }
+      
       // Refresh the experiences data to get updated availability
       const language = lang || 'en';
       await fetchExperiences(contactID, language);
       
       // Navigate to the confirmation page with the selected activities
+      console.log('Navigation to confirmation page');
       navigate(`/${lang}/front/confirmation`, { state: { activities: selectedActivities } });
     } catch (error) {
       console.error('Error making reservations:', error);
@@ -331,6 +435,98 @@ export const OpenDayRegistration = () => {
   
   const hasSelections = Object.keys(selectedTimeSlots).length > 0;
   
+  // State for debug panel
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
+  const [rawSlotData, setRawSlotData] = useState<Record<string, number>>({});
+  const [discrepancies, setDiscrepancies] = useState<Array<{id: string, displayed: number, expected: number}>>([]);
+  
+  // Function to verify displayed values against raw data
+  const verifySlotDisplay = async () => {
+    try {
+      console.log('Verifying slot display against raw data...');
+      
+      // Fetch raw slot data from the API
+      const response = await fetch('/api/get_raw_slots');
+      const data = await response.json();
+      
+      console.log('Raw slot data:', data);
+      setRawSlotData(data);
+      
+      // Check for discrepancies
+      const foundDiscrepancies: Array<{id: string, displayed: number, expected: number}> = [];
+      
+      activities.forEach(activity => {
+        activity.timeSlots.forEach(slot => {
+          // Try both key formats
+          const key1 = `${activity.id}_${slot.id}`;
+          const key2 = `${String(activity.id).replace(/-\d+$/, '')}_${slot.id}`;
+          
+          const expected = data[key1] !== undefined ? data[key1] : data[key2];
+          
+          if (expected !== undefined && slot.available !== expected) {
+            console.log(`Discrepancy found for ${key1}:`);
+            console.log(`- Displayed: ${slot.available}, Expected: ${expected}`);
+            
+            foundDiscrepancies.push({
+              id: key1,
+              displayed: slot.available,
+              expected: expected
+            });
+          }
+        });
+      });
+      
+      setDiscrepancies(foundDiscrepancies);
+      console.log(`Found ${foundDiscrepancies.length} discrepancies`);
+      
+    } catch (error) {
+      console.error('Error verifying slot display:', error);
+    }
+  };
+  
+  // Function to fix discrepancies
+  const fixDiscrepancies = () => {
+    if (discrepancies.length === 0) {
+      console.log('No discrepancies to fix');
+      return;
+    }
+    
+    console.log(`Fixing ${discrepancies.length} discrepancies...`);
+    
+    // Create a copy of the activities array
+    const updatedActivities = [...activities];
+    
+    // Fix each discrepancy
+    discrepancies.forEach(d => {
+      // Parse the key to get activity ID and slot ID
+      const [activityId, slotId] = d.id.split('_');
+      
+      // Find the activity
+      const activityIndex = updatedActivities.findIndex(a =>
+        String(a.id) === activityId || String(a.id).replace(/-\d+$/, '') === activityId
+      );
+      
+      if (activityIndex !== -1) {
+        // Find the time slot
+        const slotIndex = updatedActivities[activityIndex].timeSlots.findIndex(s => s.id === slotId);
+        
+        if (slotIndex !== -1) {
+          // Update the available slots
+          console.log(`Updating activity ${activityId}, slot ${slotId} from ${updatedActivities[activityIndex].timeSlots[slotIndex].available} to ${d.expected}`);
+          updatedActivities[activityIndex].timeSlots[slotIndex].available = d.expected;
+        }
+      }
+    });
+    
+    // Update the activities state
+    setActivities(updatedActivities);
+    
+    // Clear discrepancies
+    setDiscrepancies([]);
+    
+    console.log('Discrepancies fixed');
+  };
+  
   return (
     <main className="min-h-screen bg-[#00A4E4] w-full relative overflow-hidden">
       {/* Add the LoadingOverlay */}
@@ -338,6 +534,88 @@ export const OpenDayRegistration = () => {
         visible={submitting}
         message={t('processingRegistration')}
       />
+      
+      {/* Debug Panel */}
+      <div className="fixed top-0 right-0 z-50">
+        <button
+          onClick={() => setShowDebugPanel(!showDebugPanel)}
+          className="bg-gray-800 text-white px-3 py-1 text-xs"
+        >
+          {showDebugPanel ? 'Hide Debug' : 'Show Debug'}
+        </button>
+        
+        {showDebugPanel && (
+          <div className="bg-gray-800 text-white p-4 max-w-md max-h-screen overflow-auto text-xs">
+            <h3 className="font-bold mb-2">Debug Information</h3>
+            
+            <div className="mb-4">
+              <div className="flex space-x-2 mb-2">
+                <button
+                  onClick={verifySlotDisplay}
+                  className="bg-blue-600 text-white px-3 py-1 text-xs"
+                >
+                  Verify Slot Display
+                </button>
+                
+                <button
+                  onClick={fixDiscrepancies}
+                  className={`px-3 py-1 text-xs ${discrepancies.length > 0 ? 'bg-green-600 text-white' : 'bg-gray-600 text-gray-300 cursor-not-allowed'}`}
+                  disabled={discrepancies.length === 0}
+                >
+                  Fix Discrepancies ({discrepancies.length})
+                </button>
+              </div>
+              
+              {discrepancies.length > 0 && (
+                <div className="mb-4 bg-red-900/30 p-2 rounded">
+                  <h4 className="font-semibold text-red-300">Discrepancies Found ({discrepancies.length})</h4>
+                  {discrepancies.map((d, index) => (
+                    <div key={index} className="mb-1">
+                      <p><strong>ID:</strong> {d.id}</p>
+                      <p><strong>Displayed:</strong> {d.displayed}</p>
+                      <p><strong>Expected:</strong> {d.expected}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {Object.keys(rawSlotData).length > 0 && (
+                <div className="mb-4">
+                  <h4 className="font-semibold">Raw Slot Data</h4>
+                  <div className="max-h-40 overflow-auto">
+                    <pre>{JSON.stringify(rawSlotData, null, 2)}</pre>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="mb-4">
+              <h4 className="font-semibold">Activities ({activities.length})</h4>
+              {activities.map((activity, index) => (
+                <div key={activity.id} className="mb-2 border-t border-gray-700 pt-1">
+                  <p><strong>Activity {index + 1}:</strong> {activity.title}</p>
+                  <p><strong>ID:</strong> {activity.id}</p>
+                  <p><strong>Time Slots:</strong> {activity.timeSlots.length}</p>
+                  <div className="pl-2 border-l border-gray-700">
+                    {activity.timeSlots.map((slot, slotIndex) => (
+                      <div key={slot.id} className="mb-1">
+                        <p><strong>Slot {slotIndex + 1}:</strong> {slot.time} {slot.endTime ? `- ${slot.endTime}` : ''}</p>
+                        <p><strong>ID:</strong> {slot.id}</p>
+                        <p><strong>Available:</strong> {slot.available} (type: {typeof slot.available})</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div>
+              <h4 className="font-semibold">Selected Time Slots</h4>
+              <pre>{JSON.stringify(selectedTimeSlots, null, 2)}</pre>
+            </div>
+          </div>
+        )}
+      </div>
       <div className="absolute inset-0 pointer-events-none opacity-10">
         <img src="/Group_96.svg" className="absolute top-0 right-0 w-96 h-96" alt="" />
         <img src="/Frame_94-3.svg" className="absolute bottom-0 left-0 w-96 h-96" alt="" />

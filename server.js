@@ -1,6 +1,7 @@
 const path = require('path');
 const express = require('express');
 const { getRemainingSlots } = require('./remainingSlots');
+const slotCalculationService = require('./slotCalculationService');
 
 // Create a replacement for reservationOptions that gets data from the database
 const reservationOptions = {
@@ -62,7 +63,14 @@ const app = express();
 // Add CORS middleware
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Cache-Control, Pragma, Expires');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+    
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+    
     next();
 });
 
@@ -150,14 +158,8 @@ let transporter = nodemailer.createTransport({
 // Funzione per aggiornare i posti rimanenti
 async function updateRemainingSlots() {
     try {
-        globalRemainingSlots = await getRemainingSlots(db);
-        
-        // Assicurati che nessun valore sia negativo
-        for (const key in globalRemainingSlots) {
-            if (globalRemainingSlots[key] < 0) {
-                globalRemainingSlots[key] = 0;
-            }
-        }
+        // Use the new slot calculation service instead of getRemainingSlots
+        globalRemainingSlots = await slotCalculationService.getAllAvailableSlots(db);
         
         console.log('Posti rimanenti aggiornati:', JSON.stringify(globalRemainingSlots));
     } catch (error) {
@@ -216,6 +218,10 @@ const hubspotExperienceService = require('./hubspot_experience_service');
 const reservationService = require('./reservationService');
 const experiencesService = require('./experiencesService');
 
+// Import and initialize the simplified experiences admin panel routes
+const addExperiencesRoutes = require('./add_experiences_routes');
+addExperiencesRoutes(app, db);
+
 // Endpoint to get experiences based on contactID and language
 app.get('/api/get_experiences', async (req, res) => {
     const { contactID, lang } = req.query;
@@ -261,12 +267,44 @@ app.get('/api/get_experiences', async (req, res) => {
         // Get experiences from the database based on the filtered IDs and language
         const experiences = await courseExperienceService.getExperiencesByCustomObjectIds(db, filteredObjectIds, language);
         
+        // Log the experiences for debugging
+        logger.info(`Returning ${experiences.length} experiences to frontend`);
+        experiences.forEach((exp, index) => {
+            logger.info(`Experience ${index + 1}: ID=${exp.id}, Title=${exp.title}`);
+            if (exp.timeSlots && exp.timeSlots.length > 0) {
+                exp.timeSlots.forEach((slot, slotIndex) => {
+                    logger.info(`- Slot ${slotIndex + 1}: ID=${slot.id}, Time=${slot.time}, Available=${slot.available}, Type=${typeof slot.available}`);
+                });
+            }
+        });
+        
         // Return the experiences as JSON
         res.json(experiences);
     } catch (error) {
         logger.error('Error in /api/get_experiences:', error);
         res.status(500).json({
             error: language === 'en' ? 'Internal server error' : 'Errore interno del server'
+        });
+    }
+});
+
+// Temporary endpoint for debugging - returns raw slot availability data
+app.get('/api/get_raw_slots', async (req, res) => {
+    try {
+        logger.info('Getting raw slot availability data');
+        
+        // Get all available slots
+        const availableSlots = await slotCalculationService.getAllAvailableSlots(db);
+        
+        // Log the data for debugging
+        logger.info(`Retrieved available slots: ${JSON.stringify(availableSlots)}`);
+        
+        // Return the raw data
+        res.json(availableSlots);
+    } catch (error) {
+        logger.error('Error in /api/get_raw_slots:', error);
+        res.status(500).json({
+            error: 'Internal server error'
         });
     }
 });
@@ -319,26 +357,8 @@ app.post('/api/reserve', async (req, res) => {
         // Save the reservation
         await reservationService.saveReservation(db, contactID, experienceId, timeSlotId);
         
-        // Update the current_participants field in the experiences table
-        // Extract the base experience ID
-        const baseExperienceId = experienceId.replace(/-\d+$/, '');
-        
-        // Increment the current_participants field
-        await new Promise((resolve, reject) => {
-            db.run(
-                "UPDATE experiences SET current_participants = current_participants + 1 WHERE experience_id LIKE ?",
-                [`${baseExperienceId}%`],
-                (err) => {
-                    if (err) {
-                        logger.error(`Error updating current_participants: ${err.message}`);
-                        reject(err);
-                    } else {
-                        logger.info(`Updated current_participants for experience ${baseExperienceId}`);
-                        resolve();
-                    }
-                }
-            );
-        });
+        // No need to update current_participants field anymore
+        // We're now using the actual reservation counts from the opend_reservations table
         
         // Update the remaining slots
         await updateRemainingSlots();
@@ -379,43 +399,11 @@ app.post('/api/cancel-reservation', async (req, res) => {
     }
     
     try {
-        // Delete the reservation
-        await new Promise((resolve, reject) => {
-            db.run(
-                "DELETE FROM opend_reservations WHERE contact_id = ? AND experience_id = ? AND time_slot_id = ?",
-                [contactID, experienceId, timeSlotId],
-                (err) => {
-                    if (err) {
-                        logger.error(`Error deleting reservation: ${err.message}`);
-                        reject(err);
-                    } else {
-                        logger.info(`Deleted reservation for contact ${contactID}, experience ${experienceId}, time slot ${timeSlotId}`);
-                        resolve();
-                    }
-                }
-            );
-        });
+        // Use the new cancelReservation function from reservationService
+        await reservationService.cancelReservation(db, contactID, experienceId, timeSlotId);
         
-        // Update the current_participants field in the experiences table
-        // Extract the base experience ID
-        const baseExperienceId = experienceId.replace(/-\d+$/, '');
-        
-        // Decrement the current_participants field
-        await new Promise((resolve, reject) => {
-            db.run(
-                "UPDATE experiences SET current_participants = MAX(0, current_participants - 1) WHERE experience_id LIKE ?",
-                [`${baseExperienceId}%`],
-                (err) => {
-                    if (err) {
-                        logger.error(`Error updating current_participants: ${err.message}`);
-                        reject(err);
-                    } else {
-                        logger.info(`Updated current_participants for experience ${baseExperienceId}`);
-                        resolve();
-                    }
-                }
-            );
-        });
+        // No need to update current_participants field anymore
+        // We're now using the actual reservation counts from the opend_reservations table
         
         // Update the remaining slots
         await updateRemainingSlots();
@@ -428,6 +416,115 @@ app.post('/api/cancel-reservation', async (req, res) => {
         logger.error('Error in /api/cancel-reservation:', error);
         res.status(500).json({
             error: 'Internal server error'
+        });
+    }
+});
+
+// Test endpoint to check if the server is receiving requests
+app.get('/api/test', (req, res) => {
+    console.log('Test endpoint hit - this should appear in the server logs');
+    logger.info('Test endpoint hit - this should appear in the server logs');
+    return res.json({ success: true, message: 'Test endpoint working' });
+});
+
+// Endpoint to update selected experiences in HubSpot
+app.post('/api/update-selected-experiences', async (req, res) => {
+    console.log('Endpoint /api/update-selected-experiences hit - this should appear in the server logs when the endpoint is called');
+    console.log('Request body:', req.body);
+    logger.info('Endpoint /api/update-selected-experiences hit - this should appear in the server logs when the endpoint is called');
+    logger.info('Request body:', req.body);
+    const { contactID, experienceIds } = req.body;
+    
+    if (!contactID || !experienceIds) {
+        return res.status(400).json({
+            error: 'Missing required fields'
+        });
+    }
+    
+    try {
+        // Format the experience IDs as a comma-separated string
+        const experiencesString = Array.isArray(experienceIds)
+            ? experienceIds.join(',')
+            : experienceIds;
+        
+        logger.info(`Updating HubSpot contact ${contactID} with selected experiences: ${experiencesString}`);
+        
+        // Log the request details
+        const requestData = {
+            properties: {
+                open_day__iscrizione_esperienze_10_05_2025: experiencesString
+            }
+        };
+        logger.info('HubSpot update request data:', JSON.stringify(requestData));
+        
+        // Log the API key being used (without showing the full key)
+        const apiKeyPrefix = apiKey.substring(0, 10);
+        logger.info(`Using API key with prefix: ${apiKeyPrefix}...`);
+        
+        // Update the HubSpot contact property
+        const response = await axios.patch(
+            `https://api.hubapi.com/crm/v3/objects/contacts/${contactID}`,
+            requestData
+        );
+        
+        // Log the response
+        logger.info('HubSpot update response:', {
+            status: response.status,
+            statusText: response.statusText,
+            data: JSON.stringify(response.data)
+        });
+        
+        // Return success
+        res.json({
+            success: true
+        });
+    } catch (error) {
+        logger.error('Error updating HubSpot contact with selected experiences:', error.message);
+        
+        // Log more detailed error information
+        if (error.response) {
+            // The request was made and the server responded with a status code
+            // that falls out of the range of 2xx
+            logger.error('HubSpot API error response:', {
+                status: error.response.status,
+                statusText: error.response.statusText,
+                data: JSON.stringify(error.response.data)
+            });
+            
+            // Check for specific error types
+            if (error.response.data && error.response.data.message) {
+                logger.error('HubSpot error message:', error.response.data.message);
+                
+                // Check if it's a property not found error
+                if (error.response.data.message.includes('property') && error.response.data.message.includes('not found')) {
+                    logger.error('This appears to be a property not found error. The property might not exist in HubSpot.');
+                }
+                
+                // Check if it's an authentication error
+                if (error.response.status === 401) {
+                    logger.error('This appears to be an authentication error. The API key might be invalid or expired.');
+                }
+            }
+        } else if (error.request) {
+            // The request was made but no response was received
+            logger.error('No response received from HubSpot API:', error.request);
+        } else {
+            // Something happened in setting up the request that triggered an Error
+            logger.error('Error setting up HubSpot API request:', error.message);
+        }
+        
+        // Try to get the contact to verify it exists
+        try {
+            logger.info(`Attempting to fetch contact ${contactID} to verify it exists...`);
+            const contactResponse = await axios.get(`https://api.hubapi.com/crm/v3/objects/contacts/${contactID}?properties=email`);
+            logger.info(`Contact exists with email: ${contactResponse.data.properties.email}`);
+        } catch (contactError) {
+            logger.error(`Error fetching contact: ${contactError.message}`);
+        }
+        
+        res.status(500).json({
+            error: 'Internal server error',
+            details: error.response ? error.response.data : error.message
         });
     }
 });
