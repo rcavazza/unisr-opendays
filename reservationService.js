@@ -13,44 +13,15 @@ const slotCalculationService = require('./slotCalculationService');
  * @param {string} qrCodeUrl - QR code URL (optional)
  * @returns {Promise<boolean>} - Success status
  */
-async function saveReservation(db, contactId, experienceId, timeSlotId, qrCodeUrl = null) {
+async function saveReservation(db, contactId, experienceId, timeSlotId, qrCodeUrl = null, replaceAll = false) {
     try {
         logger.info(`Saving reservation for contact ${contactId}, experience ${experienceId}, time slot ${timeSlotId}`);
         
-        // Check if a reservation already exists for this contact and experience
-        const existingReservation = await new Promise((resolve, reject) => {
-            db.get(
-                "SELECT id FROM opend_reservations WHERE contact_id = ? AND experience_id = ?",
-                [contactId, experienceId],
-                (err, row) => {
-                    if (err) {
-                        logger.error(`Error checking existing reservation: ${err.message}`);
-                        reject(err);
-                    } else {
-                        resolve(row);
-                    }
-                }
-            );
-        });
-        
-        if (existingReservation) {
-            // Update existing reservation
-            await new Promise((resolve, reject) => {
-                db.run(
-                    "UPDATE opend_reservations SET time_slot_id = ?, qr_code_url = ?, created_at = CURRENT_TIMESTAMP WHERE contact_id = ? AND experience_id = ?",
-                    [timeSlotId, qrCodeUrl, contactId, experienceId],
-                    (err) => {
-                        if (err) {
-                            logger.error(`Error updating reservation: ${err.message}`);
-                            reject(err);
-                        } else {
-                            logger.info(`Updated reservation for contact ${contactId}, experience ${experienceId}`);
-                            resolve();
-                        }
-                    }
-                );
-            });
-        } else {
+        // If replaceAll is true, delete all existing reservations for this contact
+        if (replaceAll) {
+            logger.info(`Deleting all existing reservations for contact ${contactId}`);
+            await deleteAllReservationsForContact(db, contactId);
+            
             // Create new reservation
             await new Promise((resolve, reject) => {
                 db.run(
@@ -67,6 +38,58 @@ async function saveReservation(db, contactId, experienceId, timeSlotId, qrCodeUr
                     }
                 );
             });
+        } else {
+            // Check if a reservation already exists for this contact and experience
+            const existingReservation = await new Promise((resolve, reject) => {
+                db.get(
+                    "SELECT id FROM opend_reservations WHERE contact_id = ? AND experience_id = ?",
+                    [contactId, experienceId],
+                    (err, row) => {
+                        if (err) {
+                            logger.error(`Error checking existing reservation: ${err.message}`);
+                            reject(err);
+                        } else {
+                            resolve(row);
+                        }
+                    }
+                );
+            });
+            
+            if (existingReservation) {
+                // Update existing reservation
+                await new Promise((resolve, reject) => {
+                    db.run(
+                        "UPDATE opend_reservations SET time_slot_id = ?, qr_code_url = ?, created_at = CURRENT_TIMESTAMP WHERE contact_id = ? AND experience_id = ?",
+                        [timeSlotId, qrCodeUrl, contactId, experienceId],
+                        (err) => {
+                            if (err) {
+                                logger.error(`Error updating reservation: ${err.message}`);
+                                reject(err);
+                            } else {
+                                logger.info(`Updated reservation for contact ${contactId}, experience ${experienceId}`);
+                                resolve();
+                            }
+                        }
+                    );
+                });
+            } else {
+                // Create new reservation
+                await new Promise((resolve, reject) => {
+                    db.run(
+                        "INSERT INTO opend_reservations (contact_id, experience_id, time_slot_id, qr_code_url) VALUES (?, ?, ?, ?)",
+                        [contactId, experienceId, timeSlotId, qrCodeUrl],
+                        (err) => {
+                            if (err) {
+                                logger.error(`Error creating reservation: ${err.message}`);
+                                reject(err);
+                            } else {
+                                logger.info(`Created reservation for contact ${contactId}, experience ${experienceId}`);
+                                resolve();
+                            }
+                        }
+                    );
+                });
+            }
         }
         
         return true;
@@ -227,11 +250,43 @@ async function cancelReservation(db, contactId, experienceId, timeSlotId) {
     }
 }
 
+/**
+ * Delete all reservations for a contact
+ * @param {Object} db - Database instance
+ * @param {string} contactId - Contact ID
+ * @returns {Promise<boolean>} - Success status
+ */
+async function deleteAllReservationsForContact(db, contactId) {
+    try {
+        logger.info(`Deleting all reservations for contact ${contactId}`);
+        
+        return new Promise((resolve, reject) => {
+            db.run(
+                "DELETE FROM opend_reservations WHERE contact_id = ?",
+                [contactId],
+                function(err) {
+                    if (err) {
+                        logger.error(`Error deleting reservations: ${err.message}`);
+                        reject(err);
+                    } else {
+                        logger.info(`Deleted ${this.changes} reservations for contact ${contactId}`);
+                        resolve(true);
+                    }
+                }
+            );
+        });
+    } catch (error) {
+        logger.error(`Error in deleteAllReservationsForContact: ${error.message}`);
+        throw error;
+    }
+}
+
 module.exports = {
     saveReservation,
     getReservationsForContact,
     getReservationCounts,
     updateQrCodeUrl,
     isSlotAvailable,
-    cancelReservation
+    cancelReservation,
+    deleteAllReservationsForContact
 };

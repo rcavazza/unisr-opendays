@@ -1,70 +1,76 @@
 # Slot Calculation Fix Summary
 
-## Issue Overview
+## Issue Fixed
 
-We've identified an issue with the slot availability calculation in the application. The frontend is showing incorrect available slot counts for certain experiences, specifically:
-
-- For "imdp-e-medicina-chirurgia-mani-2", the frontend shows 20 available slots
-- According to the database, it should show 19 available slots (max_participants=20 - current_participants=1)
-
-This discrepancy could lead to overbooking if all 20 slots were allowed to be reserved when only 19 are actually available.
+We've resolved the discrepancy in slot counting where the frontend was showing 1 less available slot than what was actually available in the database. For example, experience ID 71 had 0 reserved slots and 20 available slots in the database, but the frontend was showing only 19 available slots.
 
 ## Root Cause
 
-The issue is in the `slotCalculationService.js` file, specifically in how it calculates available slots. There's a mismatch between the key formats used to store and retrieve reservation counts:
+The issue was caused by **double-counting of reservations** in the slot availability calculation:
 
-- The reservation count is stored with one key format in the database
-- But the code is looking it up with a different key format
+1. In `courseExperienceService.js`, the initial available slots were calculated as:
+   ```javascript
+   available: Math.max(0, row.max_participants - row.current_participants)
+   ```
+   This already accounted for reservations through the `current_participants` field.
 
-This mismatch causes the system to not find the existing reservation, assume there are no reservations, and therefore display the maximum number of slots (20) as available.
+2. Later in the same file, the available slots were adjusted again based on reservation counts:
+   ```javascript
+   slot.available = Math.max(0, originalAvailable - reservationCount)
+   ```
+   This subtracted the reservation count a second time.
 
-## Solution
+Since the `current_participants` field was being updated when reservations were made, this led to double-counting of reservations and incorrect available slot counts in the frontend.
 
-The solution is straightforward:
+## Solution Implemented
 
-1. Modify the `getAllAvailableSlots` function in `slotCalculationService.js` to try both key formats when looking up reservation counts
-2. This ensures that regardless of which format is used in the database, the correct reservation count will be found
+We modified `courseExperienceService.js` to stop subtracting the reservation count from the already-calculated available slots:
 
-The code change is minimal and focused, affecting only a few lines of code.
+```javascript
+// Before:
+slot.available = Math.max(0, originalAvailable - reservationCount);
 
-## Implementation Approach
+// After:
+// Don't subtract reservation count as it's already accounted for in current_participants
+slot.available = originalAvailable;
+```
 
-We've prepared three documents to guide the implementation:
+We also updated the logging statement to reflect this change:
 
-1. **[slot_calculation_fix_plan.md](slot_calculation_fix_plan.md)**: Detailed analysis of the issue and proposed solution
-2. **[slot_calculation_fix_implementation_plan.md](slot_calculation_fix_implementation_plan.md)**: Specific code changes and implementation steps
-3. **[slot_calculation_fix_deployment.md](slot_calculation_fix_deployment.md)**: Deployment process and verification steps
+```javascript
+// Before:
+logger.info(`Slot ${directKey} (or ${key}): original=${originalAvailable}, reservations=${reservationCount}, available=${slot.available}`);
 
-The implementation will be done in the following phases:
+// After:
+logger.info(`Slot ${directKey} (or ${key}): available=${slot.available}, reservations=${reservationCount} (already accounted for in current_participants)`);
+```
 
-1. Code change in development environment
-2. Testing and verification
-3. Deployment to production
-4. Post-deployment verification
+## Implementation Steps
 
-## Impact and Benefits
+1. Created a script (`fix_slot_calculation.js`) to patch the `courseExperienceService.js` file
+2. Executed the script to apply the changes
+3. Created and executed a script (`restart_after_slot_fix.js`) to restart the server with the fixed code
 
-Fixing this issue will:
+## Expected Results
 
-- Ensure accurate display of available slots for all experiences
-- Prevent potential overbooking situations
-- Improve user experience by showing correct availability information
-- Maintain data integrity between the database and frontend
+- Experience ID 71 should now show 20 available slots in the frontend (instead of 19)
+- All other experiences should show the correct number of available slots
+- The slot calculation system should now correctly handle reservations without double-counting
 
-## Next Steps
+## Verification
 
-1. Review and approve the implementation plan
-2. Schedule the deployment
-3. Implement the fix
-4. Verify the fix works as expected
-5. Consider a more comprehensive review of similar code patterns to prevent similar issues
+To verify that the fix is working correctly:
 
-## Timeline
+1. Check that experience ID 71 shows 20 available slots in the frontend
+2. Verify that other experiences show the correct number of available slots
+3. Test making a reservation to ensure the count updates correctly
 
-- Implementation: 1 day
-- Testing: 1 day
-- Deployment: 1 hour during low-traffic period
+## Long-term Recommendations
 
-## Conclusion
+For a more comprehensive solution in the future, consider:
 
-This is a focused fix for a specific issue with slot availability calculation. The solution is well-understood, the implementation is straightforward, and the risk is minimal. We recommend proceeding with the implementation as outlined in the detailed plans.
+1. **Standardize Slot Calculation**: Use a single, consistent approach to calculate available slots throughout the codebase
+2. **Simplify Data Model**: Consider removing the `current_participants` field and rely solely on counting reservations from the `opend_reservations` table
+3. **Add Automated Tests**: Implement tests to verify slot calculation logic and prevent regression
+4. **Improve Error Handling**: Add more comprehensive error handling and logging for slot calculation
+5. **Add Monitoring**: Implement monitoring for slot calculation discrepancies to catch issues early

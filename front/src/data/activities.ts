@@ -5,6 +5,7 @@ export interface TimeSlot {
   time: string;
   endTime?: string; // Added endTime field (optional for backward compatibility)
   available: number;
+  selected?: boolean; // Flag to indicate if this slot is already reserved by the user
 }
 
 export interface ActivityDetails {
