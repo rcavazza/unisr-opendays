@@ -13,17 +13,41 @@ const DefaultRedirect = () => {
   return <Navigate to={`/en/opendays${location.search}`} replace />;
 };
 
-// Helper component to handle the confirmation page with location state
+// Helper component to handle the confirmation page with location state or URL parameters
 const ConfirmationPageWrapper = () => {
   const location = useLocation();
   const activities = location.state?.activities || [];
-  const matchingCourseIds = location.state?.matchingCourseIds || [];
   
-  // Extract contactID from URL query parameters
+  console.log('ConfirmationPageWrapper - location:', location);
+  console.log('ConfirmationPageWrapper - location.search:', location.search);
+  
+  // Extract parameters from URL query parameters
   const urlParams = new URLSearchParams(location.search);
-  const contactID = urlParams.get('contactID') || '';
+  console.log('ConfirmationPageWrapper - urlParams entries:', Array.from(urlParams.entries()));
   
-  console.log('ConfirmationPageWrapper - matchingCourseIds:', matchingCourseIds);
+  const contactID = urlParams.get('contactID') || '';
+  console.log('ConfirmationPageWrapper - contactID from URL:', contactID);
+  
+  // Get matchingCourseIds from either location state or URL query parameters
+  let matchingCourseIds = location.state?.matchingCourseIds || [];
+  console.log('ConfirmationPageWrapper - initial matchingCourseIds from state:', matchingCourseIds);
+  
+  // If matchingCourseIds is not in location state, check URL query parameters
+  const matchingCourseIdsParam = urlParams.get('matchingCourseIds');
+  console.log('ConfirmationPageWrapper - matchingCourseIdsParam from URL:', matchingCourseIdsParam);
+  
+  // Always prioritize URL parameters over state
+  if (matchingCourseIdsParam) {
+    // Split the comma-separated list of IDs
+    matchingCourseIds = matchingCourseIdsParam.split(',');
+    console.log('ConfirmationPageWrapper - matchingCourseIds after split:', matchingCourseIds);
+    console.log('ConfirmationPageWrapper - matchingCourseIds length after split:', matchingCourseIds.length);
+    console.log('ConfirmationPageWrapper - matchingCourseIds is array after split:', Array.isArray(matchingCourseIds));
+  } else if (matchingCourseIds.length > 0) {
+    console.log('ConfirmationPageWrapper - using matchingCourseIds from state:', matchingCourseIds);
+  } else {
+    console.log('ConfirmationPageWrapper - no matchingCourseIds found in URL or state');
+  }
   
   return (
     <LanguageProvider>

@@ -97,13 +97,96 @@ const handleMissingSvg = (req, res) => {
 // app.use('/Frame_94-3.svg', handleMissingSvg);
 // app.use('/Frame_94-2.svg', handleMissingSvg);
 
+// Serve otto.json for the frontend
+app.get('/otto.json', (req, res) => {
+  res.sendFile(path.join(__dirname, 'otto.json'));
+});
+
 // Serve the frontend app for language-specific routes and root
-app.get(['/en/opendays', '/it/opendays', '/opendays', '/it/opendays/genitori', '/en/opendays/genitori', '/opendays/genitori'], (req, res) => {
+app.get(['/en/opendays', '/it/opendays', '/opendays', '/en/opendays/confirmation', '/it/opendays/confirmation', '/it/opendays/genitori', '/en/opendays/genitori', '/opendays/genitori'], async (req, res) => {
+    // Default redirect for /opendays
     if (req.path === '/opendays') {
         return res.redirect('/en/opendays');
     }
-    res.sendFile(path.join(__dirname, 'front/dist/index.html'));
+    
+    // Extract language from path
+    const pathParts = req.path.split('/');
+    const language = pathParts[1] === 'en' || pathParts[1] === 'it' ? pathParts[1] : 'en';
+    
+    // Check if this is a confirmation page - if so, skip the otto.json check
+    const isConfirmationPage = req.path.includes('/confirmation');
+    if (isConfirmationPage) {
+        logger.info(`Serving confirmation page: ${req.path}`);
+        return res.sendFile(path.join(__dirname, 'front/dist/index.html'));
+    }
+    
+    // Check if contactID is provided
+    const { contactID } = req.query;
+    
+    // If no contactID, just serve the frontend app
+    if (!contactID) {
+        return res.sendFile(path.join(__dirname, 'front/dist/index.html'));
+    }
+    
+    try {
+        logger.info(`Processing /opendays route for contact ID: ${contactID} in language: ${language}`);
+        
+        // Get custom objects from HubSpot
+        const customObjects = await hubspotExperienceService.getAllCustomObjects(contactID);
+        
+        if (customObjects.error) {
+            logger.error(`Error getting custom objects: ${customObjects.error}`);
+            // Continue to frontend app even if there's an error
+            return res.sendFile(path.join(__dirname, 'front/dist/index.html'));
+        }
+        
+        // Extract IDs from custom objects
+        const customObjectIds = customObjects.map(obj => obj.id);
+        logger.info(`Custom object IDs: ${customObjectIds.join(', ')}`);
+        
+        // Load otto.json
+        const ottoCourses = require('./otto.json');
+        const ottoCourseIds = ottoCourses.map(course => course.id);
+        logger.info(`Otto course IDs: ${ottoCourseIds.join(', ')}`);
+        
+        // Check for matches between custom objects and otto.json
+        const matchingOttoCourseIds = [];
+        for (const customId of customObjectIds) {
+            for (const courseId of ottoCourseIds) {
+                // Try string comparison
+                if (String(customId) === String(courseId)) {
+                    logger.info(`Match found in otto.json: ${customId} matches ${courseId}`);
+                    matchingOttoCourseIds.push(customId);
+                    break;
+                }
+                // Try number comparison if both can be converted to numbers
+                else if (!isNaN(Number(customId)) && !isNaN(Number(courseId)) && Number(customId) === Number(courseId)) {
+                    logger.info(`Numeric match found in otto.json: ${customId} matches ${courseId}`);
+                    matchingOttoCourseIds.push(customId);
+                    break;
+                }
+            }
+        }
+        
+        // If matches found in otto.json, redirect to confirmation page
+        if (matchingOttoCourseIds.length > 0) {
+            const redirectUrl = `/${language}/opendays/confirmation?contactID=${contactID}&matchingCourseIds=${matchingOttoCourseIds.join(',')}`;
+            logger.info(`Found ${matchingOttoCourseIds.length} matches in otto.json: ${matchingOttoCourseIds.join(', ')}`);
+            logger.info(`Redirecting to: ${redirectUrl}`);
+            // Redirect to the confirmation page with the matching course IDs
+            return res.redirect(redirectUrl);
+        }
+        
+        // If no matches found, proceed with normal flow
+        logger.info(`No matches found in otto.json, proceeding with normal flow`);
+        return res.sendFile(path.join(__dirname, 'front/dist/index.html'));
+    } catch (error) {
+        logger.error('Error in /opendays route:', error);
+        // Continue to frontend app even if there's an error
+        return res.sendFile(path.join(__dirname, 'front/dist/index.html'));
+    }
 });
+
 const fs = require('fs');
 const https = require('https');
 require('dotenv').config();

@@ -102,7 +102,23 @@ export const ActivityAccordion = ({
                           name={`timeSlot-${activity.id}`}
                           value={slot.id}
                           checked={selectedSlot === slot.id}
-                          onChange={() => onTimeSlotSelect(activity.id, slot.id)}
+                          // Use onChange for normal selection
+                          onChange={() => {
+                            // Only handle selection, not deselection
+                            if (selectedSlot !== slot.id) {
+                              onTimeSlotSelect(activity.id, slot.id);
+                            }
+                          }}
+                          // Add custom click handler specifically for deselection
+                          onClick={() => {
+                            if (isDisabled) return; // Don't do anything if disabled
+                            
+                            // If already selected, handle deselection
+                            if (selectedSlot === slot.id) {
+                              // Call onTimeSlotSelect to handle deselection
+                              onTimeSlotSelect(activity.id, slot.id);
+                            }
+                          }}
                           className="h-4 w-4 text-yellow-300 border-white/30"
                           disabled={isDisabled}
                         />

@@ -40,25 +40,64 @@ export const ConfirmationPage = ({ activities, contactID, matchingCourseIds = []
     }
   }, [contactID]);
   
-  // Fetch matching courses from corsi.json
+  // Log matchingCourseIds when they change
   useEffect(() => {
+    console.log('ConfirmationPage - matchingCourseIds:', matchingCourseIds);
+    console.log('ConfirmationPage - matchingCourseIds type:', typeof matchingCourseIds);
+    console.log('ConfirmationPage - matchingCourseIds length:', matchingCourseIds.length);
+    console.log('ConfirmationPage - matchingCourseIds is array:', Array.isArray(matchingCourseIds));
+    
+    if (matchingCourseIds.length > 0) {
+      console.log('ConfirmationPage - First matchingCourseId:', matchingCourseIds[0]);
+      console.log('ConfirmationPage - First matchingCourseId type:', typeof matchingCourseIds[0]);
+    }
+  }, [matchingCourseIds]);
+
+  // Fetch matching courses from otto.json first, then fall back to corsi.json
+  useEffect(() => {
+    console.log('ConfirmationPage - Fetch courses effect running');
+    console.log('ConfirmationPage - matchingCourseIds in fetch effect:', matchingCourseIds);
+    
     if (matchingCourseIds.length > 0) {
       const fetchCourses = async () => {
         try {
-          const response = await fetch('/corsi.json');
+          console.log('ConfirmationPage - Fetching courses for IDs:', matchingCourseIds);
+          
+          // First try to fetch from otto.json
+          console.log('ConfirmationPage - Attempting to fetch from otto.json');
+          let response = await fetch('/otto.json');
+          console.log('ConfirmationPage - otto.json response status:', response.status);
+          
+          // If otto.json is not available, fall back to corsi.json
           if (!response.ok) {
-            console.error('Failed to fetch courses:', response.statusText);
-            return;
+            console.warn('Failed to fetch from otto.json, falling back to corsi.json');
+            response = await fetch('/corsi.json');
+            console.log('ConfirmationPage - corsi.json response status:', response.status);
+            
+            if (!response.ok) {
+              console.error('Failed to fetch courses:', response.statusText);
+              return;
+            }
           }
           
           const allCourses: Course[] = await response.json();
+          console.log('ConfirmationPage - Fetched courses count:', allCourses.length);
+          console.log('ConfirmationPage - First few courses:', allCourses.slice(0, 3));
+          
+          // Ensure matchingCourseIds are strings for comparison
+          const normalizedIds = matchingCourseIds.map(id => String(id));
+          console.log('ConfirmationPage - Normalized IDs for comparison:', normalizedIds);
           
           // Filter courses by matching IDs
-          const courses = allCourses.filter(course =>
-            matchingCourseIds.includes(course.id)
-          );
+          const courses = allCourses.filter(course => {
+            const courseIdStr = String(course.id);
+            const isMatch = normalizedIds.includes(courseIdStr);
+            console.log(`ConfirmationPage - Course ${courseIdStr} (${course.name}) match: ${isMatch}`);
+            return isMatch;
+          });
           
-          console.log('Matching courses:', courses);
+          console.log('ConfirmationPage - Matching courses count:', courses.length);
+          console.log('ConfirmationPage - Matching courses:', courses);
           setMatchingCourses(courses);
         } catch (error) {
           console.error('Error fetching courses:', error);
