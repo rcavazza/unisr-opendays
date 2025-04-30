@@ -679,7 +679,7 @@ export const OpenDayRegistration = () => {
           </h1>
         </div>
         <div className="bg-[#0082b6]/80 backdrop-blur-sm rounded-lg p-6 mb-8 shadow-xl">
-          <p className="font-bold text-white/90 leading-relaxed">
+          <p className="text-white/90 leading-relaxed">
             {t('intro')}
           </p>
         </div>
@@ -721,9 +721,10 @@ export const OpenDayRegistration = () => {
             <div className="flex justify-center mb-16">
           <button onClick={handleSubmit}
               disabled={!hasSelections || loading}
-              className={`bg-yellow-300 text-[#00A4E4] font-bold text-xl px-16 py-4 rounded-full hover:bg-yellow-400 transition-colors `}>
+              className={`bg-yellow-300 text-white font-bold text-xl px-16 py-4 rounded-full border-2 border-white hover:bg-yellow-400 transition-colors `}>
           {t('submitRegistration')}
           </button>
+       
           </div>
         )}
       </div>

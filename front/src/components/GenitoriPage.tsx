@@ -7,7 +7,7 @@ export const GenitoriPage = () => {
         <h1 className="text-6xl font-viridian text-white tracking-wide leading-tight text-center mb-16">
           Welcome to Open Days
         </h1>
-        <div className="text-center mb-16 max-w-xl mx-auto">
+        <div className="bg-[#0082b6] rounded-lg p-6 mb-8 text-center ">
           <p className="text-lg font-normal leading-relaxed">
             Join us for an exciting Open Day at our Medical University! This is
             your opportunity to experience hands-on medical training and explore
@@ -76,9 +76,9 @@ export const GenitoriPage = () => {
         </div>
         <div className="flex justify-center mb-16">
         <div className="flex justify-center mb-16">
-          <button className="bg-yellow-300 text-[#00A4E4] font-bold text-xl px-16 py-4 rounded-full hover:bg-yellow-400 transition-colors">
-            Submit
-          </button>
+        <button className="bg-yellow-300 text-white font-bold text-xl px-16 py-4 rounded-full border-2 border-white hover:bg-yellow-400 transition-colors">
+        Submit
+        </button>
         </div>
         </div>
         <div className="flex justify-center">
