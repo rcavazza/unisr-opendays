@@ -698,7 +698,12 @@ export const OpenDayRegistration = () => {
         </div>
         <div className="bg-[#0082b6]/80 backdrop-blur-sm rounded-lg p-6 mb-8 shadow-xl">
           <p className="text-white/90 leading-relaxed">
-            {t('intro')}
+          {t('intro').split('\n').map((line, index) => (
+        <React.Fragment key={index}>
+          {line}
+          <br />
+        </React.Fragment>
+        ))}
           </p>
         </div>
         
