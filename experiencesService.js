@@ -82,7 +82,7 @@ async function getExperienceById(db, id) {
             reject(err);
           } else {
             if (!row) {
-              logger.warn(`Esperienza con ID ${id} non trovata`);
+              logger.info(`Esperienza con ID ${id} non trovata`);
             } else {
               logger.info(`Esperienza con ID ${id} recuperata con successo`);
             }
@@ -123,7 +123,7 @@ async function getExperienceByExperienceId(db, experienceId, language = null) {
           reject(err);
         } else {
           if (!row) {
-            logger.warn(`Esperienza con experience_id ${experienceId} non trovata`);
+            logger.info(`Esperienza con experience_id ${experienceId} non trovata`);
           } else {
             logger.info(`Esperienza con experience_id ${experienceId} recuperata con successo`);
           }
@@ -151,7 +151,7 @@ async function createExperience(db, experienceData) {
     const existingExperience = await getExperienceByExperienceId(db, experienceData.experience_id, experienceData.language);
     
     if (existingExperience) {
-      logger.warn(`Esperienza con experience_id ${experienceData.experience_id} e lingua ${experienceData.language} già esistente`);
+      logger.info(`Esperienza con experience_id ${experienceData.experience_id} e lingua ${experienceData.language} già esistente`);
       return { success: false, error: 'Esiste già un\'esperienza con questo ID per questa lingua' };
     }
     
@@ -214,7 +214,7 @@ async function updateExperience(db, id, experienceData) {
             reject(err);
           } else {
             if (this.changes === 0) {
-              logger.warn(`Esperienza con ID ${id} non trovata per l'aggiornamento`);
+              logger.info(`Esperienza con ID ${id} non trovata per l'aggiornamento`);
               resolve({ success: false, error: 'Esperienza non trovata' });
             } else {
               logger.info(`Esperienza con ID ${id} aggiornata con successo`);
@@ -250,7 +250,7 @@ async function deleteExperience(db, id) {
             reject(err);
           } else {
             if (this.changes === 0) {
-              logger.warn(`Esperienza con ID ${id} non trovata per l'eliminazione`);
+              logger.info(`Esperienza con ID ${id} non trovata per l'eliminazione`);
               resolve({ success: false, error: 'Esperienza non trovata' });
             } else {
               logger.info(`Esperienza con ID ${id} eliminata con successo`);
@@ -286,7 +286,7 @@ async function incrementParticipantCount(db, experienceId) {
             reject(err);
           } else {
             if (this.changes === 0) {
-              logger.warn(`Esperienza con ID ${experienceId} non trovata per l'incremento del contatore`);
+              logger.info(`Esperienza con ID ${experienceId} non trovata per l'incremento del contatore`);
               resolve(false);
             } else {
               logger.info(`Contatore incrementato per esperienza ${experienceId}`);
@@ -322,7 +322,7 @@ async function decrementParticipantCount(db, experienceId) {
             reject(err);
           } else {
             if (this.changes === 0) {
-              logger.warn(`Esperienza con ID ${experienceId} non trovata per il decremento del contatore`);
+              logger.info(`Esperienza con ID ${experienceId} non trovata per il decremento del contatore`);
               resolve(false);
             } else {
               logger.info(`Contatore decrementato per esperienza ${experienceId}`);

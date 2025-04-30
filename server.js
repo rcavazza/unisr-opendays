@@ -229,6 +229,10 @@ const experiencesService = require('./experiencesService');
 const addExperiencesRoutes = require('./add_experiences_routes');
 addExperiencesRoutes(app, db);
 
+// Import and initialize the experiences API routes
+const addExperiencesApiRoutes = require('./add_experiences_api');
+addExperiencesApiRoutes(app, db);
+
 // Endpoint to get experiences based on contactID and language
 app.get('/api/get_experiences', async (req, res) => {
     const { contactID, lang } = req.query;
