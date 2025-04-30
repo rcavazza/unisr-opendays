@@ -7,19 +7,19 @@
     <style type="text/css">
       @font-face {
         font-family: "Poppins";
-        src: url("https://changemakers.unisr.org/fonts/Poppins-Regular.ttf") format("truetype");
+        src: url("https://open.unisr.org/fonts/Poppins-Regular.ttf") format("truetype");
         font-weight: 400;
         font-style: normal;
       }
       @font-face {
         font-family: "Poppins";
-        src: url("https://changemakers.unisr.org/fonts/Poppins-Medium.ttf") format("truetype");
+        src: url("https://open.unisr.org/fonts/Poppins-Medium.ttf") format("truetype");
         font-weight: 500;
         font-style: normal;
       }
       @font-face {
         font-family: "Poppins";
-        src: url("https://changemakers.unisr.org/fonts/Poppins-SemiBold.ttf") format("truetype");
+        src: url("https://open.unisr.org/fonts/Poppins-SemiBold.ttf") format("truetype");
         font-weight: 600;
         font-style: normal;
       }
@@ -43,11 +43,12 @@
       @media (prefers-color-scheme: dark) {
         body { background-color: #333333 !important; }
         .email-container { background-color: #333333 !important; }
-        p, h1, h2, h3, span, a { color: #ffffff !important; }
+        p:not(.event-detail), h1, h2, h3, span, a { color: #ffffff !important; }
+        p.event-detail { color: #FFDD33 !important; }
       }
       
       .event-card {
-        background-color: #FFFFFF;
+        background-color: #0082b6;
         border-radius: 8px;
         padding: 20px;
         margin-bottom: 15px;
@@ -56,16 +57,16 @@
       .event-title {
         font-family: 'Poppins', sans-serif;
         font-size: 20px;
-        font-weight: 600;
-        color: #003366;
+        font-weight: 700;
+        color: #FFFFFF;
         margin: 0 0 10px 0;
       }
       
       .event-detail {
         font-family: 'Poppins', sans-serif;
         font-size: 16px;
-        font-weight: 400;
-        color: #333333;
+        font-weight: 700;
+        color: #FFDD33;
         margin: 5px 0;
       }
       
@@ -79,10 +80,10 @@
       }
     </style>
   </head>
-  <body style="margin: 0 !important; padding: 0 !important; background-color: #FFC72D; color: #FFFFFF;">
+  <body style="margin: 0 !important; padding: 0 !important; background-color: #00A4E4; color: #FFFFFF;">
     <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed;">
       <tr>
-        <td bgcolor="#FFC72D" align="center" style="padding: 45px 15px 45px 15px;" class="section-padding">
+        <td bgcolor="#00A4E4" align="center" style="padding: 45px 15px 45px 15px;" class="section-padding">
           <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 700px;" class="responsive-table">
             <tr>
               <td>
@@ -109,7 +110,7 @@
                             <table border="0" cellpadding="0" cellspacing="0" width="200" height="200" style="background-color: white; margin: 0 auto;">
                               <tr>
                                 <td align="center" valign="middle">
-                                  <img src="https://zaini.unisr.org/<%= qrCode %>" width="200" height="200" border="0" alt="Codice QR" style="display: block; width: 200px; height: 200px; max-width: 200px;" class="qr-code">
+                                  <img src="https://open.unisr.org/<%= qrCode %>" width="200" height="200" border="0" alt="Codice QR" style="display: block; width: 200px; height: 200px; max-width: 200px;" class="qr-code">
                                 </td>
                               </tr>
                             </table>
@@ -132,8 +133,8 @@
                             <% fieldData.courses.forEach(course => { %>
                             <div class="event-card">
                               <h3 class="event-title"><%= course.title %></h3>
-                              <p class="event-detail"><strong>Data:</strong> <%= course.date %></p>
-                              <p class="event-detail"><strong>Luogo:</strong> <%= course.location %></p>
+                              <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Data:</strong> <%= course.date %></p>
+                              <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Luogo:</strong> <%= course.location %></p>
                             </div>
                             <% }); %>
                           </td>
@@ -150,10 +151,10 @@
                             <div class="event-card">
                               <h3 class="event-title"><%= exp.title %></h3>
                               <% if (exp.date) { %>
-                              <p class="event-detail"><strong>Data:</strong> <%= exp.date %></p>
+                              <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Data:</strong> <%= exp.date %></p>
                               <% } %>
                               <% if (exp.location) { %>
-                              <p class="event-detail"><strong>Luogo:</strong> <%= exp.location %></p>
+                              <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Luogo:</strong> <%= exp.location %></p>
                               <% } %>
                             </div>
                             <% }); %>
@@ -170,8 +171,8 @@
                             <% fieldData.experiences.forEach(exp => { %>
                             <div class="event-card">
                               <h3 class="event-title"><%= exp.title %></h3>
-                              <p class="event-detail"><strong>Data:</strong> <%= exp.date %></p>
-                              <p class="event-detail"><strong>Luogo:</strong> <%= exp.location %></p>
+                              <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Data:</strong> <%= exp.date %></p>
+                              <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Luogo:</strong> <%= exp.location %></p>
                             </div>
                             <% }); %>
                           </td>
@@ -198,7 +199,7 @@
                             <table width="100%" border="0" cellspacing="0" cellpadding="0">
                               <tr>
                                 <td align="center">
-                                  <img src="https://zaini.unisr.org/images/uniSRFooter.png" width="200" height="auto" border="0" alt="uniSR" style="display: block; width: 200px; height: auto;">
+                                  <img src="https://open.unisr.org/images/uniSRFooter.png" width="200" height="auto" border="0" alt="uniSR" style="display: block; width: 200px; height: auto;">
                                 </td>
                               </tr>
                             </table>

@@ -544,6 +544,265 @@ app.post('/api/update-selected-experiences', async (req, res) => {
         // Log email transporter configuration (without sensitive data)
         logger.info(`Email transporter configuration: host=${process.env.SMTP_HOST}, port=${process.env.SMTP_PORT}, secure=${process.env.SMTP_SECURE}`);
         
+        // Function to get matching courses from corsi.json
+        function getMatchingCourses(matchingCourseIds) {
+            try {
+                logger.info(`Attempting to read corsi.json file...`);
+                logger.info(`Current directory: ${__dirname}`);
+                const coursesPath = path.join(__dirname, 'corsi.json');
+                logger.info(`Full path to corsi.json: ${coursesPath}`);
+                logger.info(`File exists: ${fs.existsSync(coursesPath)}`);
+                
+                const coursesData = fs.readFileSync(coursesPath, 'utf8');
+                logger.info(`Successfully read corsi.json file`);
+                logger.info(`Courses data length: ${coursesData.length} characters`);
+                
+                const allCourses = JSON.parse(coursesData);
+                logger.info(`Parsed ${allCourses.length} courses from corsi.json`);
+                logger.info(`Looking for courses with IDs: ${matchingCourseIds.join(', ')}`);
+                
+                // Filter courses by matching IDs
+                const matchingCourses = allCourses.filter(course =>
+                    matchingCourseIds.includes(course.id)
+                );
+                
+                logger.info(`Found ${matchingCourses.length} matching courses`);
+                logger.info(`Matching courses: ${JSON.stringify(matchingCourses)}`);
+                
+                return matchingCourses;
+            } catch (error) {
+                logger.error('Error reading courses data:', error);
+                logger.error('Error stack:', error.stack);
+                return [];
+            }
+        }
+
+        // Function to generate QR code that returns a Promise
+        function generateQRCode(text2encode) {
+            return new Promise((resolve, reject) => {
+                QRCode.toDataURL(text2encode, (err, qrCode) => {
+                    if (err) {
+                        logger.error('Error generating QR code:', err);
+                        return reject(err);
+                    }
+                    resolve(qrCode);
+                });
+            });
+        }
+        
+        // Function to save QR code to file that returns a Promise
+        function saveQRCodeToFile(qrCode) {
+            return new Promise((resolve, reject) => {
+                const qrFileName = `${uuidv4()}.png`;
+                const qrFilePath = path.join(__dirname, 'public', 'qrimg', qrFileName);
+                const qrBuffer = Buffer.from(qrCode.split(',')[1], 'base64');
+                
+                fs.writeFile(qrFilePath, qrBuffer, (err) => {
+                    if (err) {
+                        logger.error('Error saving QR code image:', err);
+                        return reject(err);
+                    }
+                    const qrCodeUrl = `qrimg/${qrFileName}`;
+                    resolve(qrCodeUrl);
+                });
+            });
+        }
+        
+        // Function to send email with QR code that returns a Promise
+        function sendEmailWithQR(contact, qrCodeUrl, validExperiences, language, matchingCourses = []) {
+            return new Promise((resolve, reject) => {
+                // Prepare email data with the same structure as the confirmation page
+                const emailData = {
+                    name: contact.firstname,
+                    email: contact.email,
+                    qrCode: qrCodeUrl,
+                    type: 2, // Use email_courses.ejs template
+                    language: language, // Add language
+                    fieldData: {
+                        courses: matchingCourses.map(course => ({
+                            title: course.name || course.title,
+                            date: "May 10, 2025", // Fixed date for Open Day
+                            location: course.location || "Main Campus",
+                            time: course.orario_inizio ? `${course.orario_inizio}${course.orario_fine ? ' - ' + course.orario_fine : ''}` : ''
+                        })),
+                        experiences: validExperiences,
+                        frontali: [] // Empty array if no frontali experiences
+                    }
+                };
+                
+                logger.info(`Preparing to send email with QR code to ${contact.email}, QR URL: ${qrCodeUrl}`);
+                logger.info(`Email data structure: ${JSON.stringify({
+                    name: typeof emailData.name,
+                    email: typeof emailData.email,
+                    qrCode: typeof emailData.qrCode,
+                    type: emailData.type,
+                    language: emailData.language,
+                    fieldData: {
+                        courses: Array.isArray(emailData.fieldData.courses) ? emailData.fieldData.courses.length : 'not an array',
+                        experiences: Array.isArray(emailData.fieldData.experiences) ? emailData.fieldData.experiences.length : 'not an array',
+                        frontali: Array.isArray(emailData.fieldData.frontali) ? emailData.fieldData.frontali.length : 'not an array'
+                    }
+                }, null, 2)}`);
+                logger.info(`Email data content: ${JSON.stringify(emailData, null, 2)}`);
+                
+                // Log template path to verify it exists
+                const templatePath = path.join(__dirname, 'views', language, 'email.ejs');
+                logger.info(`Using email template: ${templatePath}`);
+                
+                // Render email template
+                ejs.renderFile(
+                    templatePath,
+                    emailData,
+                    (err, htmlContent) => {
+                        if (err) {
+                            logger.error('Error rendering email template:', err);
+                            logger.error('Template error details:', err.stack);
+                            return reject(err);
+                        }
+                        
+                        logger.info('Email template rendered successfully');
+                        logger.info(`HTML content length: ${htmlContent.length}`);
+                        logger.info(`HTML content preview: ${htmlContent.substring(0, 200)}...`);
+                        
+                        // Determine recipient email
+                        let recipientEmail = contact.email;
+                        // if (HUBSPOT_DEV == 1) {
+                            recipientEmail = "guanxi_4@studenti.unisr.it"; // Development email
+                            logger.info(`Development mode: redirecting email to ${recipientEmail}`);
+                        // }
+                        
+                        // Prepare mail options
+                        const mailOptions = {
+                            from: `UniSR – Università Vita Salute San Raffaele <info.unisr@unisr.it>`,
+                            to: recipientEmail,
+                            subject: language === 'en'
+                                ? `${contact.firstname}, your Open Day registration is confirmed`
+                                : `${contact.firstname}, la tua registrazione all'Open Day è confermata`,
+                            replyTo: 'info.unisr@unisr.it',
+                            html: htmlContent
+                        };
+                        
+                        logger.info(`Mail options prepared: to=${recipientEmail}, subject="${mailOptions.subject}"`);
+                        
+                        // Send email
+                        if (SENDMAIL == 1) {
+                            logger.info('Attempting to send email...');
+                            transporter.sendMail(mailOptions, (error, info) => {
+                                if (error) {
+                                    logger.error('Error sending email:', error);
+                                    logger.error('Error details:', error.stack);
+                                    logger.error('Mail options that failed:', JSON.stringify(mailOptions, null, 2));
+                                    return reject(error);
+                                } else {
+                                    logger.info('Email sent successfully:', info.response);
+                                    logger.info('Message ID:', info.messageId);
+                                    return resolve(info);
+                                }
+                            });
+                        } else {
+                            logger.info('Email sending is disabled (SENDMAIL=0). Would have sent email with options:', JSON.stringify(mailOptions, null, 2));
+                            return resolve({ disabled: true });
+                        }
+                    }
+                );
+            });
+        }
+        
+        // Function to send email without QR code that returns a Promise
+        function sendEmailWithoutQR(contact, validExperiences, language, matchingCourses = []) {
+            return new Promise((resolve, reject) => {
+                // Similar to sendEmailWithQR but without the QR code
+                const emailData = {
+                    name: contact.firstname,
+                    email: contact.email,
+                    type: 2, // Use email_courses.ejs template
+                    language: language, // Add language
+                    fieldData: {
+                        courses: matchingCourses.map(course => ({
+                            title: course.name || course.title,
+                            date: "May 10, 2025", // Fixed date for Open Day
+                            location: course.location || "Main Campus",
+                            time: course.orario_inizio ? `${course.orario_inizio}${course.orario_fine ? ' - ' + course.orario_fine : ''}` : ''
+                        })),
+                        experiences: validExperiences,
+                        frontali: [] // Empty array if no frontali experiences
+                    }
+                };
+                
+                logger.info(`Preparing to send email without QR code to ${contact.email}`);
+                logger.info(`Email data structure: ${JSON.stringify({
+                    name: typeof emailData.name,
+                    email: typeof emailData.email,
+                    type: emailData.type,
+                    language: emailData.language,
+                    fieldData: {
+                        courses: Array.isArray(emailData.fieldData.courses) ? emailData.fieldData.courses.length : 'not an array',
+                        experiences: Array.isArray(emailData.fieldData.experiences) ? emailData.fieldData.experiences.length : 'not an array',
+                        frontali: Array.isArray(emailData.fieldData.frontali) ? emailData.fieldData.frontali.length : 'not an array'
+                    }
+                }, null, 2)}`);
+                logger.info(`Email data content: ${JSON.stringify(emailData, null, 2)}`);
+                
+                // Log template path to verify it exists
+                const templatePath = path.join(__dirname, 'views', language, 'email.ejs');
+                logger.info(`Using email template: ${templatePath}`);
+                
+                // Render and send email (same as above but without QR code)
+                ejs.renderFile(
+                    templatePath,
+                    emailData,
+                    (err, htmlContent) => {
+                        if (err) {
+                            logger.error('Error rendering email template:', err);
+                            logger.error('Template error details:', err.stack);
+                            return reject(err);
+                        }
+                        
+                        logger.info('Email template rendered successfully');
+                        logger.info(`HTML content length: ${htmlContent.length}`);
+                        logger.info(`HTML content preview: ${htmlContent.substring(0, 200)}...`);
+                        
+                        let recipientEmail = contact.email;
+                        if (HUBSPOT_DEV == 1) {
+                            recipientEmail = "phantomazzz@gmail.com";
+                            logger.info(`Development mode: redirecting email to ${recipientEmail}`);
+                        }
+                        
+                        const mailOptions = {
+                            from: `UniSR – Università Vita Salute San Raffaele <info.unisr@unisr.it>`,
+                            to: recipientEmail,
+                            subject: language === 'en'
+                                ? `${contact.firstname}, your Open Day registration is confirmed`
+                                : `${contact.firstname}, la tua registrazione all'Open Day è confermata`,
+                            replyTo: 'info.unisr@unisr.it',
+                            html: htmlContent
+                        };
+                        
+                        logger.info(`Mail options prepared: to=${recipientEmail}, subject="${mailOptions.subject}"`);
+                        
+                        if (SENDMAIL == 1) {
+                            logger.info('Attempting to send email...');
+                            transporter.sendMail(mailOptions, (error, info) => {
+                                if (error) {
+                                    logger.error('Error sending email:', error);
+                                    logger.error('Error details:', error.stack);
+                                    logger.error('Mail options that failed:', JSON.stringify(mailOptions, null, 2));
+                                    return reject(error);
+                                } else {
+                                    logger.info('Email sent successfully:', info.response);
+                                    logger.info('Message ID:', info.messageId);
+                                    return resolve(info);
+                                }
+                            });
+                        } else {
+                            logger.info('Email sending is disabled (SENDMAIL=0). Would have sent email with options:', JSON.stringify(mailOptions, null, 2));
+                            return resolve({ disabled: true });
+                        }
+                    }
+                );
+            });
+        }
+        
         try {
             // Fetch contact details from HubSpot
             logger.info(`Fetching contact details for ${contactID}`);
@@ -600,174 +859,32 @@ app.post('/api/update-selected-experiences', async (req, res) => {
             const text2encode = contact.email + '**' + contactID;
             const encoded = xorCipher.encode(text2encode, xorKey);
             
-            // Generate QR code
-            const qrFileName = `${uuidv4()}.png`;
-            const qrFilePath = path.join(__dirname, 'public', 'qrimg', qrFileName);
-            
-            QRCode.toDataURL(encoded, async function (err, qrCode) {
-                if (err) {
-                    logger.error('Error generating QR code:', err);
-                    // Continue without QR code
-                    sendEmailWithoutQR();
-                    return;
+            // Get matching courses from corsi.json
+            logger.info(`Calling getMatchingCourses with expIds: ${expIds.join(', ')}`);
+            const matchingCourses = getMatchingCourses(expIds);
+            logger.info(`Retrieved ${matchingCourses.length} matching courses for email`);
+            logger.info(`Matching courses details: ${JSON.stringify(matchingCourses)}`);
+
+            try {
+                // Generate and save QR code
+                const qrCode = await generateQRCode(encoded);
+                try {
+                    // Save QR code to file
+                    const qrCodeUrl = await saveQRCodeToFile(qrCode);
+                    // Send email with QR code
+                    await sendEmailWithQR(contact, qrCodeUrl, validExperiences, language, matchingCourses);
+                    logger.info('Email with QR code sent successfully');
+                } catch (saveError) {
+                    logger.error('Error saving QR code:', saveError);
+                    // If saving QR code fails, send email without QR code
+                    await sendEmailWithoutQR(contact, validExperiences, language, matchingCourses);
+                    logger.info('Email without QR code sent successfully (after QR save error)');
                 }
-                
-                // Save QR code to file
-                const qrBuffer = Buffer.from(qrCode.split(',')[1], 'base64');
-                
-                fs.writeFile(qrFilePath, qrBuffer, (err) => {
-                    if (err) {
-                        logger.error('Error saving QR code image:', err);
-                        // Continue without QR code
-                        sendEmailWithoutQR();
-                        return;
-                    }
-                    
-                    const qrCodeUrl = `qrimg/${qrFileName}`;
-                    sendEmailWithQR(qrCodeUrl);
-                });
-            });
-            
-            // Function to send email with QR code
-            function sendEmailWithQR(qrCodeUrl) {
-                // Prepare email data
-                const emailData = {
-                    name: contact.firstname,
-                    email: contact.email,
-                    qrCode: qrCodeUrl,
-                    type: 2, // Use email_courses.ejs template
-                    fieldData: {
-                        experiences: validExperiences
-                    }
-                };
-                
-                logger.info(`Preparing to send email with QR code to ${contact.email}, QR URL: ${qrCodeUrl}`);
-                logger.info(`Email data: ${JSON.stringify(emailData, null, 2)}`);
-                
-                // Log template path to verify it exists
-                const templatePath = path.join(__dirname, 'views', language, 'email.ejs');
-                logger.info(`Using email template: ${templatePath}`);
-                
-                // Render email template
-                ejs.renderFile(
-                    templatePath,
-                    emailData,
-                    (err, htmlContent) => {
-                        if (err) {
-                            logger.error('Error rendering email template:', err);
-                            logger.error('Template error details:', err.stack);
-                            return;
-                        }
-                        
-                        logger.info('Email template rendered successfully');
-                        
-                        // Determine recipient email
-                        let recipientEmail = contact.email;
-                        if (HUBSPOT_DEV == 1) {
-                            recipientEmail = "phantomazzz@gmail.com"; // Development email
-                            logger.info(`Development mode: redirecting email to ${recipientEmail}`);
-                        }
-                        
-                        // Prepare mail options
-                        const mailOptions = {
-                            from: `UniSR – Università Vita Salute San Raffaele <info.unisr@unisr.it>`,
-                            to: recipientEmail,
-                            subject: language === 'en'
-                                ? `${contact.firstname}, your Open Day registration is confirmed`
-                                : `${contact.firstname}, la tua registrazione all'Open Day è confermata`,
-                            replyTo: 'info.unisr@unisr.it',
-                            html: htmlContent
-                        };
-                        
-                        logger.info(`Mail options prepared: to=${recipientEmail}, subject="${mailOptions.subject}"`);
-                        
-                        // Send email
-                        if (SENDMAIL == 1) {
-                            logger.info('Attempting to send email...');
-                            transporter.sendMail(mailOptions, (error, info) => {
-                                if (error) {
-                                    logger.error('Error sending email:', error);
-                                    logger.error('Error details:', error.stack);
-                                    logger.error('Mail options that failed:', JSON.stringify(mailOptions, null, 2));
-                                } else {
-                                    logger.info('Email sent successfully:', info.response);
-                                    logger.info('Message ID:', info.messageId);
-                                }
-                            });
-                        } else {
-                            logger.info('Email sending is disabled (SENDMAIL=0). Would have sent email with options:', JSON.stringify(mailOptions, null, 2));
-                        }
-                    }
-                );
-            }
-            
-            // Function to send email without QR code
-            function sendEmailWithoutQR() {
-                // Similar to sendEmailWithQR but without the QR code
-                const emailData = {
-                    name: contact.firstname,
-                    email: contact.email,
-                    type: 2, // Use email_courses.ejs template
-                    fieldData: {
-                        experiences: validExperiences
-                    }
-                };
-                
-                logger.info(`Preparing to send email without QR code to ${contact.email}`);
-                logger.info(`Email data: ${JSON.stringify(emailData, null, 2)}`);
-                
-                // Log template path to verify it exists
-                const templatePath = path.join(__dirname, 'views', language, 'email.ejs');
-                logger.info(`Using email template: ${templatePath}`);
-                
-                // Render and send email (same as above but without QR code)
-                ejs.renderFile(
-                    templatePath,
-                    emailData,
-                    (err, htmlContent) => {
-                        if (err) {
-                            logger.error('Error rendering email template:', err);
-                            logger.error('Template error details:', err.stack);
-                            return;
-                        }
-                        
-                        logger.info('Email template rendered successfully');
-                        
-                        let recipientEmail = contact.email;
-                        if (HUBSPOT_DEV == 1) {
-                            recipientEmail = "phantomazzz@gmail.com";
-                            logger.info(`Development mode: redirecting email to ${recipientEmail}`);
-                        }
-                        
-                        const mailOptions = {
-                            from: `UniSR – Università Vita Salute San Raffaele <info.unisr@unisr.it>`,
-                            to: recipientEmail,
-                            subject: language === 'en'
-                                ? `${contact.firstname}, your Open Day registration is confirmed`
-                                : `${contact.firstname}, la tua registrazione all'Open Day è confermata`,
-                            replyTo: 'info.unisr@unisr.it',
-                            html: htmlContent
-                        };
-                        
-                        logger.info(`Mail options prepared: to=${recipientEmail}, subject="${mailOptions.subject}"`);
-                        
-                        if (SENDMAIL == 1) {
-                            logger.info('Attempting to send email...');
-                            transporter.sendMail(mailOptions, (error, info) => {
-                                if (error) {
-                                    logger.error('Error sending email:', error);
-                                    logger.error('Error details:', error.stack);
-                                    logger.error('Mail options that failed:', JSON.stringify(mailOptions, null, 2));
-                                } else {
-                                    logger.info('Email sent successfully:', info.response);
-                                    logger.info('Message ID:', info.messageId);
-                                }
-                            });
-                        } else {
-                            logger.info('Email sending is disabled (SENDMAIL=0). Would have sent email with options:', JSON.stringify(mailOptions, null, 2));
-                        }
-                    }
-                );
+            } catch (qrError) {
+                logger.error('Error generating QR code:', qrError);
+                // If generating QR code fails, send email without QR code
+                await sendEmailWithoutQR(contact, validExperiences, language, matchingCourses);
+                logger.info('Email without QR code sent successfully (after QR generation error)');
             }
         } catch (error) {
             // Log the error but don't fail the request
@@ -780,13 +897,21 @@ app.post('/api/update-selected-experiences', async (req, res) => {
             if (transporter) {
                 logger.info('Email transporter exists');
                 // Check if transporter is verified
-                transporter.verify(function(error, success) {
-                    if (error) {
-                        logger.error('Transporter verification failed:', error);
-                    } else {
-                        logger.info('Transporter is ready to send messages');
-                    }
-                });
+                try {
+                    const success = await new Promise((resolve, reject) => {
+                        transporter.verify(function(error, success) {
+                            if (error) {
+                                logger.error('Transporter verification failed:', error);
+                                reject(error);
+                            } else {
+                                logger.info('Transporter is ready to send messages');
+                                resolve(success);
+                            }
+                        });
+                    });
+                } catch (verifyError) {
+                    logger.error('Error verifying transporter:', verifyError);
+                }
             } else {
                 logger.error('Email transporter is undefined');
             }
