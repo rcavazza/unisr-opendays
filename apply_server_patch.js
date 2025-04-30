@@ -23,7 +23,7 @@ try {
     
     // Define the pattern to match the existing endpoint
     // We need to match the entire endpoint function from app.post to the closing brace
-    const endpointPattern = /app\.post\('\/api\/update-selected-experiences'[\s\S]*?(?=app\.get\('\/selection')|$)/;
+    const endpointPattern = /app\.post\('\/api\/update-selected-experiences'[\s\S]*?\}\);/;
     
     // Check if the pattern exists in the server.js file
     if (!endpointPattern.test(serverContent)) {

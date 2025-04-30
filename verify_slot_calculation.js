@@ -74,7 +74,7 @@ async function verifySlotCalculation() {
             log('No reservations found in the database.');
         }
         
-        // 3. Calculate expected available slots
+        // 3. Calculate expected available slots based on current_participants
         const expectedAvailableSlots = {};
         experiences.forEach(exp => {
             // Assume up to 5 time slots per experience
@@ -82,13 +82,8 @@ async function verifySlotCalculation() {
                 const timeSlotId = `${exp.experience_id}-${i}`;
                 const key = `${exp.experience_id}_${timeSlotId}`;
                 
-                // Find reservation count for this experience and time slot
-                const reservation = reservationCounts.find(
-                    res => res.experience_id === exp.experience_id && res.time_slot_id === timeSlotId
-                );
-                const reservationCount = reservation ? reservation.count : 0;
-                
-                expectedAvailableSlots[key] = Math.max(0, exp.max_participants - reservationCount);
+                // Calculate available slots based on current_participants
+                expectedAvailableSlots[key] = Math.max(0, exp.max_participants - exp.current_participants);
                 
                 // Also calculate for frontend key format
                 const baseExperienceId = exp.experience_id.replace(/-\d+$/, '');
@@ -97,7 +92,7 @@ async function verifySlotCalculation() {
                 
                 // Only add if it's different from the original key
                 if (frontendKey !== key) {
-                    expectedAvailableSlots[frontendKey] = Math.max(0, exp.max_participants - reservationCount);
+                    expectedAvailableSlots[frontendKey] = Math.max(0, exp.max_participants - exp.current_participants);
                 }
             }
         });

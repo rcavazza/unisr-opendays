@@ -140,6 +140,27 @@
                         </tr>
                         <% } %>
                         
+                        <!-- Frontali Section -->
+                        <% if (typeof fieldData !== 'undefined' && fieldData.frontali && fieldData.frontali.length > 0) { %>
+                        <tr>
+                          <td>
+                            <h2 class="section-title">Lecture Experiences</h2>
+                            
+                            <% fieldData.frontali.forEach(exp => { %>
+                            <div class="event-card">
+                              <h3 class="event-title"><%= exp.title %></h3>
+                              <% if (exp.date) { %>
+                              <p class="event-detail"><strong>Date:</strong> <%= exp.date %></p>
+                              <% } %>
+                              <% if (exp.location) { %>
+                              <p class="event-detail"><strong>Location:</strong> <%= exp.location %></p>
+                              <% } %>
+                            </div>
+                            <% }); %>
+                          </td>
+                        </tr>
+                        <% } %>
+                        
                         <!-- Experiences Section -->
                         <% if (typeof fieldData !== 'undefined' && fieldData.experiences && fieldData.experiences.length > 0) { %>
                         <tr>

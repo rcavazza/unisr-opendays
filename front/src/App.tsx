@@ -17,14 +17,21 @@ const DefaultRedirect = () => {
 const ConfirmationPageWrapper = () => {
   const location = useLocation();
   const activities = location.state?.activities || [];
+  const matchingCourseIds = location.state?.matchingCourseIds || [];
   
   // Extract contactID from URL query parameters
   const urlParams = new URLSearchParams(location.search);
   const contactID = urlParams.get('contactID') || '';
   
+  console.log('ConfirmationPageWrapper - matchingCourseIds:', matchingCourseIds);
+  
   return (
     <LanguageProvider>
-      <ConfirmationPage activities={activities} contactID={contactID} />
+      <ConfirmationPage
+        activities={activities}
+        contactID={contactID}
+        matchingCourseIds={matchingCourseIds}
+      />
     </LanguageProvider>
   );
 };

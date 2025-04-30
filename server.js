@@ -203,6 +203,14 @@ db.serialize(() => {
             email TEXT UNIQUE,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )`);
+    db.run(`CREATE TABLE IF NOT EXISTS opend_reservations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            contact_id TEXT,
+            experience_id TEXT,
+            time_slot_id TEXT,
+            qr_code_url TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )`);
     db.get(`SELECT COUNT(*) AS count FROM fcfs`, (err, row) => {
         if (err) {
             console.error("Errore nel conteggio delle righe:", err.message);
@@ -253,6 +261,11 @@ app.get('/api/get_experiences', async (req, res) => {
         const courses = require('./corsi.json');
         const courseIds = courses.map(course => course.id);
         
+        // Log the types of IDs in corsi.json
+        courses.forEach(course => {
+            logger.info(`Course ID: ${course.id}, Type: ${typeof course.id}`);
+        });
+        
         // Get all custom objects associated with the contact
         const customObjects = await hubspotExperienceService.getAllCustomObjects(contactID);
         
@@ -263,16 +276,38 @@ app.get('/api/get_experiences', async (req, res) => {
             });
         }
         
-        // Extract IDs from custom objects
-        const customObjectIds = customObjects.map(obj => obj.id);
+        // Extract IDs from custom objects and log their types
+        const customObjectIds = customObjects.map(obj => {
+            logger.info(`Custom object ID: ${obj.id}, Type: ${typeof obj.id}`);
+            return obj.id;
+        });
         
-        // Filter IDs to only include those in our corsi.json file
-        const filteredObjectIds = customObjectIds.filter(id => courseIds.includes(id));
+        // Try both string and number comparisons for filtering
+        const filteredObjectIds = [];
+        for (const customId of customObjectIds) {
+            for (const courseId of courseIds) {
+                // Try string comparison
+                if (String(customId) === String(courseId)) {
+                    logger.info(`Match found: ${customId} (${typeof customId}) matches ${courseId} (${typeof courseId})`);
+                    filteredObjectIds.push(customId);
+                    break;
+                }
+                // Try number comparison if both can be converted to numbers
+                else if (!isNaN(Number(customId)) && !isNaN(Number(courseId)) && Number(customId) === Number(courseId)) {
+                    logger.info(`Numeric match found: ${customId} (${typeof customId}) matches ${courseId} (${typeof courseId})`);
+                    filteredObjectIds.push(customId);
+                    break;
+                }
+            }
+        }
         
-        // If no matching custom objects found, return an empty array
+        // If no matching custom objects found, return an empty response
         if (filteredObjectIds.length === 0) {
             logger.info(`No matching custom objects found for contact ID: ${contactID}`);
-            return res.json([]);
+            return res.json({
+                experiences: [],
+                matchingCourseIds: []
+            });
         }
         
         // Get experiences from the database based on the filtered IDs, language, and contactID
@@ -289,8 +324,11 @@ app.get('/api/get_experiences', async (req, res) => {
             }
         });
         
-        // Return the experiences as JSON
-        res.json(experiences);
+        // Return the experiences and matching course IDs as JSON
+        res.json({
+            experiences: experiences,
+            matchingCourseIds: filteredObjectIds
+        });
     } catch (error) {
         logger.error('Error in /api/get_experiences:', error);
         res.status(500).json({
@@ -368,8 +406,8 @@ app.post('/api/reserve', async (req, res) => {
         // Save the reservation
         await reservationService.saveReservation(db, contactID, experienceId, timeSlotId, null, replaceAll);
         
-        // No need to update current_participants field anymore
-        // We're now using the actual reservation counts from the opend_reservations table
+        // Update the current_participants field for the specific time slot
+        await experiencesService.incrementParticipantCountForTimeSlot(db, experienceId, timeSlotId);
         
         // Update the remaining slots
         await updateRemainingSlots();
@@ -413,8 +451,8 @@ app.post('/api/cancel-reservation', async (req, res) => {
         // Use the new cancelReservation function from reservationService
         await reservationService.cancelReservation(db, contactID, experienceId, timeSlotId);
         
-        // No need to update current_participants field anymore
-        // We're now using the actual reservation counts from the opend_reservations table
+        // Decrement the current_participants field for the specific time slot
+        await experiencesService.decrementParticipantCountForTimeSlot(db, experienceId, timeSlotId);
         
         // Update the remaining slots
         await updateRemainingSlots();
@@ -453,9 +491,16 @@ app.post('/api/update-selected-experiences', async (req, res) => {
     }
     
     try {
-        // Format the experience IDs as a comma-separated string
+        // Log the received experienceIds to verify format
+        logger.info(`Received experienceIds: ${JSON.stringify(experienceIds)}`);
+        logger.info(`experienceIds is array: ${Array.isArray(experienceIds)}`);
+        if (Array.isArray(experienceIds)) {
+            logger.info(`Number of experienceIds: ${experienceIds.length}`);
+        }
+        
+        // Format the experience IDs as a semicolon-separated string
         const experiencesString = Array.isArray(experienceIds)
-            ? experienceIds.join(',')
+            ? experienceIds.join(';')
             : experienceIds;
         
         logger.info(`Updating HubSpot contact ${contactID} with selected experiences: ${experiencesString}`);
@@ -466,7 +511,8 @@ app.post('/api/update-selected-experiences', async (req, res) => {
                 open_day__iscrizione_esperienze_10_05_2025: experiencesString
             }
         };
-        logger.info('HubSpot update request data:', JSON.stringify(requestData));
+        logger.info('HubSpot update request data:', JSON.stringify(requestData, null, 2));
+        logger.info(`Final property value being sent to HubSpot: "${experiencesString}"`);
         
         // Log the API key being used (without showing the full key)
         const apiKeyPrefix = apiKey.substring(0, 10);
@@ -484,6 +530,213 @@ app.post('/api/update-selected-experiences', async (req, res) => {
             statusText: response.statusText,
             data: JSON.stringify(response.data)
         });
+        
+        // ===== START OF NEW CODE FOR EMAIL SENDING =====
+        
+        // Extract language from request headers or query parameters
+        // Default to English if not specified
+        const language = req.query.lang === 'it' ? 'it' : 'en';
+        logger.info(`Using language: ${language} for email`);
+        
+        try {
+            // Fetch contact details from HubSpot
+            logger.info(`Fetching contact details for ${contactID}`);
+            const contactResponse = await axios.get(
+                `https://api.hubapi.com/crm/v3/objects/contacts/${contactID}?properties=email,firstname,lastname`
+            );
+            const contact = contactResponse.data.properties;
+            logger.info(`Contact details retrieved: ${contact.email}`);
+            
+            // Parse experienceIds to ensure it's an array
+            const expIds = Array.isArray(experienceIds) ? experienceIds : experiencesString.split(';');
+            logger.info(`Fetching experience details for IDs: ${expIds.join(', ')}`);
+            
+            // Get experience details from the database
+            const experiences = await Promise.all(
+                expIds.map(async (expId) => {
+                    try {
+                        // Query the database to get experience details
+                        const experience = await new Promise((resolve, reject) => {
+                            db.get(
+                                "SELECT * FROM experiences WHERE experience_id = ?",
+                                [expId],
+                                (err, row) => {
+                                    if (err) reject(err);
+                                    else resolve(row);
+                                }
+                            );
+                        });
+                        
+                        if (!experience) {
+                            logger.warn(`Experience ${expId} not found in database`);
+                            return null;
+                        }
+                        
+                        return {
+                            title: experience.title,
+                            date: "May 10, 2025", // Fixed date for Open Day
+                            location: experience.location || "Main Campus",
+                            time: experience.ora_inizio || ""
+                        };
+                    } catch (error) {
+                        logger.error(`Error fetching details for experience ${expId}: ${error.message}`);
+                        return null;
+                    }
+                })
+            );
+            
+            // Filter out null values and log the results
+            const validExperiences = experiences.filter(exp => exp !== null);
+            logger.info(`Retrieved ${validExperiences.length} valid experiences for email`);
+            
+            // Generate QR code if needed
+            // For this implementation, we'll reuse the existing QR code generation logic
+            const text2encode = contact.email + '**' + contactID;
+            const encoded = xorCipher.encode(text2encode, xorKey);
+            
+            // Generate QR code
+            const qrFileName = `${uuidv4()}.png`;
+            const qrFilePath = path.join(__dirname, 'public', 'qrimg', qrFileName);
+            
+            QRCode.toDataURL(encoded, async function (err, qrCode) {
+                if (err) {
+                    logger.error('Error generating QR code:', err);
+                    // Continue without QR code
+                    sendEmailWithoutQR();
+                    return;
+                }
+                
+                // Save QR code to file
+                const qrBuffer = Buffer.from(qrCode.split(',')[1], 'base64');
+                
+                fs.writeFile(qrFilePath, qrBuffer, (err) => {
+                    if (err) {
+                        logger.error('Error saving QR code image:', err);
+                        // Continue without QR code
+                        sendEmailWithoutQR();
+                        return;
+                    }
+                    
+                    const qrCodeUrl = `qrimg/${qrFileName}`;
+                    sendEmailWithQR(qrCodeUrl);
+                });
+            });
+            
+            // Function to send email with QR code
+            function sendEmailWithQR(qrCodeUrl) {
+                // Prepare email data
+                const emailData = {
+                    name: contact.firstname,
+                    email: contact.email,
+                    qrCode: qrCodeUrl,
+                    type: 2, // Use email_courses.ejs template
+                    fieldData: {
+                        experiences: validExperiences
+                    }
+                };
+                
+                // Render email template
+                ejs.renderFile(
+                    path.join(__dirname, 'views', language, 'email.ejs'),
+                    emailData,
+                    (err, htmlContent) => {
+                        if (err) {
+                            logger.error('Error rendering email template:', err);
+                            return;
+                        }
+                        
+                        // Determine recipient email
+                        let recipientEmail = contact.email;
+                        if (HUBSPOT_DEV == 1) {
+                            recipientEmail = "phantomazzz@gmail.com"; // Development email
+                        }
+                        
+                        // Prepare mail options
+                        const mailOptions = {
+                            from: `UniSR – Università Vita Salute San Raffaele <info.unisr@unisr.it>`,
+                            to: recipientEmail,
+                            subject: language === 'en'
+                                ? `${contact.firstname}, your Open Day registration is confirmed`
+                                : `${contact.firstname}, la tua registrazione all'Open Day è confermata`,
+                            replyTo: 'info.unisr@unisr.it',
+                            html: htmlContent
+                        };
+                        
+                        // Send email
+                        if (SENDMAIL == 1) {
+                            transporter.sendMail(mailOptions, (error, info) => {
+                                if (error) {
+                                    logger.error('Error sending email:', error);
+                                } else {
+                                    logger.info('Email sent:', info.response);
+                                }
+                            });
+                        } else {
+                            logger.info('Email sending is disabled (SENDMAIL=0)');
+                        }
+                    }
+                );
+            }
+            
+            // Function to send email without QR code
+            function sendEmailWithoutQR() {
+                // Similar to sendEmailWithQR but without the QR code
+                const emailData = {
+                    name: contact.firstname,
+                    email: contact.email,
+                    type: 2, // Use email_courses.ejs template
+                    fieldData: {
+                        experiences: validExperiences
+                    }
+                };
+                
+                // Render and send email (same as above but without QR code)
+                ejs.renderFile(
+                    path.join(__dirname, 'views', language, 'email.ejs'),
+                    emailData,
+                    (err, htmlContent) => {
+                        if (err) {
+                            logger.error('Error rendering email template:', err);
+                            return;
+                        }
+                        
+                        let recipientEmail = contact.email;
+                        if (HUBSPOT_DEV == 1) {
+                            recipientEmail = "phantomazzz@gmail.com";
+                        }
+                        
+                        const mailOptions = {
+                            from: `UniSR – Università Vita Salute San Raffaele <info.unisr@unisr.it>`,
+                            to: recipientEmail,
+                            subject: language === 'en'
+                                ? `${contact.firstname}, your Open Day registration is confirmed`
+                                : `${contact.firstname}, la tua registrazione all'Open Day è confermata`,
+                            replyTo: 'info.unisr@unisr.it',
+                            html: htmlContent
+                        };
+                        
+                        if (SENDMAIL == 1) {
+                            transporter.sendMail(mailOptions, (error, info) => {
+                                if (error) {
+                                    logger.error('Error sending email:', error);
+                                } else {
+                                    logger.info('Email sent:', info.response);
+                                }
+                            });
+                        } else {
+                            logger.info('Email sending is disabled (SENDMAIL=0)');
+                        }
+                    }
+                );
+            }
+        } catch (error) {
+            // Log the error but don't fail the request
+            logger.error('Error sending confirmation email:', error);
+            logger.error('Error details:', error.message);
+            // Continue with the success response even if email fails
+        }
+        
+        // ===== END OF NEW CODE FOR EMAIL SENDING =====
         
         // Return success
         res.json({
@@ -1382,6 +1635,12 @@ app.post('/submit-experiences', async (req, res) => {
         
         // Recupera i dettagli delle esperienze selezionate
         const experiencesDetails = await courseExperienceService.getSelectedExperiences(db, contactID);
+        logger.info(`Retrieved ${experiencesDetails.length} selected experiences for contact ID: ${contactID}`);
+        
+        // Recupera i dettagli delle esperienze "frontali"
+        const frontaliExperiences = await courseExperienceService.getFrontaliExperiences(contactID);
+        logger.info(`Retrieved ${frontaliExperiences.length} frontali experiences for contact ID: ${contactID}`);
+        console.log('Frontali experiences in submit-experiences route:', JSON.stringify(frontaliExperiences, null, 2));
         
         // Recupera i dettagli del contatto
         const contact = await courseExperienceService.getContactDetails(contactID);
@@ -1402,10 +1661,20 @@ app.post('/submit-experiences', async (req, res) => {
             }
             
             // Renderizza la pagina di riepilogo
+            logger.info(`Rendering registration summary with ${coursesDetails.length} courses, ${experiencesDetails.length} experiences, and ${frontaliExperiences.length} frontali experiences`);
+            console.log('Data being passed to template:', {
+                contactId: contactID,
+                coursesCount: coursesDetails.length,
+                experiencesCount: experiencesDetails.length,
+                frontaliCount: frontaliExperiences.length,
+                frontali: frontaliExperiences
+            });
+            
             res.render(`${language}/registrationSummary`, {
                 contactId: contactID,
                 courses: coursesDetails,
                 experiences: experiencesDetails,
+                frontali: frontaliExperiences,
                 qrCode: qrCode
             });
             
@@ -1427,7 +1696,8 @@ app.post('/submit-experiences', async (req, res) => {
                     // Prepara i dati per il template email
                     const fieldData = {
                         courses: coursesDetails,
-                        experiences: experiencesDetails
+                        experiences: experiencesDetails,
+                        frontali: frontaliExperiences
                     };
                     
                     // Renderizza il template email
@@ -1444,9 +1714,9 @@ app.post('/submit-experiences', async (req, res) => {
                         }
                         
                         let thisemail = contact.email;
-                        if (HUBSPOT_DEV === 1) {
+                        // if (HUBSPOT_DEV === 1) {
                             thisemail = "phantomazzz@gmail.com";
-                        }
+                        // }
                         
                         const mailOptions = {
                             from: `UniSR – Università Vita Salute San Raffaele <info.unisr@unisr.it>`,

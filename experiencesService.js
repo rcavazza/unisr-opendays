@@ -338,6 +338,203 @@ async function decrementParticipantCount(db, experienceId) {
   }
 }
 
+/**
+ * Incrementa il contatore dei partecipanti per uno slot orario specifico
+ * @param {Object} db - Istanza del database
+ * @param {string} experienceId - Experience ID
+ * @param {string} timeSlotId - Time slot ID
+ * @returns {Promise<boolean>} - Successo dell'operazione
+ */
+async function incrementParticipantCountForTimeSlot(db, experienceId, timeSlotId) {
+  try {
+    logger.info(`[DEBUG] Incremento contatore per experienceId: ${experienceId}, timeSlotId: ${timeSlotId}`);
+    
+    // Verifica la struttura della tabella experiences
+    await new Promise((resolve) => {
+      db.all("PRAGMA table_info(experiences)", (err, columns) => {
+        if (err) {
+          logger.error(`Errore nel recupero della struttura della tabella: ${err.message}`);
+        } else {
+          logger.info(`[DEBUG] Struttura della tabella experiences: ${JSON.stringify(columns)}`);
+        }
+        resolve();
+      });
+    });
+    
+    // Estrai il numero dello slot dal timeSlotId
+    const parts = timeSlotId.split('-');
+    const slotNumber = parseInt(parts[parts.length - 1]);
+    logger.info(`[DEBUG] Numero slot estratto: ${slotNumber}, parts: ${JSON.stringify(parts)}`);
+    
+    // Ottieni tutte le esperienze con lo stesso titolo
+    // Prima ottieni il titolo dell'esperienza corrente
+    const currentExperience = await new Promise((resolve, reject) => {
+      db.get(
+        "SELECT id, title FROM experiences WHERE experience_id = ?",
+        [experienceId],
+        (err, row) => {
+          if (err) {
+            logger.error(`Errore nel recupero dell'esperienza: ${err.message}`);
+            reject(err);
+          } else {
+            resolve(row);
+          }
+        }
+      );
+    });
+    
+    if (!currentExperience) {
+      logger.warn(`Nessuna esperienza trovata con ID ${experienceId}`);
+      return false;
+    }
+    
+    logger.info(`[DEBUG] Esperienza corrente: id=${currentExperience.id}, title=${currentExperience.title}`);
+    
+    // Ora ottieni tutte le esperienze con lo stesso titolo, ordinate per ora_inizio
+    const allExperiences = await new Promise((resolve, reject) => {
+      db.all(
+        "SELECT id, experience_id, title, ora_inizio FROM experiences WHERE title = ? ORDER BY ora_inizio",
+        [currentExperience.title],
+        (err, rows) => {
+          if (err) {
+            logger.error(`Errore nel recupero delle esperienze: ${err.message}`);
+            reject(err);
+          } else {
+            logger.info(`[DEBUG] Trovate ${rows.length} esperienze con titolo "${currentExperience.title}"`);
+            rows.forEach((row, index) => {
+              logger.info(`[DEBUG] Riga ${index}: id=${row.id}, experience_id=${row.experience_id}, ora_inizio=${row.ora_inizio}`);
+            });
+            resolve(rows);
+          }
+        }
+      );
+    });
+    
+    if (allExperiences.length === 0) {
+      logger.warn(`Nessuna esperienza trovata con titolo "${currentExperience.title}"`);
+      return false;
+    }
+    
+    // Ottieni l'ID della riga per lo slot orario specifico
+    // Se slotNumber è nel range, usalo come indice, altrimenti usa la prima riga
+    const rowIndex = (slotNumber > 0 && slotNumber <= allExperiences.length) ? (slotNumber - 1) : 0;
+    const rowId = allExperiences[rowIndex].id;
+    logger.info(`[DEBUG] Indice riga selezionato: ${rowIndex}, ID riga: ${rowId}, slotNumber: ${slotNumber}, allExperiences.length: ${allExperiences.length}`);
+    
+    // Incrementa il campo current_participants per questa riga specifica
+    return new Promise((resolve, reject) => {
+      db.run(
+        "UPDATE experiences SET current_participants = current_participants + 1 WHERE id = ?",
+        [rowId],
+        function(err) {
+          if (err) {
+            logger.error(`Errore nell'incremento del contatore: ${err.message}`);
+            reject(err);
+          } else {
+            logger.info(`[DEBUG] Contatore incrementato per ID riga ${rowId}, changes: ${this.changes}`);
+            resolve(true);
+          }
+        }
+      );
+    });
+  } catch (error) {
+    logger.error(`Errore in incrementParticipantCountForTimeSlot: ${error.message}`);
+    throw error;
+  }
+}
+
+/**
+ * Decrementa il contatore dei partecipanti per uno slot orario specifico
+ * @param {Object} db - Istanza del database
+ * @param {string} experienceId - Experience ID
+ * @param {string} timeSlotId - Time slot ID
+ * @returns {Promise<boolean>} - Successo dell'operazione
+ */
+async function decrementParticipantCountForTimeSlot(db, experienceId, timeSlotId) {
+  try {
+    logger.info(`[DEBUG] Decremento contatore per experienceId: ${experienceId}, timeSlotId: ${timeSlotId}`);
+    
+    // Estrai il numero dello slot dal timeSlotId
+    const parts = timeSlotId.split('-');
+    const slotNumber = parseInt(parts[parts.length - 1]);
+    logger.info(`[DEBUG] Numero slot estratto: ${slotNumber}, parts: ${JSON.stringify(parts)}`);
+    
+    // Ottieni tutte le esperienze con lo stesso titolo
+    // Prima ottieni il titolo dell'esperienza corrente
+    const currentExperience = await new Promise((resolve, reject) => {
+      db.get(
+        "SELECT id, title FROM experiences WHERE experience_id = ?",
+        [experienceId],
+        (err, row) => {
+          if (err) {
+            logger.error(`Errore nel recupero dell'esperienza: ${err.message}`);
+            reject(err);
+          } else {
+            resolve(row);
+          }
+        }
+      );
+    });
+    
+    if (!currentExperience) {
+      logger.warn(`Nessuna esperienza trovata con ID ${experienceId}`);
+      return false;
+    }
+    
+    logger.info(`[DEBUG] Esperienza corrente: id=${currentExperience.id}, title=${currentExperience.title}`);
+    
+    // Ora ottieni tutte le esperienze con lo stesso titolo, ordinate per ora_inizio
+    const allExperiences = await new Promise((resolve, reject) => {
+      db.all(
+        "SELECT id, experience_id, title, ora_inizio FROM experiences WHERE title = ? ORDER BY ora_inizio",
+        [currentExperience.title],
+        (err, rows) => {
+          if (err) {
+            logger.error(`Errore nel recupero delle esperienze: ${err.message}`);
+            reject(err);
+          } else {
+            logger.info(`[DEBUG] Trovate ${rows.length} esperienze con titolo "${currentExperience.title}"`);
+            rows.forEach((row, index) => {
+              logger.info(`[DEBUG] Riga ${index}: id=${row.id}, experience_id=${row.experience_id}, ora_inizio=${row.ora_inizio}`);
+            });
+            resolve(rows);
+          }
+        }
+      );
+    });
+    
+    if (allExperiences.length === 0) {
+      logger.warn(`Nessuna esperienza trovata con titolo "${currentExperience.title}"`);
+      return false;
+    }
+    
+    // Ottieni l'ID della riga per lo slot orario specifico
+    const rowIndex = (slotNumber > 0 && slotNumber <= allExperiences.length) ? (slotNumber - 1) : 0;
+    const rowId = allExperiences[rowIndex].id;
+    logger.info(`[DEBUG] Indice riga selezionato: ${rowIndex}, ID riga: ${rowId}, slotNumber: ${slotNumber}, allExperiences.length: ${allExperiences.length}`);
+    
+    // Decrementa il campo current_participants per questa riga specifica
+    return new Promise((resolve, reject) => {
+      db.run(
+        "UPDATE experiences SET current_participants = MAX(0, current_participants - 1) WHERE id = ?",
+        [rowId],
+        function(err) {
+          if (err) {
+            logger.error(`Errore nel decremento del contatore: ${err.message}`);
+            reject(err);
+          } else {
+            logger.info(`[DEBUG] Contatore decrementato per ID riga ${rowId}, changes: ${this.changes}`);
+            resolve(true);
+          }
+        }
+      );
+    });
+  } catch (error) {
+    logger.error(`Errore in decrementParticipantCountForTimeSlot: ${error.message}`);
+    throw error;
+  }
+}
+
 module.exports = {
   getAllExperiences,
   getExperienceById,
@@ -346,5 +543,7 @@ module.exports = {
   updateExperience,
   deleteExperience,
   incrementParticipantCount,
-  decrementParticipantCount
+  decrementParticipantCount,
+  incrementParticipantCountForTimeSlot,
+  decrementParticipantCountForTimeSlot
 };

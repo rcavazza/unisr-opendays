@@ -133,6 +133,29 @@
         </div>
         
         <div class="summary-section">
+            <h2>Esperienze Frontali</h2>
+            <% if (frontali && frontali.length > 0) { %>
+                <% frontali.forEach(exp => { %>
+                    <div class="summary-card">
+                        <h3><%= exp.title %></h3>
+                        <div class="summary-info">
+                            <% if (exp.date) { %>
+                                <p><strong>Data:</strong> <%= exp.date %></p>
+                            <% } %>
+                            <% if (exp.location) { %>
+                                <p><strong>Luogo:</strong> <%= exp.location %></p>
+                            <% } %>
+                        </div>
+                    </div>
+                <% }); %>
+            <% } else { %>
+                <div class="empty-state">
+                    <p>Nessuna esperienza frontale disponibile.</p>
+                </div>
+            <% } %>
+        </div>
+        
+        <div class="summary-section">
             <h2>Esperienze selezionate</h2>
             <% if (experiences && experiences.length > 0) { %>
                 <% experiences.forEach(exp => { %>

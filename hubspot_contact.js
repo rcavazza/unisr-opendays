@@ -373,7 +373,7 @@ async function getContactInfo() {
             };
         } else {
             // Make the API request to HubSpot
-            const response = await axios.get(`https://api.hubapi.com/crm/v3/objects/contacts/${effectiveContactId}?properties=open_day__conferma_partecipazione_corsi_08_05_2025`);
+            const response = await axios.get(`https://api.hubapi.com/crm/v3/objects/contacts/${effectiveContactId}?properties=open_day__iscrizione_esperienze_10_05_2025`);
             contact = response.data;
         }
         

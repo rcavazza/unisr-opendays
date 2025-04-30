@@ -88,17 +88,15 @@ async function testFix() {
         // Combine both sets of reservations
         const reservations = [...exactReservations, ...baseReservations];
         
-        // 3. Calculate expected available slots
-        console.log('\nCalculating expected available slots...');
+        // 3. Calculate expected available slots based on current_participants
+        console.log('\nCalculating expected available slots based on current_participants...');
         const expectedAvailableSlots = {};
         for (let i = 1; i <= 5; i++) {
             const timeSlotId = `imdp-e-medicina-chirurgia-mani-2-${i}`;
-            const reservation = reservations.find(res => res.time_slot_id === timeSlotId);
-            const reservationCount = reservation ? reservation.count : 0;
-            const available = Math.max(0, experience.max_participants - reservationCount);
+            const available = Math.max(0, experience.max_participants - experience.current_participants);
             
             expectedAvailableSlots[`imdp-e-medicina-chirurgia-mani-2_${timeSlotId}`] = available;
-            console.log(`  Expected available slots for ${timeSlotId}: ${available}`);
+            console.log(`  Expected available slots for ${timeSlotId}: ${available} (max: ${experience.max_participants}, current: ${experience.current_participants})`);
         }
         
         // 4. Get actual available slots using the fixed service
@@ -109,23 +107,13 @@ async function testFix() {
         console.log('\nComparing expected vs actual available slots for imdp-e-medicina-chirurgia-mani-2:');
         let allCorrect = true;
         
-        // Update expected available slots based on all reservations found
+        // Compare expected vs actual for this experience
         for (let i = 1; i <= 5; i++) {
             const timeSlotId = `imdp-e-medicina-chirurgia-mani-2-${i}`;
-            const baseTimeSlotId = `imdp-e-medicina-chirurgia-mani-${i}`;
             
-            // Find reservations for this time slot (checking both formats)
-            const exactReservation = exactReservations.find(res => res.time_slot_id === timeSlotId);
-            const baseReservation = baseReservations.find(res => res.time_slot_id === baseTimeSlotId);
-            
-            // Calculate total reservation count
-            const exactCount = exactReservation ? exactReservation.count : 0;
-            const baseCount = baseReservation ? baseReservation.count : 0;
-            const totalCount = exactCount + baseCount;
-            
-            // Update expected available slots
+            // Use the current_participants field for expected available slots
             const key = `imdp-e-medicina-chirurgia-mani-2_${timeSlotId}`;
-            expectedAvailableSlots[key] = Math.max(0, experience.max_participants - totalCount);
+            expectedAvailableSlots[key] = Math.max(0, experience.max_participants - experience.current_participants);
             
             // Compare with actual
             const actual = actualAvailableSlots[key];

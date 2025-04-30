@@ -23,6 +23,10 @@
   "reserved": "Prenotato",
   "tryAgain": "Riprova",
   "processingRegistration": "Elaborazione della tua registrazione...",
+  "matchingCourses": "I tuoi Corsi",
+  "selectedActivities": "Le tue Attività",
+  "time": "Orario",
+  "locationNotAvailable": "Posizione non disponibile",
   "activities": {
     "1": {
       "title": "Manichino con ascolto e visione del timpano",

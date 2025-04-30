@@ -651,6 +651,97 @@ async function getExperiencesByCustomObjectIds(db, customObjectIds, language, co
 }
 
 /**
+ * Retrieves frontali experiences for a contact
+ * @param {string} contactId - The HubSpot contact ID
+ * @returns {Promise<Array<Object>>} - Array of frontali experience objects
+ */
+async function getFrontaliExperiences(contactId) {
+    try {
+        logger.info(`Retrieving frontali experiences for contact ID: ${contactId}`);
+        
+        // Load the list of course IDs and names from corsi.json
+        const courses = require('./corsi.json');
+        logger.info(`Loaded ${courses.length} courses from corsi.json`);
+        console.log('Courses from corsi.json:', JSON.stringify(courses, null, 2));
+        
+        // Log the types of IDs in corsi.json
+        courses.forEach(course => {
+            logger.info(`Course ID: ${course.id}, Type: ${typeof course.id}`);
+        });
+        
+        const courseIds = courses.map(course => course.id);
+        logger.info(`Course IDs from corsi.json: ${courseIds.join(', ')}`);
+        
+        // Get all custom objects associated with the contact
+        const customObjects = await require('./hubspot_experience_service').getAllCustomObjects(contactId);
+        logger.info(`Retrieved ${customObjects.length || 0} custom objects for contact ID: ${contactId}`);
+        console.log('Custom objects:', JSON.stringify(customObjects, null, 2));
+        
+        if (customObjects.error) {
+            logger.error(`Error getting custom objects: ${customObjects.error}`);
+            return [];
+        }
+        
+        // Extract IDs from custom objects and log their types
+        const customObjectIds = customObjects.map(obj => {
+            logger.info(`Custom object ID: ${obj.id}, Type: ${typeof obj.id}`);
+            return obj.id;
+        });
+        logger.info(`Custom object IDs: ${customObjectIds.join(', ')}`);
+        
+        // Try both string and number comparisons for filtering
+        const filteredObjectIds = [];
+        for (const customId of customObjectIds) {
+            for (const courseId of courseIds) {
+                // Try string comparison
+                if (String(customId) === String(courseId)) {
+                    logger.info(`Match found: ${customId} (${typeof customId}) matches ${courseId} (${typeof courseId})`);
+                    filteredObjectIds.push(customId);
+                    break;
+                }
+                // Try number comparison if both can be converted to numbers
+                else if (!isNaN(Number(customId)) && !isNaN(Number(courseId)) && Number(customId) === Number(courseId)) {
+                    logger.info(`Numeric match found: ${customId} (${typeof customId}) matches ${courseId} (${typeof courseId})`);
+                    filteredObjectIds.push(customId);
+                    break;
+                }
+            }
+        }
+        
+        logger.info(`Filtered object IDs (matching corsi.json): ${filteredObjectIds.join(', ')}`);
+        
+        // If no matching custom objects found, return an empty array
+        if (filteredObjectIds.length === 0) {
+            logger.info(`No matching frontali experiences found for contact ID: ${contactId}`);
+            return [];
+        }
+        
+        // Map the filtered IDs to their corresponding courses from corsi.json
+        const frontaliExperiences = filteredObjectIds.map(id => {
+            // Find the course with matching ID (using string comparison)
+            const course = courses.find(c => String(c.id) === String(id));
+            if (!course) {
+                logger.error(`Could not find course with ID ${id} in corsi.json`);
+                return null;
+            }
+            return {
+                id: course.id,
+                title: course.name,
+                date: course.orario_inizio ? `${course.orario_inizio} - ${course.orario_fine}` : '',
+                location: course.location || ''
+            };
+        }).filter(Boolean); // Remove any null entries
+        
+        logger.info(`Found ${frontaliExperiences.length} frontali experiences for contact ID: ${contactId}`);
+        console.log('Frontali experiences:', JSON.stringify(frontaliExperiences, null, 2));
+        return frontaliExperiences;
+    } catch (error) {
+        logger.error('Error retrieving frontali experiences:', error);
+        return [];
+    }
+}
+
+/**
  * Formats time from 24-hour format to AM/PM format
  * @param {string} time - Time in HH:MM format
  * @returns {string} - Formatted time string
@@ -690,5 +781,6 @@ module.exports = {
     saveSelectedExperiences,
     getConfirmedCourses,
     getSelectedExperiences,
-    getExperiencesByCustomObjectIds
+    getExperiencesByCustomObjectIds,
+    getFrontaliExperiences
 };

@@ -23,6 +23,10 @@
   "reserved": "Reserved",
   "tryAgain": "Try Again",
   "processingRegistration": "Processing your registration...",
+  "matchingCourses": "Your Courses",
+  "selectedActivities": "Your Activities",
+  "time": "Time",
+  "locationNotAvailable": "Location not available",
   "activities": {
     "1": {
       "title": "Mannequin with listening and viewing of the eardrum",

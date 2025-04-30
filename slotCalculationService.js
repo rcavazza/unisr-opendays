@@ -20,19 +20,31 @@ async function getAvailableSlots(db, experienceId, timeSlotId) {
     try {
         // Standardize IDs using utility functions with preserveNumbering flag
         const baseExperienceId = utils.standardizeExperienceId(experienceId, PRESERVE_NUMBERING);
-        const baseTimeSlotId = utils.standardizeTimeSlotId(experienceId, timeSlotId, PRESERVE_NUMBERING);
         
-        logger.info(`Getting available slots for baseExperienceId: ${baseExperienceId}, baseTimeSlotId: ${baseTimeSlotId}`);
+        logger.info(`Getting available slots for baseExperienceId: ${baseExperienceId}`);
         
-        // Get max_participants for this experience
-        const maxParticipants = await getMaxParticipants(db, baseExperienceId);
+        // Get max_participants and current_participants for this experience
+        const experience = await new Promise((resolve, reject) => {
+            db.get(
+                "SELECT max_participants, current_participants FROM experiences WHERE experience_id = ?",
+                [baseExperienceId],
+                (err, row) => {
+                    if (err) {
+                        logger.error(`Error getting experience details: ${err.message}`);
+                        reject(err);
+                    } else if (!row) {
+                        logger.warn(`No experience found with ID ${baseExperienceId}`);
+                        resolve({ max_participants: 0, current_participants: 0 });
+                    } else {
+                        resolve(row);
+                    }
+                }
+            );
+        });
         
-        // Get current reservation count
-        const reservationCount = await getReservationCount(db, baseExperienceId, baseTimeSlotId);
-        
-        // Calculate available slots
-        const availableSlots = Math.max(0, maxParticipants - reservationCount);
-        logger.info(`Available slots for ${baseExperienceId}, ${baseTimeSlotId}: ${availableSlots} (max: ${maxParticipants}, reserved: ${reservationCount})`);
+        // Calculate available slots based on current_participants
+        const availableSlots = Math.max(0, experience.max_participants - experience.current_participants);
+        logger.info(`Available slots for ${baseExperienceId}: ${availableSlots} (max: ${experience.max_participants}, current: ${experience.current_participants})`);
         
         return availableSlots;
     } catch (error) {
@@ -172,45 +184,16 @@ async function getReservationCount(db, experienceId, timeSlotId) {
  */
 async function getAllAvailableSlots(db) {
     try {
-        // Get all experiences with their max_participants in a single query
+        // Get all experiences with their max_participants and current_participants in a single query
         const experiences = await new Promise((resolve, reject) => {
             db.all(
-                "SELECT experience_id, max_participants FROM experiences",
+                "SELECT experience_id, max_participants, current_participants FROM experiences",
                 (err, rows) => {
                     if (err) {
                         logger.error(`Error getting experiences: ${err.message}`);
                         reject(err);
                     } else {
                         resolve(rows);
-                    }
-                }
-            );
-        });
-        
-        // Get all reservation counts in a single query
-        const reservationCounts = await new Promise((resolve, reject) => {
-            db.all(
-                "SELECT experience_id, time_slot_id, COUNT(*) as count FROM opend_reservations GROUP BY experience_id, time_slot_id",
-                (err, rows) => {
-                    if (err) {
-                        logger.error(`Error getting reservation counts: ${err.message}`);
-                        reject(err);
-                    } else {
-                        const counts = {};
-                        rows.forEach(row => {
-                            if (USE_DIRECT_KEYS) {
-                                // Extract the slot number from the time_slot_id
-                                const slotNumber = utils.extractSlotNumber(row.time_slot_id);
-                                // Create a direct key using the database columns
-                                const directKey = utils.createDirectKey(row.experience_id, slotNumber);
-                                counts[directKey] = row.count;
-                            } else {
-                                // Legacy key format
-                                const key = utils.formatSlotKey(row.experience_id, row.time_slot_id);
-                                counts[key] = row.count;
-                            }
-                        });
-                        resolve(counts);
                     }
                 }
             );
@@ -228,23 +211,12 @@ async function getAllAvailableSlots(db) {
                 // Create the time slot ID
                 const dbTimeSlotId = `${baseExperienceId}-${i}`;
                 
-                // Get reservation count based on the key format
-                let reservationCount = 0;
+                // Calculate available slots based on current_participants
+                const availableSlotCount = Number(Math.max(0, exp.max_participants - exp.current_participants));
                 
                 if (USE_DIRECT_KEYS) {
                     // Create a direct key using the database columns
                     const directKey = utils.createDirectKey(baseExperienceId, i);
-                    reservationCount = reservationCounts[directKey] || 0;
-                    
-                    // Log for debugging
-                    if (reservationCounts[directKey]) {
-                        logger.info(`Found reservation count for direct key: ${directKey} = ${reservationCounts[directKey]}`);
-                    }
-                    
-                    // Calculate available slots
-                    const availableSlotCount = Number(Math.max(0, exp.max_participants - reservationCount));
-                    
-                    // Store with the direct key format
                     availableSlots[directKey] = availableSlotCount;
                     
                     // For backward compatibility, also store with the old key format
@@ -257,21 +229,10 @@ async function getAllAvailableSlots(db) {
                         availableSlots[originalKey] = availableSlotCount;
                     }
                     
-                    logger.info(`Generated key: ${directKey} with availability: ${availableSlotCount}, reservation count: ${reservationCount}`);
+                    logger.info(`Generated key: ${directKey} with availability: ${availableSlotCount}, current_participants: ${exp.current_participants}`);
                 } else {
                     // Legacy approach
                     const dbKey = utils.formatSlotKey(baseExperienceId, dbTimeSlotId);
-                    reservationCount = reservationCounts[dbKey] || 0;
-                    
-                    // Log for debugging
-                    if (reservationCounts[dbKey]) {
-                        logger.info(`Found reservation count for key: ${dbKey} = ${reservationCounts[dbKey]}`);
-                    }
-                    
-                    // Calculate available slots
-                    const availableSlotCount = Number(Math.max(0, exp.max_participants - reservationCount));
-                    
-                    // Store with the old key format
                     availableSlots[dbKey] = availableSlotCount;
                     
                     // For backward compatibility with numbered IDs
@@ -280,7 +241,7 @@ async function getAllAvailableSlots(db) {
                         availableSlots[originalKey] = availableSlotCount;
                     }
                     
-                    logger.info(`Generated key: ${dbKey} with availability: ${availableSlotCount}, reservation count: ${reservationCount}`);
+                    logger.info(`Generated key: ${dbKey} with availability: ${availableSlotCount}, current_participants: ${exp.current_participants}`);
                 }
             }
         }

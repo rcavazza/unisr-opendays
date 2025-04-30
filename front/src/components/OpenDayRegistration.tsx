@@ -12,6 +12,7 @@ export const OpenDayRegistration = () => {
   const location = useLocation();
   
   const [activities, setActivities] = useState<ActivityDetails[]>([]);
+  const [matchingCourseIds, setMatchingCourseIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reservationStatus, setReservationStatus] = useState<Record<string | number, 'pending' | 'success' | 'error'>>({});
@@ -117,10 +118,16 @@ export const OpenDayRegistration = () => {
           return data;
         };
         
-        const data = await fetchExperiences(contactID, language);
+        const response = await fetchExperiences(contactID, language);
         
-        // Inspect the data
-        const inspectedData = inspectExperienceData(data);
+        // Extract experiences and matching course IDs
+        const { experiences, matchingCourseIds } = response;
+        
+        // Store matching course IDs
+        setMatchingCourseIds(matchingCourseIds);
+        
+        // Inspect the experiences data
+        const inspectedData = inspectExperienceData(experiences);
         
         // Fix any string available slots by converting them to numbers
         // Make sure to preserve the selected flag
@@ -369,8 +376,9 @@ export const OpenDayRegistration = () => {
         setReservationStatus(prev => ({ ...prev, [String(activityId)]: 'success' }));
         
         // Refresh the experiences data to get updated availability
-        const updatedData = await fetchExperiences(contactID, i18n.language);
-        setActivities(updatedData);
+        const updatedResponse = await fetchExperiences(contactID, i18n.language);
+        setActivities(updatedResponse.experiences);
+        setMatchingCourseIds(updatedResponse.matchingCourseIds);
       } else {
         setReservationStatus(prev => ({ ...prev, [String(activityId)]: 'error' }));
         setReservationError('Failed to make reservation');
@@ -416,8 +424,9 @@ export const OpenDayRegistration = () => {
             
             // Refresh the experiences data to get updated availability
             const language = lang || 'en';
-            const updatedData = await fetchExperiences(contactID, language);
-            setActivities(updatedData);
+            const updatedResponse = await fetchExperiences(contactID, language);
+            setActivities(updatedResponse.experiences);
+            setMatchingCourseIds(updatedResponse.matchingCourseIds);
             
             // Clear the selection for this activity
             const newSelectedTimeSlots = { ...selectedTimeSlots };
@@ -477,11 +486,20 @@ export const OpenDayRegistration = () => {
       
       // Refresh the experiences data to get updated availability
       const language = lang || 'en';
-      await fetchExperiences(contactID, language);
+      const finalResponse = await fetchExperiences(contactID, language);
       
-      // Navigate to the confirmation page with the selected activities
+      // Update matching course IDs one last time
+      setMatchingCourseIds(finalResponse.matchingCourseIds);
+      
+      // Navigate to the confirmation page with the selected activities and matching course IDs
       console.log('Navigation to confirmation page with contactID:', contactID);
-      navigate(`/${lang}/opendays/confirmation?contactID=${contactID}`, { state: { activities: selectedActivities } });
+      console.log('Matching course IDs:', matchingCourseIds);
+      navigate(`/${lang}/opendays/confirmation?contactID=${contactID}`, {
+        state: {
+          activities: selectedActivities,
+          matchingCourseIds: matchingCourseIds
+        }
+      });
     } catch (error) {
       console.error('Error making reservations:', error);
       setReservationError('An error occurred while making the reservations');

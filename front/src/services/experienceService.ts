@@ -4,9 +4,12 @@ import { ActivityDetails } from '../data/activities';
  * Fetches experiences from the API based on contactID and language
  * @param contactID The ID of the contact
  * @param lang The language code (en/it)
- * @returns Promise with array of ActivityDetails
+ * @returns Promise with experiences and matching course IDs
  */
-export const fetchExperiences = async (contactID: string, lang: string): Promise<ActivityDetails[]> => {
+export const fetchExperiences = async (contactID: string, lang: string): Promise<{
+  experiences: ActivityDetails[];
+  matchingCourseIds: string[];
+}> => {
   try {
     // Ensure we're using a simple language code (en or it)
     const simpleLang = lang.startsWith('en') ? 'en' : lang.startsWith('it') ? 'it' : 'en';
@@ -35,9 +38,12 @@ export const fetchExperiences = async (contactID: string, lang: string): Promise
     // Enhanced logging for debugging
     console.log('API response data:', data);
     
+    // Extract experiences from the response
+    const experiences = data.experiences || [];
+    
     // Log each experience and its time slots
-    if (data && data.length > 0) {
-      data.forEach((experience: ActivityDetails, index: number) => {
+    if (experiences && experiences.length > 0) {
+      experiences.forEach((experience: ActivityDetails, index: number) => {
         console.log(`Experience ${index + 1}:`, experience);
         console.log(`- ID: ${experience.id}`);
         console.log(`- Title: ${experience.title}`);
@@ -55,10 +61,13 @@ export const fetchExperiences = async (contactID: string, lang: string): Promise
       console.log('No experiences returned from API');
     }
     
-    return data;
+    return {
+      experiences: experiences,
+      matchingCourseIds: data.matchingCourseIds || []
+    };
   } catch (error) {
     console.error('Error fetching experiences:', error);
-    return [];
+    return { experiences: [], matchingCourseIds: [] };
   }
 };
 

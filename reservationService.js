@@ -20,6 +20,27 @@ async function saveReservation(db, contactId, experienceId, timeSlotId, qrCodeUr
         // If replaceAll is true, delete all existing reservations for this contact
         if (replaceAll) {
             logger.info(`Deleting all existing reservations for contact ${contactId}`);
+            
+            // Get all existing reservations for this contact
+            const existingReservations = await new Promise((resolve, reject) => {
+                db.all(
+                    "SELECT experience_id FROM opend_reservations WHERE contact_id = ?",
+                    [contactId],
+                    (err, rows) => {
+                        if (err) {
+                            logger.error(`Error getting existing reservations: ${err.message}`);
+                            reject(err);
+                        } else {
+                            resolve(rows);
+                        }
+                    }
+                );
+            });
+            
+            // Note: We don't need to decrement current_participants here
+            // because that will be handled by the /api/reserve endpoint
+            
+            // Delete all existing reservations
             await deleteAllReservationsForContact(db, contactId);
             
             // Create new reservation
