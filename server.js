@@ -538,6 +538,12 @@ app.post('/api/update-selected-experiences', async (req, res) => {
         const language = req.query.lang === 'it' ? 'it' : 'en';
         logger.info(`Using language: ${language} for email`);
         
+        // Log SENDMAIL value to verify if email sending is enabled
+        logger.info(`SENDMAIL environment variable value: ${SENDMAIL}`);
+        
+        // Log email transporter configuration (without sensitive data)
+        logger.info(`Email transporter configuration: host=${process.env.SMTP_HOST}, port=${process.env.SMTP_PORT}, secure=${process.env.SMTP_SECURE}`);
+        
         try {
             // Fetch contact details from HubSpot
             logger.info(`Fetching contact details for ${contactID}`);
@@ -635,20 +641,31 @@ app.post('/api/update-selected-experiences', async (req, res) => {
                     }
                 };
                 
+                logger.info(`Preparing to send email with QR code to ${contact.email}, QR URL: ${qrCodeUrl}`);
+                logger.info(`Email data: ${JSON.stringify(emailData, null, 2)}`);
+                
+                // Log template path to verify it exists
+                const templatePath = path.join(__dirname, 'views', language, 'email.ejs');
+                logger.info(`Using email template: ${templatePath}`);
+                
                 // Render email template
                 ejs.renderFile(
-                    path.join(__dirname, 'views', language, 'email.ejs'),
+                    templatePath,
                     emailData,
                     (err, htmlContent) => {
                         if (err) {
                             logger.error('Error rendering email template:', err);
+                            logger.error('Template error details:', err.stack);
                             return;
                         }
+                        
+                        logger.info('Email template rendered successfully');
                         
                         // Determine recipient email
                         let recipientEmail = contact.email;
                         if (HUBSPOT_DEV == 1) {
                             recipientEmail = "phantomazzz@gmail.com"; // Development email
+                            logger.info(`Development mode: redirecting email to ${recipientEmail}`);
                         }
                         
                         // Prepare mail options
@@ -662,17 +679,23 @@ app.post('/api/update-selected-experiences', async (req, res) => {
                             html: htmlContent
                         };
                         
+                        logger.info(`Mail options prepared: to=${recipientEmail}, subject="${mailOptions.subject}"`);
+                        
                         // Send email
                         if (SENDMAIL == 1) {
+                            logger.info('Attempting to send email...');
                             transporter.sendMail(mailOptions, (error, info) => {
                                 if (error) {
                                     logger.error('Error sending email:', error);
+                                    logger.error('Error details:', error.stack);
+                                    logger.error('Mail options that failed:', JSON.stringify(mailOptions, null, 2));
                                 } else {
-                                    logger.info('Email sent:', info.response);
+                                    logger.info('Email sent successfully:', info.response);
+                                    logger.info('Message ID:', info.messageId);
                                 }
                             });
                         } else {
-                            logger.info('Email sending is disabled (SENDMAIL=0)');
+                            logger.info('Email sending is disabled (SENDMAIL=0). Would have sent email with options:', JSON.stringify(mailOptions, null, 2));
                         }
                     }
                 );
@@ -690,19 +713,30 @@ app.post('/api/update-selected-experiences', async (req, res) => {
                     }
                 };
                 
+                logger.info(`Preparing to send email without QR code to ${contact.email}`);
+                logger.info(`Email data: ${JSON.stringify(emailData, null, 2)}`);
+                
+                // Log template path to verify it exists
+                const templatePath = path.join(__dirname, 'views', language, 'email.ejs');
+                logger.info(`Using email template: ${templatePath}`);
+                
                 // Render and send email (same as above but without QR code)
                 ejs.renderFile(
-                    path.join(__dirname, 'views', language, 'email.ejs'),
+                    templatePath,
                     emailData,
                     (err, htmlContent) => {
                         if (err) {
                             logger.error('Error rendering email template:', err);
+                            logger.error('Template error details:', err.stack);
                             return;
                         }
+                        
+                        logger.info('Email template rendered successfully');
                         
                         let recipientEmail = contact.email;
                         if (HUBSPOT_DEV == 1) {
                             recipientEmail = "phantomazzz@gmail.com";
+                            logger.info(`Development mode: redirecting email to ${recipientEmail}`);
                         }
                         
                         const mailOptions = {
@@ -715,16 +749,22 @@ app.post('/api/update-selected-experiences', async (req, res) => {
                             html: htmlContent
                         };
                         
+                        logger.info(`Mail options prepared: to=${recipientEmail}, subject="${mailOptions.subject}"`);
+                        
                         if (SENDMAIL == 1) {
+                            logger.info('Attempting to send email...');
                             transporter.sendMail(mailOptions, (error, info) => {
                                 if (error) {
                                     logger.error('Error sending email:', error);
+                                    logger.error('Error details:', error.stack);
+                                    logger.error('Mail options that failed:', JSON.stringify(mailOptions, null, 2));
                                 } else {
-                                    logger.info('Email sent:', info.response);
+                                    logger.info('Email sent successfully:', info.response);
+                                    logger.info('Message ID:', info.messageId);
                                 }
                             });
                         } else {
-                            logger.info('Email sending is disabled (SENDMAIL=0)');
+                            logger.info('Email sending is disabled (SENDMAIL=0). Would have sent email with options:', JSON.stringify(mailOptions, null, 2));
                         }
                     }
                 );
@@ -733,6 +773,24 @@ app.post('/api/update-selected-experiences', async (req, res) => {
             // Log the error but don't fail the request
             logger.error('Error sending confirmation email:', error);
             logger.error('Error details:', error.message);
+            logger.error('Error stack:', error.stack);
+            
+            // Log transporter state
+            logger.info('Checking email transporter state...');
+            if (transporter) {
+                logger.info('Email transporter exists');
+                // Check if transporter is verified
+                transporter.verify(function(error, success) {
+                    if (error) {
+                        logger.error('Transporter verification failed:', error);
+                    } else {
+                        logger.info('Transporter is ready to send messages');
+                    }
+                });
+            } else {
+                logger.error('Email transporter is undefined');
+            }
+            
             // Continue with the success response even if email fails
         }
         
@@ -1714,7 +1772,7 @@ app.post('/submit-experiences', async (req, res) => {
                         }
                         
                         let thisemail = contact.email;
-                        // if (HUBSPOT_DEV === 1) {
+                        // if (SENDEMAIL === 1) {
                             thisemail = "phantomazzz@gmail.com";
                         // }
                         
