@@ -102,8 +102,183 @@ app.get('/otto.json', (req, res) => {
   res.sendFile(path.join(__dirname, 'otto.json'));
 });
 
+// Serve the fix_frontend_reservation.js file
+app.get('/fix_frontend_reservation.js', (req, res) => {
+  res.sendFile(path.join(__dirname, 'fix_frontend_reservation.js'));
+});
+
+// Serve the fix_frontend.html file
+app.get('/fix_frontend', (req, res) => {
+  res.sendFile(path.join(__dirname, 'fix_frontend.html'));
+});
+
 // Serve the frontend app for language-specific routes and root
 app.get(['/en/opendays', '/it/opendays', '/opendays', '/en/opendays/confirmation', '/it/opendays/confirmation', '/it/opendays/genitori', '/en/opendays/genitori', '/opendays/genitori'], async (req, res) => {
+    // Function to get matching courses from corsi.json
+    function getMatchingCourses(courseTypes) {
+        try {
+            logger.info(`Attempting to read corsi.json file...`);
+            logger.info(`Current directory: ${__dirname}`);
+            const coursesPath = path.join(__dirname, 'corsi.json');
+            logger.info(`Full path to corsi.json: ${coursesPath}`);
+            logger.info(`File exists: ${fs.existsSync(coursesPath)}`);
+            
+            const coursesData = fs.readFileSync(coursesPath, 'utf8');
+            logger.info(`Successfully read corsi.json file`);
+            logger.info(`Courses data length: ${coursesData.length} characters`);
+            
+            const allCourses = JSON.parse(coursesData);
+            logger.info(`Parsed ${allCourses.length} courses from corsi.json`);
+            logger.info(`Looking for courses with course types: ${courseTypes.join(', ')}`);
+            
+            // Filter courses by matching course types
+            const matchingCourses = allCourses.filter(course =>
+                courseTypes.includes(course.id)
+            );
+            
+            logger.info(`Found ${matchingCourses.length} matching courses`);
+            logger.info(`Matching courses: ${JSON.stringify(matchingCourses)}`);
+            
+            return matchingCourses;
+        } catch (error) {
+            logger.error('Error reading courses data:', error);
+            logger.error('Error stack:', error.stack);
+            return [];
+        }
+    }
+
+    // Function to generate QR code that returns a Promise
+    function generateQRCode(text2encode) {
+        return new Promise((resolve, reject) => {
+            QRCode.toDataURL(text2encode, (err, qrCode) => {
+                if (err) {
+                    logger.error('Error generating QR code:', err);
+                    return reject(err);
+                }
+                resolve(qrCode);
+            });
+        });
+    }
+    
+    // Function to save QR code to file that returns a Promise
+    function saveQRCodeToFile(qrCode) {
+        return new Promise((resolve, reject) => {
+            const qrFileName = `${uuidv4()}.png`;
+            const qrFilePath = path.join(__dirname, 'public', 'qrimg', qrFileName);
+            const qrBuffer = Buffer.from(qrCode.split(',')[1], 'base64');
+            
+            fs.writeFile(qrFilePath, qrBuffer, (err) => {
+                if (err) {
+                    logger.error('Error saving QR code image:', err);
+                    return reject(err);
+                }
+                const qrCodeUrl = `qrimg/${qrFileName}`;
+                resolve(qrCodeUrl);
+            });
+        });
+    }
+    
+    // Function to send email with QR code that returns a Promise
+    function sendEmailWithQR(contact, qrCodeUrl, validExperiences, language, matchingCourses = []) {
+        return new Promise((resolve, reject) => {
+            console.log("XXXXX");
+            // Prepare email data with the same structure as the confirmation page
+            const emailData = {
+                name: contact.firstname,
+                email: contact.email,
+                qrCode: qrCodeUrl,
+                type: 2, // Use email_courses.ejs template
+                language: language, // Add language
+                fieldData: {
+                    courses: matchingCourses.map(course => ({
+                        title: course.name || course.title,
+                        date: "May 10, 2025", // Fixed date for Open Day
+                        location: course.location || "Main Campus",
+                        time: course.orario_inizio ? `${course.orario_inizio}${course.orario_fine ? ' - ' + course.orario_fine : ''}` : ''
+                    })),
+                    experiences: validExperiences,
+                    frontali: [] // Empty array if no frontali experiences
+                }
+            };
+            
+            logger.info(`Preparing to send email with QR code to ${contact.email}, QR URL: ${qrCodeUrl}`);
+            logger.info(`Email data structure: ${JSON.stringify({
+                name: typeof emailData.name,
+                email: typeof emailData.email,
+                qrCode: typeof emailData.qrCode,
+                type: emailData.type,
+                language: emailData.language,
+                fieldData: {
+                    courses: Array.isArray(emailData.fieldData.courses) ? emailData.fieldData.courses.length : 'not an array',
+                    experiences: Array.isArray(emailData.fieldData.experiences) ? emailData.fieldData.experiences.length : 'not an array',
+                    frontali: Array.isArray(emailData.fieldData.frontali) ? emailData.fieldData.frontali.length : 'not an array'
+                }
+            }, null, 2)}`);
+            logger.info(`Email data content: ${JSON.stringify(emailData, null, 2)}`);
+            
+            // Log template path to verify it exists
+            const templatePath = path.join(__dirname, 'views', language, 'email.ejs');
+            logger.info(`Using email template: ${templatePath}`);
+            
+            // Render email template
+            ejs.renderFile(
+                templatePath,
+                emailData,
+                (err, htmlContent) => {
+                    if (err) {
+                        logger.error('Error rendering email template:', err);
+                        logger.error('Template error details:', err.stack);
+                        return reject(err);
+                    }
+                    
+                    logger.info('Email template rendered successfully');
+                    logger.info(`HTML content length: ${htmlContent.length}`);
+                    logger.info(`HTML content preview: ${htmlContent.substring(0, 200)}...`);
+                    
+                    // Determine recipient email
+                    let recipientEmail = contact.email;
+                    // if (HUBSPOT_DEV == 1) {
+                        recipientEmail = "guanxi_4@studenti.unisr.it"; // Development email
+                        logger.info(`Development mode: redirecting email to ${recipientEmail}`);
+                    // }
+                    
+                    // Prepare mail options
+                    const mailOptions = {
+                        from: `UniSR – Università Vita Salute San Raffaele <info.unisr@unisr.it>`,
+                        to: recipientEmail,
+                        subject: language === 'en'
+                            ? `${contact.firstname}, your Open Day registration is confirmed`
+                            : `${contact.firstname}, la tua registrazione all'Open Day è confermata`,
+                        replyTo: 'info.unisr@unisr.it',
+                        html: htmlContent
+                    };
+                    
+                    logger.info(`Mail options prepared: to=${recipientEmail}, subject="${mailOptions.subject}"`);
+                    
+                    // Send email
+                    if (SENDMAIL == 1) {
+                        logger.info('Attempting to send email...');
+                        transporter.sendMail(mailOptions, (error, info) => {
+                            if (error) {
+                                logger.error('Error sending email:', error);
+                                logger.error('Error details:', error.stack);
+                                logger.error('Mail options that failed:', JSON.stringify(mailOptions, null, 2));
+                                return reject(error);
+                            } else {
+                                logger.info('Email sent successfully:', info.response);
+                                logger.info('Message ID:', info.messageId);
+                                return resolve(info);
+                            }
+                        });
+                    } else {
+                        logger.info('Email sending is disabled (SENDMAIL=0). Would have sent email with options:', JSON.stringify(mailOptions, null, 2));
+                        return resolve({ disabled: true });
+                    }
+                }
+            );
+        });
+    }
+
     // Default redirect for /opendays
     if (req.path === '/opendays') {
         return res.redirect('/en/opendays');
@@ -168,11 +343,38 @@ app.get(['/en/opendays', '/it/opendays', '/opendays', '/en/opendays/confirmation
             }
         }
         
-        // If matches found in otto.json, redirect to confirmation page
         if (matchingOttoCourseIds.length > 0) {
             const redirectUrl = `/${language}/opendays/confirmation?contactID=${contactID}&matchingCourseIds=${matchingOttoCourseIds.join(',')}`;
             logger.info(`Found ${matchingOttoCourseIds.length} matches in otto.json: ${matchingOttoCourseIds.join(', ')}`);
             logger.info(`Redirecting to: ${redirectUrl}`);
+            
+            // Aggiungi qui il codice per inviare l'email con QR code prima del redirect
+            try {
+                // 1. Recupera i dettagli del contatto da HubSpot
+                const contactResponse = await axios.get(
+                    `https://api.hubapi.com/crm/v3/objects/contacts/${contactID}?properties=email,firstname,lastname`
+                );
+                const contact = contactResponse.data.properties;
+                
+                // 2. Genera e salva il codice QR
+                const text2encode = contact.email + '**' + contactID;
+                const encoded = xorCipher.encode(text2encode, xorKey);
+                const qrCode = await generateQRCode(encoded);
+                const qrCodeUrl = await saveQRCodeToFile(qrCode);
+                
+                // 3. Ottieni i corsi corrispondenti
+                const matchingCourses = getMatchingCourses(matchingOttoCourseIds);
+                
+                // 4. Chiama sendEmailWithQR con array vuoto per le esperienze
+                await sendEmailWithQR(contact, qrCodeUrl, [], language, matchingCourses);
+                
+                logger.info(`Email with QR code sent successfully to ${contact.email}`);
+            } catch (error) {
+                // Log dell'errore ma continua con il redirect
+                logger.error('Error sending email with QR code:', error);
+                logger.error('Continuing with redirect anyway');
+            }
+            
             // Redirect to the confirmation page with the matching course IDs
             return res.redirect(redirectUrl);
         }
@@ -203,7 +405,8 @@ var QRCode = require('qrcode');
 
 const axios = require('axios');
 var apiKey = "";
-var groupKey = process.env.GROUPKEY;
+var groupKey = process.        // If matches found in otto.json, redirect to confirmation page
+env.GROUPKEY;
 var groupKey_fcfs = "posto_prenotato";
 if(HUBSPOT_DEV == 0) {
     apiKey = process.env.HUBSPOT_APIKEY_PROD;
@@ -464,7 +667,7 @@ app.post('/reset-database', async (req, res) => {
 
 // Endpoint to make a reservation
 app.post('/api/reserve', async (req, res) => {
-    const { contactID, experienceId, timeSlotId, replaceAll } = req.body;
+    const { contactID, experienceId, timeSlotId, dbId, replaceAll } = req.body;
     
     if (!contactID || !experienceId || !timeSlotId) {
         return res.status(400).json({
@@ -472,33 +675,122 @@ app.post('/api/reserve', async (req, res) => {
         });
     }
     
+    // Log the received parameters
+    logger.info(`Reservation request received: contactID=${contactID}, experienceId=${experienceId}, timeSlotId=${timeSlotId}, dbId=${dbId}, replaceAll=${replaceAll}`);
+    
     try {
-        // Check if the slot is still available
-        const isAvailable = await reservationService.isSlotAvailable(db, experienceId, timeSlotId);
-        
-        if (!isAvailable) {
-            // No spots available, return an error
-            logger.warn(`No spots available for experience ${experienceId}, time slot ${timeSlotId}`);
-            return res.status(409).json({
-                success: false,
-                error: 'No spots available',
-                errorCode: 'NO_SPOTS_AVAILABLE'
+        // Inizia una transazione
+        await new Promise((resolve, reject) => {
+            db.run("BEGIN TRANSACTION", (err) => {
+                if (err) {
+                    logger.error(`Errore nell'iniziare la transazione: ${err.message}`);
+                    reject(err);
+                } else {
+                    resolve();
+                }
             });
-        }
-        
-        // Save the reservation
-        await reservationService.saveReservation(db, contactID, experienceId, timeSlotId, null, replaceAll);
-        
-        // Update the current_participants field for the specific time slot
-        await experiencesService.incrementParticipantCountForTimeSlot(db, experienceId, timeSlotId);
-        
-        // Update the remaining slots
-        await updateRemainingSlots();
-        
-        // Return success
-        res.json({
-            success: true
         });
+        
+        try {
+            // Se è stato fornito dbId, usa direttamente quello
+            let slot;
+            if (dbId) {
+                logger.info(`Using provided dbId: ${dbId}`);
+                slot = await new Promise((resolve, reject) => {
+                    db.get(
+                        "SELECT id, current_participants, max_participants FROM experiences WHERE id = ?",
+                        [dbId],
+                        (err, row) => {
+                            if (err) {
+                                logger.error(`Errore nel recupero dello slot con ID: ${err.message}`);
+                                reject(err);
+                            } else {
+                                resolve(row);
+                            }
+                        }
+                    );
+                });
+            } else {
+                // Fallback: ottieni l'ID dello slot usando experience_id
+                logger.info(`No dbId provided, falling back to experienceId: ${experienceId}`);
+                slot = await new Promise((resolve, reject) => {
+                    db.get(
+                        "SELECT id, current_participants, max_participants FROM experiences WHERE experience_id = ?",
+                        [experienceId],
+                        (err, row) => {
+                            if (err) {
+                                logger.error(`Errore nel recupero dello slot: ${err.message}`);
+                                reject(err);
+                            } else {
+                                resolve(row);
+                            }
+                        }
+                    );
+                });
+            }
+            
+            if (!slot) {
+                logger.warn(`Nessuno slot trovato con ${dbId ? 'ID ' + dbId : 'experience_id ' + experienceId}`);
+                await new Promise((resolve) => {
+                    db.run("ROLLBACK", () => resolve());
+                });
+                return res.status(404).json({
+                    success: false,
+                    error: 'Slot not found',
+                    errorCode: 'SLOT_NOT_FOUND'
+                });
+            }
+            
+            logger.info(`Slot trovato: ID=${slot.id}, current=${slot.current_participants}, max=${slot.max_participants}`);
+            
+            // Verifica che ci siano ancora posti disponibili
+            if (slot.current_participants >= slot.max_participants) {
+                logger.warn(`No spots available for slot ID ${slot.id} (experience ${experienceId})`);
+                await new Promise((resolve) => {
+                    db.run("ROLLBACK", () => resolve());
+                });
+                return res.status(409).json({
+                    success: false,
+                    error: 'No spots available',
+                    errorCode: 'NO_SPOTS_AVAILABLE'
+                });
+            }
+            
+            // Salva la prenotazione
+            await reservationService.saveReservation(db, contactID, experienceId, timeSlotId, null, replaceAll);
+            
+            // Incrementa il contatore dei partecipanti usando l'ID dello slot
+            await experiencesService.incrementParticipantCount(db, slot.id);
+            
+            // Commit della transazione
+            await new Promise((resolve, reject) => {
+                db.run("COMMIT", (err) => {
+                    if (err) {
+                        logger.error(`Errore nel commit della transazione: ${err.message}`);
+                        reject(err);
+                    } else {
+                        resolve();
+                    }
+                });
+            });
+            
+            // Aggiorna i posti rimanenti
+            await updateRemainingSlots();
+            
+            // Ritorna successo
+            res.json({
+                success: true
+            });
+        } catch (error) {
+            // Rollback in caso di errore
+            await new Promise((resolve) => {
+                db.run("ROLLBACK", () => {
+                    logger.info("Transazione annullata a causa di un errore");
+                    resolve();
+                });
+            });
+            throw error;
+        }
     } catch (error) {
         logger.error('Error in /api/reserve:', error);
         res.status(500).json({
@@ -558,6 +850,108 @@ app.get('/api/test', (req, res) => {
     logger.info('Test endpoint hit - this should appear in the server logs');
     return res.json({ success: true, message: 'Test endpoint working' });
 });
+
+        // Function to send email with QR code that returns a Promise
+        function sendEmailWithQR(contact, qrCodeUrl, validExperiences, language, matchingCourses = []) {
+            return new Promise((resolve, reject) => {
+                console.log("XXXXX");
+                // Prepare email data with the same structure as the confirmation page
+                const emailData = {
+                    name: contact.firstname,
+                    email: contact.email,
+                    qrCode: qrCodeUrl,
+                    type: 2, // Use email_courses.ejs template
+                    language: language, // Add language
+                    fieldData: {
+                        courses: matchingCourses.map(course => ({
+                            title: course.name || course.title,
+                            date: "May 10, 2025", // Fixed date for Open Day
+                            location: course.location || "Main Campus",
+                            time: course.orario_inizio ? `${course.orario_inizio}${course.orario_fine ? ' - ' + course.orario_fine : ''}` : ''
+                        })),
+                        experiences: validExperiences,
+                        frontali: [] // Empty array if no frontali experiences
+                    }
+                };
+                
+                logger.info(`Preparing to send email with QR code to ${contact.email}, QR URL: ${qrCodeUrl}`);
+                logger.info(`Email data structure: ${JSON.stringify({
+                    name: typeof emailData.name,
+                    email: typeof emailData.email,
+                    qrCode: typeof emailData.qrCode,
+                    type: emailData.type,
+                    language: emailData.language,
+                    fieldData: {
+                        courses: Array.isArray(emailData.fieldData.courses) ? emailData.fieldData.courses.length : 'not an array',
+                        experiences: Array.isArray(emailData.fieldData.experiences) ? emailData.fieldData.experiences.length : 'not an array',
+                        frontali: Array.isArray(emailData.fieldData.frontali) ? emailData.fieldData.frontali.length : 'not an array'
+                    }
+                }, null, 2)}`);
+                logger.info(`Email data content: ${JSON.stringify(emailData, null, 2)}`);
+                
+                // Log template path to verify it exists
+                const templatePath = path.join(__dirname, 'views', language, 'email.ejs');
+                logger.info(`Using email template: ${templatePath}`);
+                
+                // Render email template
+                ejs.renderFile(
+                    templatePath,
+                    emailData,
+                    (err, htmlContent) => {
+                        if (err) {
+                            logger.error('Error rendering email template:', err);
+                            logger.error('Template error details:', err.stack);
+                            return reject(err);
+                        }
+                        
+                        logger.info('Email template rendered successfully');
+                        logger.info(`HTML content length: ${htmlContent.length}`);
+                        logger.info(`HTML content preview: ${htmlContent.substring(0, 200)}...`);
+                        
+                        // Determine recipient email
+                        let recipientEmail = contact.email;
+                        // if (HUBSPOT_DEV == 1) {
+                            recipientEmail = "guanxi_4@studenti.unisr.it"; // Development email
+                            logger.info(`Development mode: redirecting email to ${recipientEmail}`);
+                        // }
+                        
+                        // Prepare mail options
+                        const mailOptions = {
+                            from: `UniSR – Università Vita Salute San Raffaele <info.unisr@unisr.it>`,
+                            to: recipientEmail,
+                            subject: language === 'en'
+                                ? `${contact.firstname}, your Open Day registration is confirmed`
+                                : `${contact.firstname}, la tua registrazione all'Open Day è confermata`,
+                            replyTo: 'info.unisr@unisr.it',
+                            html: htmlContent
+                        };
+                        
+                        logger.info(`Mail options prepared: to=${recipientEmail}, subject="${mailOptions.subject}"`);
+                        
+                        // Send email
+                        if (SENDMAIL == 1) {
+                            logger.info('Attempting to send email...');
+                            transporter.sendMail(mailOptions, (error, info) => {
+                                if (error) {
+                                    logger.error('Error sending email:', error);
+                                    logger.error('Error details:', error.stack);
+                                    logger.error('Mail options that failed:', JSON.stringify(mailOptions, null, 2));
+                                    return reject(error);
+                                } else {
+                                    logger.info('Email sent successfully:', info.response);
+                                    logger.info('Message ID:', info.messageId);
+                                    return resolve(info);
+                                }
+                            });
+                        } else {
+                            logger.info('Email sending is disabled (SENDMAIL=0). Would have sent email with options:', JSON.stringify(mailOptions, null, 2));
+                            return resolve({ disabled: true });
+                        }
+                    }
+                );
+            });
+        }
+        
 
 // Endpoint to update selected experiences in HubSpot
 app.post('/api/update-selected-experiences', async (req, res) => {
@@ -688,107 +1082,6 @@ app.post('/api/update-selected-experiences', async (req, res) => {
                     const qrCodeUrl = `qrimg/${qrFileName}`;
                     resolve(qrCodeUrl);
                 });
-            });
-        }
-        
-        // Function to send email with QR code that returns a Promise
-        function sendEmailWithQR(contact, qrCodeUrl, validExperiences, language, matchingCourses = []) {
-            return new Promise((resolve, reject) => {
-                console.log("XXXXX");
-                // Prepare email data with the same structure as the confirmation page
-                const emailData = {
-                    name: contact.firstname,
-                    email: contact.email,
-                    qrCode: qrCodeUrl,
-                    type: 2, // Use email_courses.ejs template
-                    language: language, // Add language
-                    fieldData: {
-                        courses: matchingCourses.map(course => ({
-                            title: course.name || course.title,
-                            date: "May 10, 2025", // Fixed date for Open Day
-                            location: course.location || "Main Campus",
-                            time: course.orario_inizio ? `${course.orario_inizio}${course.orario_fine ? ' - ' + course.orario_fine : ''}` : ''
-                        })),
-                        experiences: validExperiences,
-                        frontali: [] // Empty array if no frontali experiences
-                    }
-                };
-                
-                logger.info(`Preparing to send email with QR code to ${contact.email}, QR URL: ${qrCodeUrl}`);
-                logger.info(`Email data structure: ${JSON.stringify({
-                    name: typeof emailData.name,
-                    email: typeof emailData.email,
-                    qrCode: typeof emailData.qrCode,
-                    type: emailData.type,
-                    language: emailData.language,
-                    fieldData: {
-                        courses: Array.isArray(emailData.fieldData.courses) ? emailData.fieldData.courses.length : 'not an array',
-                        experiences: Array.isArray(emailData.fieldData.experiences) ? emailData.fieldData.experiences.length : 'not an array',
-                        frontali: Array.isArray(emailData.fieldData.frontali) ? emailData.fieldData.frontali.length : 'not an array'
-                    }
-                }, null, 2)}`);
-                logger.info(`Email data content: ${JSON.stringify(emailData, null, 2)}`);
-                
-                // Log template path to verify it exists
-                const templatePath = path.join(__dirname, 'views', language, 'email.ejs');
-                logger.info(`Using email template: ${templatePath}`);
-                
-                // Render email template
-                ejs.renderFile(
-                    templatePath,
-                    emailData,
-                    (err, htmlContent) => {
-                        if (err) {
-                            logger.error('Error rendering email template:', err);
-                            logger.error('Template error details:', err.stack);
-                            return reject(err);
-                        }
-                        
-                        logger.info('Email template rendered successfully');
-                        logger.info(`HTML content length: ${htmlContent.length}`);
-                        logger.info(`HTML content preview: ${htmlContent.substring(0, 200)}...`);
-                        
-                        // Determine recipient email
-                        let recipientEmail = contact.email;
-                        // if (HUBSPOT_DEV == 1) {
-                            recipientEmail = "guanxi_4@studenti.unisr.it"; // Development email
-                            logger.info(`Development mode: redirecting email to ${recipientEmail}`);
-                        // }
-                        
-                        // Prepare mail options
-                        const mailOptions = {
-                            from: `UniSR – Università Vita Salute San Raffaele <info.unisr@unisr.it>`,
-                            to: recipientEmail,
-                            subject: language === 'en'
-                                ? `${contact.firstname}, your Open Day registration is confirmed`
-                                : `${contact.firstname}, la tua registrazione all'Open Day è confermata`,
-                            replyTo: 'info.unisr@unisr.it',
-                            html: htmlContent
-                        };
-                        
-                        logger.info(`Mail options prepared: to=${recipientEmail}, subject="${mailOptions.subject}"`);
-                        
-                        // Send email
-                        if (SENDMAIL == 1) {
-                            logger.info('Attempting to send email...');
-                            transporter.sendMail(mailOptions, (error, info) => {
-                                if (error) {
-                                    logger.error('Error sending email:', error);
-                                    logger.error('Error details:', error.stack);
-                                    logger.error('Mail options that failed:', JSON.stringify(mailOptions, null, 2));
-                                    return reject(error);
-                                } else {
-                                    logger.info('Email sent successfully:', info.response);
-                                    logger.info('Message ID:', info.messageId);
-                                    return resolve(info);
-                                }
-                            });
-                        } else {
-                            logger.info('Email sending is disabled (SENDMAIL=0). Would have sent email with options:', JSON.stringify(mailOptions, null, 2));
-                            return resolve({ disabled: true });
-                        }
-                    }
-                );
             });
         }
         

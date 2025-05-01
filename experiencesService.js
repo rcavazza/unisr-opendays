@@ -272,26 +272,55 @@ async function deleteExperience(db, id) {
  * @param {string} experienceId - Experience ID
  * @returns {Promise<boolean>} - Successo dell'operazione
  */
-async function incrementParticipantCount(db, experienceId) {
+/**
+ * Incrementa il contatore dei partecipanti per uno slot specifico usando l'ID dello slot
+ * @param {Object} db - Istanza del database
+ * @param {number} slotId - ID dello slot (campo id della tabella experiences)
+ * @returns {Promise<boolean>} - Successo dell'operazione
+ */
+async function incrementParticipantCount(db, slotId) {
   try {
-    logger.info(`Incremento contatore partecipanti per esperienza: ${experienceId}`);
+    logger.info(`Incremento contatore per slot con ID: ${slotId}`);
     
+    // Verifica che lo slot esista e abbia posti disponibili
+    const slot = await new Promise((resolve, reject) => {
+      db.get(
+        "SELECT id, experience_id, current_participants, max_participants FROM experiences WHERE id = ?",
+        [slotId],
+        (err, row) => {
+          if (err) {
+            logger.error(`Errore nel recupero dello slot: ${err.message}`);
+            reject(err);
+          } else {
+            resolve(row);
+          }
+        }
+      );
+    });
+    
+    if (!slot) {
+      logger.warn(`Slot con ID ${slotId} non trovato`);
+      return false;
+    }
+    
+    // Verifica che ci siano ancora posti disponibili
+    if (slot.current_participants >= slot.max_participants) {
+      logger.warn(`Slot ${slotId} pieno: current=${slot.current_participants}, max=${slot.max_participants}`);
+      return false;
+    }
+    
+    // Incrementa il contatore per lo slot specifico
     return new Promise((resolve, reject) => {
       db.run(
-        "UPDATE experiences SET current_participants = current_participants + 1 WHERE experience_id = ?",
-        [experienceId],
+        "UPDATE experiences SET current_participants = current_participants + 1 WHERE id = ?",
+        [slotId],
         function(err) {
           if (err) {
             logger.error(`Errore nell'incremento del contatore: ${err.message}`);
             reject(err);
           } else {
-            if (this.changes === 0) {
-              logger.info(`Esperienza con ID ${experienceId} non trovata per l'incremento del contatore`);
-              resolve(false);
-            } else {
-              logger.info(`Contatore incrementato per esperienza ${experienceId}`);
-              resolve(true);
-            }
+            logger.info(`Contatore incrementato per slot ID ${slotId}, nuovo valore: ${slot.current_participants + 1}`);
+            resolve(true);
           }
         }
       );
@@ -308,26 +337,49 @@ async function incrementParticipantCount(db, experienceId) {
  * @param {string} experienceId - Experience ID
  * @returns {Promise<boolean>} - Successo dell'operazione
  */
-async function decrementParticipantCount(db, experienceId) {
+/**
+ * Decrementa il contatore dei partecipanti per uno slot specifico
+ * @param {Object} db - Istanza del database
+ * @param {number} slotId - ID dello slot (campo id della tabella experiences)
+ * @returns {Promise<boolean>} - Successo dell'operazione
+ */
+async function decrementParticipantCount(db, slotId) {
   try {
-    logger.info(`Decremento contatore partecipanti per esperienza: ${experienceId}`);
+    logger.info(`Decremento contatore per slot con ID: ${slotId}`);
     
+    // Verifica che lo slot esista
+    const slot = await new Promise((resolve, reject) => {
+      db.get(
+        "SELECT id, experience_id, current_participants FROM experiences WHERE id = ?",
+        [slotId],
+        (err, row) => {
+          if (err) {
+            logger.error(`Errore nel recupero dello slot: ${err.message}`);
+            reject(err);
+          } else {
+            resolve(row);
+          }
+        }
+      );
+    });
+    
+    if (!slot) {
+      logger.warn(`Slot con ID ${slotId} non trovato`);
+      return false;
+    }
+    
+    // Decrementa il contatore per lo slot specifico
     return new Promise((resolve, reject) => {
       db.run(
-        "UPDATE experiences SET current_participants = MAX(0, current_participants - 1) WHERE experience_id = ?",
-        [experienceId],
+        "UPDATE experiences SET current_participants = MAX(0, current_participants - 1) WHERE id = ?",
+        [slotId],
         function(err) {
           if (err) {
             logger.error(`Errore nel decremento del contatore: ${err.message}`);
             reject(err);
           } else {
-            if (this.changes === 0) {
-              logger.info(`Esperienza con ID ${experienceId} non trovata per il decremento del contatore`);
-              resolve(false);
-            } else {
-              logger.info(`Contatore decrementato per esperienza ${experienceId}`);
-              resolve(true);
-            }
+            logger.info(`Contatore decrementato per slot ID ${slotId}, nuovo valore: ${Math.max(0, slot.current_participants - 1)}`);
+            resolve(true);
           }
         }
       );
@@ -345,36 +397,24 @@ async function decrementParticipantCount(db, experienceId) {
  * @param {string} timeSlotId - Time slot ID
  * @returns {Promise<boolean>} - Successo dell'operazione
  */
-async function incrementParticipantCountForTimeSlot(db, experienceId, timeSlotId) {
+/**
+ * Incrementa il contatore dei partecipanti per uno slot specifico usando l'ID dello slot
+ * @param {Object} db - Istanza del database
+ * @param {number} slotId - ID dello slot (campo id della tabella experiences)
+ * @returns {Promise<boolean>} - Successo dell'operazione
+ */
+async function incrementParticipantCount(db, slotId) {
   try {
-    logger.info(`[DEBUG] Incremento contatore per experienceId: ${experienceId}, timeSlotId: ${timeSlotId}`);
+    logger.info(`Incremento contatore per slot con ID: ${slotId}`);
     
-    // Verifica la struttura della tabella experiences
-    await new Promise((resolve) => {
-      db.all("PRAGMA table_info(experiences)", (err, columns) => {
-        if (err) {
-          logger.error(`Errore nel recupero della struttura della tabella: ${err.message}`);
-        } else {
-          logger.info(`[DEBUG] Struttura della tabella experiences: ${JSON.stringify(columns)}`);
-        }
-        resolve();
-      });
-    });
-    
-    // Estrai il numero dello slot dal timeSlotId
-    const parts = timeSlotId.split('-');
-    const slotNumber = parseInt(parts[parts.length - 1]);
-    logger.info(`[DEBUG] Numero slot estratto: ${slotNumber}, parts: ${JSON.stringify(parts)}`);
-    
-    // Ottieni tutte le esperienze con lo stesso titolo
-    // Prima ottieni il titolo dell'esperienza corrente
-    const currentExperience = await new Promise((resolve, reject) => {
+    // Verifica che lo slot esista e abbia posti disponibili
+    const slot = await new Promise((resolve, reject) => {
       db.get(
-        "SELECT id, title FROM experiences WHERE experience_id = ?",
-        [experienceId],
+        "SELECT id, experience_id, current_participants, max_participants FROM experiences WHERE id = ?",
+        [slotId],
         (err, row) => {
           if (err) {
-            logger.error(`Errore nel recupero dell'esperienza: ${err.message}`);
+            logger.error(`Errore nel recupero dello slot: ${err.message}`);
             reject(err);
           } else {
             resolve(row);
@@ -383,60 +423,74 @@ async function incrementParticipantCountForTimeSlot(db, experienceId, timeSlotId
       );
     });
     
-    if (!currentExperience) {
-      logger.warn(`Nessuna esperienza trovata con ID ${experienceId}`);
+    if (!slot) {
+      logger.warn(`Slot con ID ${slotId} non trovato`);
       return false;
     }
     
-    logger.info(`[DEBUG] Esperienza corrente: id=${currentExperience.id}, title=${currentExperience.title}`);
-    
-    // Ora ottieni tutte le esperienze con lo stesso titolo, ordinate per ora_inizio
-    const allExperiences = await new Promise((resolve, reject) => {
-      db.all(
-        "SELECT id, experience_id, title, ora_inizio FROM experiences WHERE title = ? ORDER BY ora_inizio",
-        [currentExperience.title],
-        (err, rows) => {
-          if (err) {
-            logger.error(`Errore nel recupero delle esperienze: ${err.message}`);
-            reject(err);
-          } else {
-            logger.info(`[DEBUG] Trovate ${rows.length} esperienze con titolo "${currentExperience.title}"`);
-            rows.forEach((row, index) => {
-              logger.info(`[DEBUG] Riga ${index}: id=${row.id}, experience_id=${row.experience_id}, ora_inizio=${row.ora_inizio}`);
-            });
-            resolve(rows);
-          }
-        }
-      );
-    });
-    
-    if (allExperiences.length === 0) {
-      logger.warn(`Nessuna esperienza trovata con titolo "${currentExperience.title}"`);
+    // Verifica che ci siano ancora posti disponibili
+    if (slot.current_participants >= slot.max_participants) {
+      logger.warn(`Slot ${slotId} pieno: current=${slot.current_participants}, max=${slot.max_participants}`);
       return false;
     }
     
-    // Ottieni l'ID della riga per lo slot orario specifico
-    // Se slotNumber è nel range, usalo come indice, altrimenti usa la prima riga
-    const rowIndex = (slotNumber > 0 && slotNumber <= allExperiences.length) ? (slotNumber - 1) : 0;
-    const rowId = allExperiences[rowIndex].id;
-    logger.info(`[DEBUG] Indice riga selezionato: ${rowIndex}, ID riga: ${rowId}, slotNumber: ${slotNumber}, allExperiences.length: ${allExperiences.length}`);
-    
-    // Incrementa il campo current_participants per questa riga specifica
+    // Incrementa il contatore per lo slot specifico
     return new Promise((resolve, reject) => {
       db.run(
         "UPDATE experiences SET current_participants = current_participants + 1 WHERE id = ?",
-        [rowId],
+        [slotId],
         function(err) {
           if (err) {
             logger.error(`Errore nell'incremento del contatore: ${err.message}`);
             reject(err);
           } else {
-            logger.info(`[DEBUG] Contatore incrementato per ID riga ${rowId}, changes: ${this.changes}`);
+            logger.info(`Contatore incrementato per slot ID ${slotId}, nuovo valore: ${slot.current_participants + 1}`);
             resolve(true);
           }
         }
       );
     });
+  } catch (error) {
+    logger.error(`Errore in incrementParticipantCount: ${error.message}`);
+    throw error;
+  }
+}
+
+/**
+ * Funzione legacy per incrementare il contatore dei partecipanti per uno slot temporale
+ * Questa funzione è mantenuta per compatibilità con il codice esistente
+ * @param {Object} db - Istanza del database
+ * @param {string} experienceId - Experience ID
+ * @param {string} timeSlotId - Time slot ID
+ * @returns {Promise<boolean>} - Successo dell'operazione
+ */
+async function incrementParticipantCountForTimeSlot(db, experienceId, timeSlotId) {
+  try {
+    logger.info(`[LEGACY] Incremento contatore per experienceId: ${experienceId}, timeSlotId: ${timeSlotId}`);
+    
+    // Ottieni l'ID dello slot usando experience_id
+    const slot = await new Promise((resolve, reject) => {
+      db.get(
+        "SELECT id, current_participants, max_participants FROM experiences WHERE experience_id = ?",
+        [experienceId],
+        (err, row) => {
+          if (err) {
+            logger.error(`Errore nel recupero dello slot: ${err.message}`);
+            reject(err);
+          } else {
+            resolve(row);
+          }
+        }
+      );
+    });
+    
+    if (!slot) {
+      logger.warn(`Nessuno slot trovato con experience_id ${experienceId}`);
+      return false;
+    }
+    
+    // Usa la nuova funzione con l'ID dello slot
+    return incrementParticipantCount(db, slot.id);
   } catch (error) {
     logger.error(`Errore in incrementParticipantCountForTimeSlot: ${error.message}`);
     throw error;

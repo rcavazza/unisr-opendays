@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UNISR Open Days - Fixed Frontend</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        header {
+            background-color: #003366;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+        main {
+            flex: 1;
+            padding: 1rem;
+        }
+        footer {
+            background-color: #f0f0f0;
+            padding: 1rem;
+            text-align: center;
+            font-size: 0.8rem;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .alert {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .btn {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background-color: #003366;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>UNISR Open Days</h1>
+        </div>
+    </header>
+    
+    <main>
+        <div class="container">
+            <div class="alert">
+                <strong>Fix applicato!</strong> Il frontend è stato modificato per includere l'ID della riga (dbId) nella richiesta di prenotazione.
+            </div>
+            
+            <p>Questo fix risolve il problema dell'incremento del contatore dei partecipanti per lo slot corretto.</p>
+            
+            <p>Per utilizzare il frontend originale con il fix applicato, clicca sul pulsante qui sotto:</p>
+            
+            <a href="/en/selectExperiences" class="btn">Vai al frontend</a>
+        </div>
+    </main>
+    
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 UNISR Open Days</p>
+        </div>
+    </footer>
+    
+    <!-- Includi il fix per il frontend -->
+    <script src="/fix_frontend_reservation.js"></script>
+    
+    <script>
+        // Reindirizza automaticamente al frontend dopo 3 secondi
+        setTimeout(function() {
+            window.location.href = "/en/selectExperiences";
+        }, 3000);
+    </script>
+</body>
+</html>

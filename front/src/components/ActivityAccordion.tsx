@@ -95,6 +95,7 @@ export const ActivityAccordion = ({
                       }`}
                       data-slot-id={slot.id}
                       data-available={slot.available}
+                      data-db-id={slot.dbId} // Aggiunto attributo data-db-id per debugging
                     >
                       <div className="flex items-center">
                         <input
@@ -139,7 +140,7 @@ export const ActivityAccordion = ({
                             </span>
                           )}
                         </div>
-                        <span className="text-sm text-white/70 available-slots" data-experience-id={activity.id} data-time-slot-id={slot.id}>
+                        <span className="text-sm text-white/70 available-slots" data-experience-id={activity.id} data-time-slot-id={slot.id} data-db-id={slot.dbId}>
                           ({t('spotsAvailable', { count: slot.available })})
                         </span>
                       </div>

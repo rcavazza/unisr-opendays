@@ -130,7 +130,7 @@ export const OpenDayRegistration = () => {
         const inspectedData = inspectExperienceData(experiences);
         
         // Fix any string available slots by converting them to numbers
-        // Make sure to preserve the selected flag
+        // Make sure to preserve the selected flag and dbId
         const fixedData = inspectedData.map(exp => ({
           ...exp,
           timeSlots: exp.timeSlots.map(slot => ({
@@ -138,9 +138,21 @@ export const OpenDayRegistration = () => {
             available: typeof slot.available === 'string'
               ? parseInt(String(slot.available), 10)
               : slot.available,
-            selected: slot.selected || false // Ensure selected flag is preserved
+            selected: slot.selected || false, // Ensure selected flag is preserved
+            dbId: slot.dbId // Ensure dbId is preserved
           }))
         }));
+        
+        // Log dbId values for debugging
+        fixedData.forEach(exp => {
+          exp.timeSlots.forEach(slot => {
+            if (slot.dbId) {
+              console.log(`Slot ${slot.id} has dbId: ${slot.dbId}`);
+            } else {
+              console.warn(`Slot ${slot.id} is missing dbId!`);
+            }
+          });
+        });
         
         console.log('Fixed data:', fixedData);
         setActivities(fixedData);
@@ -369,8 +381,17 @@ export const OpenDayRegistration = () => {
     try {
       setReservationStatus(prev => ({ ...prev, [String(activityId)]: 'pending' }));
       
-      // Make the reservation
-      const result = await makeReservation(contactID, activityId, timeSlotId);
+      // Trovare l'attività e lo slot selezionato per ottenere dbId
+      const activity = activities.find(a => String(a.id) === String(activityId));
+      const timeSlot = activity?.timeSlots.find(slot => slot.id === timeSlotId);
+      
+      // Ottenere l'ID della riga
+      const dbId = timeSlot?.dbId;
+      
+      console.log(`Reservation for activity ${activityId}, slot ${timeSlotId}, dbId: ${dbId}`);
+      
+      // Make the reservation with dbId
+      const result = await makeReservation(contactID, activityId, timeSlotId, dbId);
       
       if (result.success) {
         setReservationStatus(prev => ({ ...prev, [String(activityId)]: 'success' }));
@@ -410,8 +431,25 @@ export const OpenDayRegistration = () => {
         // Set replaceAll to true for the first reservation only
         const isFirstReservation = i === 0;
         
-        // Make the reservation
-        const result = await makeReservation(contactID, activityId, timeSlotId, isFirstReservation);
+        // Trovare l'attività e lo slot selezionato
+        const activity = activities.find(a => String(a.id) === String(activityId));
+        const timeSlot = activity?.timeSlots.find(slot => slot.id === timeSlotId);
+        
+        // Ottenere l'ID della riga
+        const dbId = timeSlot?.dbId;
+        
+        // Verificare che dbId sia presente
+        if (!dbId) {
+          console.error(`dbId not found for activity ${activityId}, slot ${timeSlotId}`);
+          setReservationError(`Failed to make reservation for ${activity?.title || 'activity'}`);
+          setSubmitting(false);
+          return;
+        }
+        
+        console.log(`Submitting reservation for activity ${activityId}, slot ${timeSlotId}, dbId: ${dbId}`);
+        
+        // Make the reservation with dbId
+        const result = await makeReservation(contactID, activityId, timeSlotId, dbId, isFirstReservation);
         console.log(`Reservation result for ${activityId}:`, result);
         
         if (!result.success) {

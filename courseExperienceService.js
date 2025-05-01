@@ -442,7 +442,7 @@ async function getExperiencesByCustomObjectIds(db, customObjectIds, language, co
                             
                             // Now get all rows where experience_id starts with any of these base names AND has the same course_type
                             db.all(
-                                `SELECT experience_id, title, course, location, desc, max_participants, current_participants, duration, ora_inizio, ora_fine
+                                `SELECT id, experience_id, title, course, location, desc, max_participants, current_participants, duration, ora_inizio, ora_fine
                                  FROM experiences
                                  WHERE (${whereClause}) AND language = ?
                                  ORDER BY experience_id, ora_inizio`,
@@ -545,6 +545,7 @@ async function getExperiencesByCustomObjectIds(db, customObjectIds, language, co
                                             
                                             experience.timeSlots.push({
                                                 id: timeSlotId,
+                                                dbId: row.id, // Aggiungi l'ID della riga del database
                                                 time: formatTime(row.ora_inizio),
                                                 endTime: formatTime(row.ora_fine),
                                                 available: Math.max(0, row.max_participants - row.current_participants),
@@ -596,8 +597,11 @@ async function getExperiencesByCustomObjectIds(db, customObjectIds, language, co
                                             const selectedStates = experience.timeSlots.map(slot => slot.selected);
                                             
                                             // Reassign IDs to maintain sequential numbering after sorting
+                                            // but keep the original database ID
                                             experience.timeSlots.forEach((slot, index) => {
+                                                const originalDbId = slot.dbId; // Salva l'ID originale
                                                 slot.id = `${experience.id}-${index + 1}`;
+                                                slot.dbId = originalDbId; // Mantieni l'ID originale
                                                 // Restore the selected state
                                                 slot.selected = selectedStates[index];
                                             });

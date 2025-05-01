@@ -82,10 +82,18 @@ export const makeReservation = async (
   contactID: string,
   experienceId: string | number,
   timeSlotId: string,
+  dbId?: number, // Aggiunto parametro dbId opzionale
   replaceAll: boolean = false
 ): Promise<{ success: boolean, error?: string, errorCode?: string }> => {
   try {
-    console.log('Making reservation:', { contactID, experienceId, timeSlotId, replaceAll });
+    console.log('Making reservation:', { contactID, experienceId, timeSlotId, dbId, replaceAll });
+    
+    // Log dettagliati per il debugging
+    if (dbId) {
+      console.log(`✅ Sending dbId ${dbId} to backend for slot ${timeSlotId}`);
+    } else {
+      console.warn(`⚠️ No dbId provided for slot ${timeSlotId}! This may cause incorrect participant counting.`);
+    }
     const response = await fetch(' /api/reserve', {
       method: 'POST',
       headers: {
@@ -95,6 +103,7 @@ export const makeReservation = async (
         contactID,
         experienceId,
         timeSlotId,
+        dbId, // Incluso dbId nella richiesta
         replaceAll
       })
     });

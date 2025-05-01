@@ -6,6 +6,7 @@ export interface TimeSlot {
   endTime?: string; // Added endTime field (optional for backward compatibility)
   available: number;
   selected?: boolean; // Flag to indicate if this slot is already reserved by the user
+  dbId?: number; // ID della riga nel database (opzionale per retrocompatibilità)
 }
 
 export interface ActivityDetails {
