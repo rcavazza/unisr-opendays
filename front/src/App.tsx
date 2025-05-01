@@ -22,7 +22,8 @@ const ConfirmationPageWrapper = () => {
   console.log('ConfirmationPageWrapper - location.search:', location.search);
   
   // Determine if the user is coming from the selection page
-  const isFromSelectionPage = !!location.state?.activities?.length;
+  // Check for explicit flag first, then fall back to previous behavior for backward compatibility
+  const isFromSelectionPage = location.state?.isFromSelectionPage || !!location.state?.activities?.length;
   console.log('ConfirmationPageWrapper - isFromSelectionPage:', isFromSelectionPage);
   
   // Extract parameters from URL query parameters

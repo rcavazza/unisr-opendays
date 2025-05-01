@@ -366,7 +366,10 @@ app.get(['/en/opendays', '/it/opendays', '/opendays', '/en/opendays/confirmation
                 const matchingCourses = getMatchingCourses(matchingOttoCourseIds);
                 
                 // 4. Chiama sendEmailWithQR con array vuoto per le esperienze
-                await sendEmailWithQR(contact, qrCodeUrl, [], language, matchingCourses);
+                // Ensure we're using the language from the URL
+                const urlLanguage = req.path.split('/')[1] === 'en' || req.path.split('/')[1] === 'it' ? req.path.split('/')[1] : language;
+                logger.info(`Using language from URL for email: ${urlLanguage} (URL path: ${req.path})`);
+                await sendEmailWithQR(contact, qrCodeUrl, [], urlLanguage, matchingCourses);
                 
                 logger.info(`Email with QR code sent successfully to ${contact.email}`);
             } catch (error) {
@@ -993,7 +996,7 @@ app.post('/api/update-selected-experiences', async (req, res) => {
     console.log('Request body:', req.body);
     logger.info('Endpoint /api/update-selected-experiences hit - this should appear in the server logs when the endpoint is called');
     logger.info('Request body:', req.body);
-    const { contactID, experienceIds } = req.body;
+    const { contactID, experienceIds, matchingCourseIds } = req.body;
     
     if (!contactID || !experienceIds) {
         return res.status(400).json({
@@ -1002,11 +1005,22 @@ app.post('/api/update-selected-experiences', async (req, res) => {
     }
     
     try {
-        // Log the received experienceIds to verify format
+        // Log the received experienceIds and matchingCourseIds to verify format
         logger.info(`Received experienceIds: ${JSON.stringify(experienceIds)}`);
         logger.info(`experienceIds is array: ${Array.isArray(experienceIds)}`);
         if (Array.isArray(experienceIds)) {
             logger.info(`Number of experienceIds: ${experienceIds.length}`);
+        }
+        
+        // Log matchingCourseIds if provided
+        if (matchingCourseIds) {
+            logger.info(`Received matchingCourseIds: ${JSON.stringify(matchingCourseIds)}`);
+            logger.info(`matchingCourseIds is array: ${Array.isArray(matchingCourseIds)}`);
+            if (Array.isArray(matchingCourseIds)) {
+                logger.info(`Number of matchingCourseIds: ${matchingCourseIds.length}`);
+            }
+        } else {
+            logger.info('No matchingCourseIds provided');
         }
         
         // Format the experience IDs as a semicolon-separated string
@@ -1044,10 +1058,15 @@ app.post('/api/update-selected-experiences', async (req, res) => {
         
         // ===== START OF NEW CODE FOR EMAIL SENDING =====
         
-        // Extract language from request headers or query parameters
-        // Default to English if not specified
-        const language = req.query.lang === 'it' ? 'it' : 'en';
-        logger.info(`Using language: ${language} for email`);
+        // Extract language from query parameters, request body, or default to English
+        const queryLang = req.query.lang;
+        const bodyLang = req.body.lang;
+        const language = queryLang === 'it' ? 'it' :
+                       (bodyLang === 'it' ? 'it' :
+                       (queryLang === 'en' ? 'en' :
+                       (bodyLang === 'en' ? 'en' : 'en')));
+        
+        logger.info(`API endpoint language determination: query=${queryLang}, body=${bodyLang}, selected=${language}`);
         
         // Log SENDMAIL value to verify if email sending is enabled
         logger.info(`SENDMAIL environment variable value: ${SENDMAIL}`);
@@ -1155,7 +1174,9 @@ app.post('/api/update-selected-experiences', async (req, res) => {
                 logger.info(`Email data content: ${JSON.stringify(emailData, null, 2)}`);
                 
                 // Log template path to verify it exists
+                // Use the provided language parameter
                 const templatePath = path.join(__dirname, 'views', language, 'email.ejs');
+                logger.info(`Using email template for email without QR: ${templatePath} (language: ${language})`);
                 logger.info(`Using email template: ${templatePath}`);
                 
                 // Render and send email (same as above but without QR code)
@@ -1270,24 +1291,34 @@ app.post('/api/update-selected-experiences', async (req, res) => {
             const text2encode = contact.email + '**' + contactID;
             const encoded = xorCipher.encode(text2encode, xorKey);
             
-            // Get course_types from experiences
-            logger.info(`Getting course_types for experiences with IDs: ${expIds.join(', ')}`);
-            const courseTypes = await new Promise((resolve, reject) => {
-                const placeholders = expIds.map(() => '?').join(',');
-                db.all(
-                    `SELECT DISTINCT course_type FROM experiences WHERE experience_id IN (${placeholders})`,
-                    expIds,
-                    (err, rows) => {
-                        if (err) {
-                            logger.error(`Error fetching course_types: ${err.message}`);
-                            reject(err);
-                        } else {
-                            const types = rows.map(row => row.course_type).filter(type => type !== null);
-                            resolve(types);
+            // Determine course types based on selected experiences or provided matching course IDs
+            let courseTypes = [];
+            
+            // If no experiences selected but matchingCourseIds provided, use those
+            if (expIds.length === 0 && matchingCourseIds && matchingCourseIds.length > 0) {
+                logger.info(`No experiences selected, using provided matchingCourseIds: ${matchingCourseIds.join(', ')}`);
+                courseTypes = matchingCourseIds.map(id => String(id));
+                logger.info(`Using ${courseTypes.length} course types from matchingCourseIds`);
+            } else {
+                // Get course_types from experiences as before
+                logger.info(`Getting course_types for experiences with IDs: ${expIds.join(', ')}`);
+                courseTypes = await new Promise((resolve, reject) => {
+                    const placeholders = expIds.map(() => '?').join(',');
+                    db.all(
+                        `SELECT DISTINCT course_type FROM experiences WHERE experience_id IN (${placeholders})`,
+                        expIds,
+                        (err, rows) => {
+                            if (err) {
+                                logger.error(`Error fetching course_types: ${err.message}`);
+                                reject(err);
+                            } else {
+                                const types = rows.map(row => row.course_type).filter(type => type !== null);
+                                resolve(types);
+                            }
                         }
-                    }
-                );
-            });
+                    );
+                });
+            }
             
             logger.info(`Retrieved ${courseTypes.length} course types: ${courseTypes.join(', ')}`);
             
@@ -1304,18 +1335,33 @@ app.post('/api/update-selected-experiences', async (req, res) => {
                     // Save QR code to file
                     const qrCodeUrl = await saveQRCodeToFile(qrCode);
                     // Send email with QR code
-                    await sendEmailWithQR(contact, qrCodeUrl, validExperiences, language, matchingCourses);
+                    // Extract language from URL path if available, otherwise use the provided language
+                    const urlPath = req.originalUrl || req.path || '';
+                    const pathLanguage = urlPath.split('/')[1];
+                    const urlLanguage = (pathLanguage === 'en' || pathLanguage === 'it') ? pathLanguage : language;
+                    logger.info(`Using language for email: ${urlLanguage} (from URL path: ${urlPath}, default: ${language})`);
+                    await sendEmailWithQR(contact, qrCodeUrl, validExperiences, urlLanguage, matchingCourses);
                     logger.info('Email with QR code sent successfully');
                 } catch (saveError) {
                     logger.error('Error saving QR code:', saveError);
                     // If saving QR code fails, send email without QR code
-                    await sendEmailWithoutQR(contact, validExperiences, language, matchingCourses);
+                    // Use the same URL language as for sendEmailWithQR
+                    const urlPath = req.originalUrl || req.path || '';
+                    const pathLanguage = urlPath.split('/')[1];
+                    const urlLanguage = (pathLanguage === 'en' || pathLanguage === 'it') ? pathLanguage : language;
+                    logger.info(`Using language for email without QR: ${urlLanguage} (from URL path: ${urlPath}, default: ${language})`);
+                    await sendEmailWithoutQR(contact, validExperiences, urlLanguage, matchingCourses);
                     logger.info('Email without QR code sent successfully (after QR save error)');
                 }
             } catch (qrError) {
                 logger.error('Error generating QR code:', qrError);
                 // If generating QR code fails, send email without QR code
-                await sendEmailWithoutQR(contact, validExperiences, language, matchingCourses);
+                // Use the same URL language as for sendEmailWithQR
+                const urlPath = req.originalUrl || req.path || '';
+                const pathLanguage = urlPath.split('/')[1];
+                const urlLanguage = (pathLanguage === 'en' || pathLanguage === 'it') ? pathLanguage : language;
+                logger.info(`Using language for email without QR: ${urlLanguage} (from URL path: ${urlPath}, default: ${language})`);
+                await sendEmailWithoutQR(contact, validExperiences, urlLanguage, matchingCourses);
                 logger.info('Email without QR code sent successfully (after QR generation error)');
             }
         } catch (error) {
@@ -1677,7 +1723,9 @@ app.post('/submit-reservation', async (req, res) => {
                             // Add custom object location to field data
                             fieldData.customObjectLocation = customObjectLocation;
                             
-                            ejs.renderFile(path.join(__dirname, 'views', lang, 'email.ejs'), {
+                            // Use the language from the form submission
+                            logger.info(`Using language for email template in submit-reservation: ${language} (from form submission)`);
+                            ejs.renderFile(path.join(__dirname, 'views', language, 'email.ejs'), {
                                 email: contact.email,
                                 name: contact.firstname,
                                 fieldData: fieldData,
@@ -2316,6 +2364,8 @@ app.post('/submit-experiences', async (req, res) => {
                     };
                     
                     // Renderizza il template email
+                    // Ensure we're using the language from the form submission
+                    logger.info(`Using language for email template: ${language} (from form submission)`);
                     ejs.renderFile(path.join(__dirname, 'views', language, 'email.ejs'), {
                         email: contact.email,
                         name: contact.firstname,

@@ -424,6 +424,10 @@ export const OpenDayRegistration = () => {
       // Make reservations for all selected time slots
       const selectedSlots = Object.entries(selectedTimeSlots);
       
+      if (selectedSlots.length === 0) {
+        console.log('No slots selected, proceeding without making any reservations');
+      }
+      
       for (let i = 0; i < selectedSlots.length; i++) {
         const [activityId, timeSlotId] = selectedSlots[i];
         console.log(`Making reservation for activity ${activityId}, time slot ${timeSlotId}`);
@@ -510,8 +514,9 @@ export const OpenDayRegistration = () => {
       // Update the HubSpot contact with the selected experience IDs
       console.log('Now updating HubSpot contact with selected experiences');
       try {
-        console.log('Calling updateSelectedExperiences with:', { contactID, selectedActivityIds });
-        const result = await updateSelectedExperiences(contactID, selectedActivityIds);
+        const language = lang || 'en';
+        console.log('Calling updateSelectedExperiences with:', { contactID, selectedActivityIds, matchingCourseIds, language });
+        const result = await updateSelectedExperiences(contactID, selectedActivityIds, matchingCourseIds, language);
         console.log('Result from updateSelectedExperiences:', result);
         console.log('Successfully updated HubSpot contact with selected experiences');
       } catch (updateError) {
@@ -535,7 +540,8 @@ export const OpenDayRegistration = () => {
       navigate(`/${lang}/opendays/confirmation?contactID=${contactID}`, {
         state: {
           activities: selectedActivities,
-          matchingCourseIds: matchingCourseIds
+          matchingCourseIds: matchingCourseIds,
+          isFromSelectionPage: true // Explicitly set this flag to ensure correct behavior with empty selections
         }
       });
     } catch (error) {
@@ -787,7 +793,7 @@ export const OpenDayRegistration = () => {
         {!contactIdMissing && (
             <div className="flex justify-center mb-16">
           <button onClick={handleSubmit}
-              disabled={!hasSelections || loading}
+              disabled={loading}
               className={`bg-yellow-300 text-white font-bold text-xl px-16 py-4 rounded-full border-2 border-white hover:bg-yellow-400 transition-colors `}>
           {t('submitRegistration')}
           </button>

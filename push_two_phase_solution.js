@@ -5,7 +5,7 @@ const { execSync } = require('child_process');
 const path = require('path');
 
 // Configurazione
-const COMMIT_MESSAGE = 'Implementa soluzione in due fasi per la visualizzazione degli slot prenotati';
+const COMMIT_MESSAGE = 'Aggiornamento generale: push di tutte le modifiche';
 const BRANCH_NAME = 'fix/two-phase-slot-selection';
 
 /**
@@ -49,23 +49,15 @@ function pushChangesToGit() {
             }
         }
         
-        // Aggiungi i file modificati
-        const filesToAdd = [
-            'courseExperienceService.js',
-            'restart_after_two_phase_fix.js',
-            'test_two_phase_solution.js',
-            'README_two_phase_solution.md'
-        ];
-        
-        console.log('Aggiungo i file modificati...');
-        filesToAdd.forEach(file => {
-            try {
-                execSync(`git add ${file}`, { stdio: 'inherit' });
-                console.log(`Aggiunto il file '${file}'`);
-            } catch (error) {
-                console.error(`Errore nell'aggiungere il file '${file}': ${error.message}`);
-            }
-        });
+        // Aggiungi tutti i file modificati
+        console.log('Aggiungo tutti i file modificati...');
+        try {
+            execSync('git add .', { stdio: 'inherit' });
+            console.log('Aggiunti tutti i file modificati');
+        } catch (error) {
+            console.error(`Errore nell'aggiungere i file: ${error.message}`);
+            process.exit(1);
+        }
         
         // Commit delle modifiche
         try {
