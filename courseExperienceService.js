@@ -326,24 +326,26 @@ async function getExperiencesByCustomObjectIds(db, customObjectIds, language, co
         
         // Create a map for quick lookup of user's reservations
         const reservationMap = {};
-        // Also create a map of experience_id to array of time_slot_id for easier lookup
-        const userReservationsByExperience = {};
+        // Also create a map of dbId to array of time_slot_id for easier lookup
+        // Note: experience_id now contains the dbId (numeric ID from experiences table)
+        const userReservationsByDbId = {};
         
         userReservations.forEach(reservation => {
-            // Store the original key format
+            // Store the original key format - now using dbId
             const key = `${reservation.experience_id}_${reservation.time_slot_id}`;
             reservationMap[key] = true;
             
-            // Also store by experience_id for easier lookup
-            if (!userReservationsByExperience[reservation.experience_id]) {
-                userReservationsByExperience[reservation.experience_id] = [];
+            // Also store by dbId for easier lookup
+            const dbId = reservation.experience_id; // This now contains the numeric ID
+            if (!userReservationsByDbId[dbId]) {
+                userReservationsByDbId[dbId] = [];
             }
-            userReservationsByExperience[reservation.experience_id].push(reservation.time_slot_id);
+            userReservationsByDbId[dbId].push(reservation.time_slot_id);
             
-            logger.info(`User has reservation for: ${key}`);
+            logger.info(`User has reservation for dbId: ${dbId}, time slot: ${reservation.time_slot_id}`);
         });
         
-        logger.info(`User reservations by experience: ${JSON.stringify(userReservationsByExperience)}`);
+        logger.info(`User reservations by dbId: ${JSON.stringify(userReservationsByDbId)}`);
         
         // Query the database to see what course_type values are available
         db.all("SELECT DISTINCT course_type FROM experiences", (err, rows) => {
@@ -524,25 +526,8 @@ async function getExperiencesByCustomObjectIds(db, customObjectIds, language, co
                                             const slotNumber = experience.timeSlots.length + 1;
                                             const timeSlotId = `${baseExperienceId}-${slotNumber}`;
                                             
-                                            // Check if this slot matches any of the user's reservations
-                                            // First try the exact match
-                                            const exactKey = `${baseExperienceId}_${timeSlotId}`;
-                                            let isSelected = reservationMap[exactKey] || false;
-                                            
-                                            // If not found, check if the experience ID has any reservations
-                                            if (!isSelected && userReservationsByExperience[baseExperienceId]) {
-                                                // Check if any of the time slot IDs for this experience match our format
-                                                isSelected = userReservationsByExperience[baseExperienceId].some(slotId => {
-                                                    // Try different formats of the slot ID
-                                                    return slotId === timeSlotId ||
-                                                           slotId === `${baseExperienceId}-${slotNumber}`;
-                                                });
-                                            }
-                                            
-                                            if (isSelected) {
-                                                logger.info(`Marking slot ${timeSlotId} as selected for experience ${baseExperienceId}`);
-                                            }
-                                            
+                                            // In fase 1: Aggiungiamo solo lo slot senza verificare se è selezionato
+                                            // La verifica verrà fatta in una seconda fase dopo aver raccolto tutti gli slot
                                             experience.timeSlots.push({
                                                 id: timeSlotId,
                                                 dbId: row.id, // Aggiungi l'ID della riga del database
@@ -550,7 +535,7 @@ async function getExperiencesByCustomObjectIds(db, customObjectIds, language, co
                                                 endTime: formatTime(row.ora_fine),
                                                 available: Math.max(0, row.max_participants - row.current_participants),
                                                 reserved: row.current_participants || 0,
-                                                selected: isSelected
+                                                selected: false // Inizialmente impostiamo a false, verrà aggiornato nella fase 2
                                             });
                                             logger.info(`After adding time slot, timeSlots length: ${experience.timeSlots.length}`);
                                         }
@@ -607,6 +592,66 @@ async function getExperiencesByCustomObjectIds(db, customObjectIds, language, co
                                             });
                                         }
                                     });
+                                    
+                                    // FASE 2: Verifica delle prenotazioni dell'utente per ogni slot
+                                    logger.info(`FASE 2: Verifica delle prenotazioni dell'utente per ogni slot`);
+                                    
+                                    if (contactId && userReservations.length > 0) {
+                                        experiences.forEach(experience => {
+                                            if (experience.timeSlots && experience.timeSlots.length > 0) {
+                                                experience.timeSlots.forEach(slot => {
+                                                    const dbId = slot.dbId;
+                                                    const timeSlotId = slot.id;
+                                                    
+                                                    // Verifica se l'utente ha prenotazioni per questo dbId
+                                                    if (userReservationsByDbId[dbId]) {
+                                                        logger.info(`Verifica slot ${timeSlotId} (dbId: ${dbId}). Prenotazioni utente: ${JSON.stringify(userReservationsByDbId[dbId])}`);
+                                                        
+                                                        // Estrai il numero dello slot dal timeSlotId
+                                                        const slotNumber = timeSlotId.split('-').pop();
+                                                        
+                                                        // Verifica se l'utente ha una prenotazione per questo slot
+                                                        userReservationsByDbId[dbId].forEach(reservationSlotId => {
+                                                            // Estrai il numero dello slot dalla prenotazione
+                                                            const reservationSlotNumber = reservationSlotId.split('-').pop();
+                                                            
+                                                            // Verifica se i numeri degli slot corrispondono
+                                                            if (slotNumber === reservationSlotNumber) {
+                                                                logger.info(`Match trovato! Slot ${timeSlotId} corrisponde alla prenotazione ${reservationSlotId} (stesso numero di slot: ${slotNumber})`);
+                                                                slot.selected = true;
+                                                            }
+                                                            
+                                                            // Verifica anche se gli ID completi corrispondono
+                                                            if (timeSlotId === reservationSlotId) {
+                                                                logger.info(`Match trovato! Slot ${timeSlotId} corrisponde esattamente alla prenotazione ${reservationSlotId}`);
+                                                                slot.selected = true;
+                                                            }
+                                                            
+                                                            // Verifica se la prenotazione termina con lo stesso numero di slot
+                                                            if (reservationSlotId.endsWith(`-${slotNumber}`)) {
+                                                                logger.info(`Match trovato! Slot ${timeSlotId} corrisponde alla prenotazione ${reservationSlotId} (entrambi terminano con -${slotNumber})`);
+                                                                slot.selected = true;
+                                                            }
+                                                        });
+                                                        
+                                                        // Verifica anche il formato chiave esatta
+                                                        const exactKey = `${dbId}_${timeSlotId}`;
+                                                        if (reservationMap[exactKey]) {
+                                                            logger.info(`Match trovato usando exactKey ${exactKey}`);
+                                                            slot.selected = true;
+                                                        }
+                                                        
+                                                        // Log del risultato
+                                                        if (slot.selected) {
+                                                            logger.info(`Slot ${timeSlotId} (dbId: ${dbId}) marcato come selezionato`);
+                                                        } else {
+                                                            logger.info(`Slot ${timeSlotId} (dbId: ${dbId}) non selezionato`);
+                                                        }
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    }
                                     
                                     // Get reservation counts for all time slots
                                     reservationService.getReservationCounts(db)
