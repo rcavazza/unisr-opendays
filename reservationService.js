@@ -15,7 +15,7 @@ const slotCalculationService = require('./slotCalculationService');
  */
 async function saveReservation(db, contactId, experienceId, timeSlotId, qrCodeUrl = null, replaceAll = false) {
     try {
-        logger.info(`Saving reservation for contact ${contactId}, experience ${experienceId}, time slot ${timeSlotId}`);
+        logger.info(`Saving reservation for contact ${contactId}, experience dbId ${experienceId}, time slot ${timeSlotId}`);
         
         // If replaceAll is true, delete all existing reservations for this contact
         if (replaceAll) {
@@ -43,7 +43,7 @@ async function saveReservation(db, contactId, experienceId, timeSlotId, qrCodeUr
             // Delete all existing reservations
             await deleteAllReservationsForContact(db, contactId);
             
-            // Create new reservation
+            // Create new reservation - now experienceId contains the dbId (numeric ID)
             await new Promise((resolve, reject) => {
                 db.run(
                     "INSERT INTO opend_reservations (contact_id, experience_id, time_slot_id, qr_code_url) VALUES (?, ?, ?, ?)",
@@ -53,14 +53,14 @@ async function saveReservation(db, contactId, experienceId, timeSlotId, qrCodeUr
                             logger.error(`Error creating reservation: ${err.message}`);
                             reject(err);
                         } else {
-                            logger.info(`Created reservation for contact ${contactId}, experience ${experienceId}`);
+                            logger.info(`Created reservation for contact ${contactId}, experience dbId ${experienceId}`);
                             resolve();
                         }
                     }
                 );
             });
         } else {
-            // Check if a reservation already exists for this contact and experience
+            // Check if a reservation already exists for this contact and experience dbId
             const existingReservation = await new Promise((resolve, reject) => {
                 db.get(
                     "SELECT id FROM opend_reservations WHERE contact_id = ? AND experience_id = ?",
@@ -87,14 +87,14 @@ async function saveReservation(db, contactId, experienceId, timeSlotId, qrCodeUr
                                 logger.error(`Error updating reservation: ${err.message}`);
                                 reject(err);
                             } else {
-                                logger.info(`Updated reservation for contact ${contactId}, experience ${experienceId}`);
+                                logger.info(`Updated reservation for contact ${contactId}, experience dbId ${experienceId}`);
                                 resolve();
                             }
                         }
                     );
                 });
             } else {
-                // Create new reservation
+                // Create new reservation - now experienceId contains the dbId (numeric ID)
                 await new Promise((resolve, reject) => {
                     db.run(
                         "INSERT INTO opend_reservations (contact_id, experience_id, time_slot_id, qr_code_url) VALUES (?, ?, ?, ?)",
@@ -104,7 +104,7 @@ async function saveReservation(db, contactId, experienceId, timeSlotId, qrCodeUr
                                 logger.error(`Error creating reservation: ${err.message}`);
                                 reject(err);
                             } else {
-                                logger.info(`Created reservation for contact ${contactId}, experience ${experienceId}`);
+                                logger.info(`Created reservation for contact ${contactId}, experience dbId ${experienceId}`);
                                 resolve();
                             }
                         }
@@ -248,7 +248,7 @@ async function updateQrCodeUrl(db, contactId, experienceId, qrCodeUrl) {
  */
 async function cancelReservation(db, contactId, experienceId, timeSlotId) {
     try {
-        logger.info(`Canceling reservation for contact ${contactId}, experience ${experienceId}, time slot ${timeSlotId}`);
+        logger.info(`Canceling reservation for contact ${contactId}, experience dbId ${experienceId}, time slot ${timeSlotId}`);
         
         return new Promise((resolve, reject) => {
             db.run(

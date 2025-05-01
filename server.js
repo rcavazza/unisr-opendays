@@ -756,8 +756,8 @@ app.post('/api/reserve', async (req, res) => {
                 });
             }
             
-            // Salva la prenotazione
-            await reservationService.saveReservation(db, contactID, experienceId, timeSlotId, null, replaceAll);
+            // Salva la prenotazione usando il dbId (slot.id) invece dell'experienceId testuale
+            await reservationService.saveReservation(db, contactID, slot.id, timeSlotId, null, replaceAll);
             
             // Incrementa il contatore dei partecipanti usando l'ID dello slot
             await experiencesService.incrementParticipantCount(db, slot.id);
@@ -814,20 +814,54 @@ app.get('/api/reservation-counters', async (req, res) => {
 
 // Endpoint to cancel a reservation
 app.post('/api/cancel-reservation', async (req, res) => {
-    const { contactID, experienceId, timeSlotId } = req.body;
+    const { contactID, experienceId, timeSlotId, dbId } = req.body;
     
-    if (!contactID || !experienceId || !timeSlotId) {
+    if (!contactID || (!experienceId && !dbId) || !timeSlotId) {
         return res.status(400).json({
             error: 'Missing required fields'
         });
     }
     
     try {
-        // Use the new cancelReservation function from reservationService
-        await reservationService.cancelReservation(db, contactID, experienceId, timeSlotId);
+        // Determina quale ID usare (dbId ha priorità)
+        let slotId = dbId;
+        
+        // Se dbId non è fornito, cerca di ottenere l'ID numerico usando experienceId
+        if (!slotId && experienceId) {
+            const slot = await new Promise((resolve, reject) => {
+                db.get(
+                    "SELECT id FROM experiences WHERE experience_id = ?",
+                    [experienceId],
+                    (err, row) => {
+                        if (err) {
+                            logger.error(`Errore nel recupero dello slot: ${err.message}`);
+                            reject(err);
+                        } else {
+                            resolve(row);
+                        }
+                    }
+                );
+            });
+            
+            if (slot) {
+                slotId = slot.id;
+                logger.info(`Converted experienceId ${experienceId} to dbId ${slotId}`);
+            } else {
+                logger.warn(`No slot found for experienceId ${experienceId}`);
+                return res.status(404).json({
+                    success: false,
+                    error: 'Slot not found',
+                    errorCode: 'SLOT_NOT_FOUND'
+                });
+            }
+        }
+        
+        // Use the cancelReservation function with the dbId
+        await reservationService.cancelReservation(db, contactID, slotId, timeSlotId);
         
         // Decrement the current_participants field for the specific time slot
-        await experiencesService.decrementParticipantCountForTimeSlot(db, experienceId, timeSlotId);
+        // Use the dbId for this operation
+        await experiencesService.decrementParticipantCountForTimeSlot(db, slotId, timeSlotId);
         
         // Update the remaining slots
         await updateRemainingSlots();

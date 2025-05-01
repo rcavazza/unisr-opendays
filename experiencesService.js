@@ -500,14 +500,24 @@ async function incrementParticipantCountForTimeSlot(db, experienceId, timeSlotId
 /**
  * Decrementa il contatore dei partecipanti per uno slot orario specifico
  * @param {Object} db - Istanza del database
- * @param {string} experienceId - Experience ID
+ * @param {string|number} experienceId - Experience ID o dbId (ID numerico)
  * @param {string} timeSlotId - Time slot ID
  * @returns {Promise<boolean>} - Successo dell'operazione
  */
 async function decrementParticipantCountForTimeSlot(db, experienceId, timeSlotId) {
   try {
-    logger.info(`[DEBUG] Decremento contatore per experienceId: ${experienceId}, timeSlotId: ${timeSlotId}`);
+    logger.info(`[DEBUG] Decremento contatore per experienceId/dbId: ${experienceId}, timeSlotId: ${timeSlotId}`);
     
+    // Verifica se experienceId è un numero (dbId)
+    const isNumeric = !isNaN(Number(experienceId));
+    
+    if (isNumeric) {
+      // Se experienceId è un numero (dbId), usa direttamente decrementParticipantCount
+      logger.info(`[DEBUG] Usando direttamente il dbId: ${experienceId}`);
+      return decrementParticipantCount(db, experienceId);
+    }
+    
+    // Altrimenti, procedi con la logica esistente per l'experience_id testuale
     // Estrai il numero dello slot dal timeSlotId
     const parts = timeSlotId.split('-');
     const slotNumber = parseInt(parts[parts.length - 1]);
