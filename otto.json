@@ -1,107 +1,66 @@
 [
-  {
-    "id": "25417865530",
-    "name": "Filosofia",
-    "orario_inizio": "",
-    "orario_fine": "",
-    "location": ""
-  },
-  {
-    "id": "25417865528",
-    "name": "Scienze Tecniche Psicologiche",
-    "orario_inizio": "",
-    "orario_fine": "",
-    "location": ""
-  },
-  {
-    "id": "25415255386",
-    "name": "Scienze Politiche",
-    "orario_inizio": "",
-    "orario_fine": "",
-    "location": ""
-  },
-  {
-    "id": "25417865519",
-    "name": "Tecniche di Radiologia",
-    "orario_inizio": "",
-    "orario_fine": "",
-    "location": ""
-  },
-  {
-    "id": "25415255380",
-    "name": "Fisioterapia",
-    "orario_inizio": "14:00",
-    "orario_fine": "15:00",
-    "location": "Aula S. G. Crisostomo"
-  },
-  {
-    "id": "25417865515",
-    "name": "Odontoiatria e Igiene Dentale",
-    "orario_inizio": "",
-    "orario_fine": "",
-    "location": ""
-  },
-  {
-    "id": "25417865510",
-    "name": "Ostetricia",
-    "orario_inizio": "13:00",
-    "orario_fine": "14:00",
-    "location": "Aula Scuola di Atene"
-  },
-  {
-    "id": "25417865508",
-    "name": "Osteopatia",
-    "orario_inizio": "",
-    "orario_fine": "",
-    "location": ""
-  },
-  {
-    "id": "25415255368",
-    "name": "Infermieristica",
-    "orario_inizio": "12:00",
-    "orario_fine": "13:00",
-    "location": "Aula Scuola di Atene"
-  },
-  {
-    "id": "25417865501",
-    "name": "Ricerca Biotecnologica",
-    "orario_inizio": "",
-    "orario_fine": "",
-    "location": ""
-  },
-  {
-    "id": "25417865498",
-    "name": "International Medical Doctor Program",
-    "orario_inizio": "",
-    "orario_fine": "",
-    "location": ""
-  },
-  {
-    "id": "25417865493",
-    "name": "Medicina e Chirurgia 3",
-    "orario_inizio": "",
-    "orario_fine": "",
-    "location": ""
-  },
-  {
-    "id": "25417865392",
-    "name": "Medicina e Chirurgia 2",
-    "orario_inizio": "",
-    "orario_fine": "",
-    "location": ""
-  },
-  {
-    "id": "25326449768",
-    "name": "Medicina e Chirurgia 1",
-    "orario_inizio": "",
-    "orario_fine": "",
-    "location": ""
-  },
-  {
-    "id": "140261653720",
-    "name": "Genitori Tutti Corsi presentati il 10/05",
-    "orario_inizio": "",
-    "orario_fine": "",
-    "location": ""
-  }
+    {
+      "id": "26732275832",
+      "name": "Biotechnology for Innovative Therapeutics",
+      "orario_inizio": "16:00",
+      "orario_fine": "17:00",
+      "location": "Aula Origene"
+    },
+    {
+      "id": "26674022262",
+      "name": "Health Informatics",
+      "orario_inizio": "17:00",
+      "orario_fine": "18:00",
+      "location": "Aula S. Agostino"
+    },
+    {
+      "id": "26732275834",
+      "name": "Scienze Infermieristiche e Ostetriche",
+      "orario_inizio": "16:00",
+      "orario_fine": "17:00",
+      "location": "Aula S. Cipriano"
+    },
+    {
+      "id": "26732275835",
+      "name": "Scienze Riabilitative delle Professioni Sanitarie",
+      "orario_inizio": "17:00",
+      "orario_fine": "18:00",
+      "location": "Aula S. Cipriano"
+    },
+    {
+      "id": "26674022264",
+      "name": "Psicologia",
+      "orario_inizio": "16:00",
+      "orario_fine": "17:00",
+      "location": "Aula S. Atanasio"
+    },
+    {
+      "id": "26674022266",
+      "name": "Cognitive Psychology in Health Communication",
+      "orario_inizio": "17:00",
+      "orario_fine": "18:00",
+      "location": "Aula S. Atanasio"
+    },
+    {
+      "id": "26674022267",
+      "name": "Geopolitica, Economia e Strategie Globali",
+      "orario_inizio": "17:00",
+      "orario_fine": "18:00",
+      "location": "Aula Origene"
+    },
+    {
+      "id": "26732275838",
+      "name": "Filosofia del Mondo Contemporaneo",
+      "orario_inizio": "16:00",
+      "orario_fine": "17:00",
+      "location": "Aula Tertulliano"
+    },
+    {
+      "id": "26732275839",
+      "name": "Teoria e Storia delle Arti e dell’Immagine",
+      "orario_inizio": "17:00",
+      "orario_fine": "18:00",
+      "location": "Aula Tertulliano"
+    }
 ]
+  

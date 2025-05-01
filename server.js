@@ -628,7 +628,7 @@ app.post('/api/update-selected-experiences', async (req, res) => {
         logger.info(`Email transporter configuration: host=${process.env.SMTP_HOST}, port=${process.env.SMTP_PORT}, secure=${process.env.SMTP_SECURE}`);
         
         // Function to get matching courses from corsi.json
-        function getMatchingCourses(matchingCourseIds) {
+        function getMatchingCourses(courseTypes) {
             try {
                 logger.info(`Attempting to read corsi.json file...`);
                 logger.info(`Current directory: ${__dirname}`);
@@ -642,11 +642,11 @@ app.post('/api/update-selected-experiences', async (req, res) => {
                 
                 const allCourses = JSON.parse(coursesData);
                 logger.info(`Parsed ${allCourses.length} courses from corsi.json`);
-                logger.info(`Looking for courses with IDs: ${matchingCourseIds.join(', ')}`);
+                logger.info(`Looking for courses with course types: ${courseTypes.join(', ')}`);
                 
-                // Filter courses by matching IDs
+                // Filter courses by matching course types
                 const matchingCourses = allCourses.filter(course =>
-                    matchingCourseIds.includes(course.id)
+                    courseTypes.includes(course.id)
                 );
                 
                 logger.info(`Found ${matchingCourses.length} matching courses`);
@@ -694,6 +694,7 @@ app.post('/api/update-selected-experiences', async (req, res) => {
         // Function to send email with QR code that returns a Promise
         function sendEmailWithQR(contact, qrCodeUrl, validExperiences, language, matchingCourses = []) {
             return new Promise((resolve, reject) => {
+                console.log("XXXXX");
                 // Prepare email data with the same structure as the confirmation page
                 const emailData = {
                     name: contact.firstname,
@@ -942,9 +943,30 @@ app.post('/api/update-selected-experiences', async (req, res) => {
             const text2encode = contact.email + '**' + contactID;
             const encoded = xorCipher.encode(text2encode, xorKey);
             
+            // Get course_types from experiences
+            logger.info(`Getting course_types for experiences with IDs: ${expIds.join(', ')}`);
+            const courseTypes = await new Promise((resolve, reject) => {
+                const placeholders = expIds.map(() => '?').join(',');
+                db.all(
+                    `SELECT DISTINCT course_type FROM experiences WHERE experience_id IN (${placeholders})`,
+                    expIds,
+                    (err, rows) => {
+                        if (err) {
+                            logger.error(`Error fetching course_types: ${err.message}`);
+                            reject(err);
+                        } else {
+                            const types = rows.map(row => row.course_type).filter(type => type !== null);
+                            resolve(types);
+                        }
+                    }
+                );
+            });
+            
+            logger.info(`Retrieved ${courseTypes.length} course types: ${courseTypes.join(', ')}`);
+            
             // Get matching courses from corsi.json
-            logger.info(`Calling getMatchingCourses with expIds: ${expIds.join(', ')}`);
-            const matchingCourses = getMatchingCourses(expIds);
+            logger.info(`Calling getMatchingCourses with course types: ${courseTypes.join(', ')}`);
+            const matchingCourses = getMatchingCourses(courseTypes);
             logger.info(`Retrieved ${matchingCourses.length} matching courses for email`);
             logger.info(`Matching courses details: ${JSON.stringify(matchingCourses)}`);
 

@@ -34,6 +34,12 @@ const logger = {
         logStream.write(logMessage);
     },
     
+    warn: (message) => {
+        const logMessage = `[${new Date().toISOString()}] WARN: ${message}\n`;
+        console.warn(logMessage.trim());
+        logStream.write(logMessage);
+    },
+    
     error: (message, error = null) => {
         let logMessage = `[${new Date().toISOString()}] ERROR: ${message}\n`;
         if (error) {

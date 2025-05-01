@@ -21,6 +21,10 @@ const ConfirmationPageWrapper = () => {
   console.log('ConfirmationPageWrapper - location:', location);
   console.log('ConfirmationPageWrapper - location.search:', location.search);
   
+  // Determine if the user is coming from the selection page
+  const isFromSelectionPage = !!location.state?.activities?.length;
+  console.log('ConfirmationPageWrapper - isFromSelectionPage:', isFromSelectionPage);
+  
   // Extract parameters from URL query parameters
   const urlParams = new URLSearchParams(location.search);
   console.log('ConfirmationPageWrapper - urlParams entries:', Array.from(urlParams.entries()));
@@ -55,6 +59,7 @@ const ConfirmationPageWrapper = () => {
         activities={activities}
         contactID={contactID}
         matchingCourseIds={matchingCourseIds}
+        isFromSelectionPage={isFromSelectionPage}
       />
     </LanguageProvider>
   );

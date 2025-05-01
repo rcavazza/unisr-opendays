@@ -23,9 +23,10 @@ interface ConfirmationPageProps {
   activities: SelectedActivity[];
   contactID?: string; // Add contactID prop
   matchingCourseIds?: string[]; // Add matching course IDs
+  isFromSelectionPage?: boolean; // Add flag to indicate if coming from selection page
 }
 
-export const ConfirmationPage = ({ activities, contactID, matchingCourseIds = [] }: ConfirmationPageProps) => {
+export const ConfirmationPage = ({ activities, contactID, matchingCourseIds = [], isFromSelectionPage = false }: ConfirmationPageProps) => {
   const { t } = useTranslation();
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('/images/qr.png'); // Default to static image
   const [matchingCourses, setMatchingCourses] = useState<Course[]>([]);
@@ -53,31 +54,27 @@ export const ConfirmationPage = ({ activities, contactID, matchingCourseIds = []
     }
   }, [matchingCourseIds]);
 
-  // Fetch matching courses from otto.json first, then fall back to corsi.json
+  // Fetch matching courses from otto.json or corsi.json based on navigation source
   useEffect(() => {
     console.log('ConfirmationPage - Fetch courses effect running');
     console.log('ConfirmationPage - matchingCourseIds in fetch effect:', matchingCourseIds);
+    console.log('ConfirmationPage - isFromSelectionPage:', isFromSelectionPage);
     
     if (matchingCourseIds.length > 0) {
       const fetchCourses = async () => {
         try {
           console.log('ConfirmationPage - Fetching courses for IDs:', matchingCourseIds);
           
-          // First try to fetch from otto.json
-          console.log('ConfirmationPage - Attempting to fetch from otto.json');
-          let response = await fetch('/otto.json');
-          console.log('ConfirmationPage - otto.json response status:', response.status);
+          // Choose the appropriate JSON file based on navigation source
+          const jsonFile = isFromSelectionPage ? '/corsi.json' : '/otto.json';
+          console.log(`ConfirmationPage - Fetching from ${jsonFile} based on navigation source`);
           
-          // If otto.json is not available, fall back to corsi.json
+          let response = await fetch(jsonFile);
+          console.log(`ConfirmationPage - ${jsonFile} response status:`, response.status);
+          
           if (!response.ok) {
-            console.warn('Failed to fetch from otto.json, falling back to corsi.json');
-            response = await fetch('/corsi.json');
-            console.log('ConfirmationPage - corsi.json response status:', response.status);
-            
-            if (!response.ok) {
-              console.error('Failed to fetch courses:', response.statusText);
-              return;
-            }
+            console.error(`Failed to fetch from ${jsonFile}:`, response.statusText);
+            return;
           }
           
           const allCourses: Course[] = await response.json();
@@ -106,7 +103,7 @@ export const ConfirmationPage = ({ activities, contactID, matchingCourseIds = []
       
       fetchCourses();
     }
-  }, [matchingCourseIds]);
+  }, [matchingCourseIds, isFromSelectionPage]);
   
   return (
     <main className="min-h-screen bg-[#00A4E4] w-full">
