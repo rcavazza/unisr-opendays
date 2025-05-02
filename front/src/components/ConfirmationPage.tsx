@@ -60,49 +60,55 @@ export const ConfirmationPage = ({ activities, contactID, matchingCourseIds = []
     console.log('ConfirmationPage - matchingCourseIds in fetch effect:', matchingCourseIds);
     console.log('ConfirmationPage - isFromSelectionPage:', isFromSelectionPage);
     
-    if (matchingCourseIds.length > 0) {
-      const fetchCourses = async () => {
-        try {
-          console.log('ConfirmationPage - Fetching courses for IDs:', matchingCourseIds);
-          
-          // Choose the appropriate JSON file based on navigation source
-          const jsonFile = isFromSelectionPage ? '/corsi.json' : '/otto.json';
-          console.log(`ConfirmationPage - Fetching from ${jsonFile} based on navigation source`);
-          
-          let response = await fetch(jsonFile);
-          console.log(`ConfirmationPage - ${jsonFile} response status:`, response.status);
-          
-          if (!response.ok) {
-            console.error(`Failed to fetch from ${jsonFile}:`, response.statusText);
-            return;
-          }
-          
-          const allCourses: Course[] = await response.json();
-          console.log('ConfirmationPage - Fetched courses count:', allCourses.length);
-          console.log('ConfirmationPage - First few courses:', allCourses.slice(0, 3));
-          
-          // Ensure matchingCourseIds are strings for comparison
-          const normalizedIds = matchingCourseIds.map(id => String(id));
-          console.log('ConfirmationPage - Normalized IDs for comparison:', normalizedIds);
-          
-          // Filter courses by matching IDs
-          const courses = allCourses.filter(course => {
-            const courseIdStr = String(course.id);
-            const isMatch = normalizedIds.includes(courseIdStr);
-            console.log(`ConfirmationPage - Course ${courseIdStr} (${course.name}) match: ${isMatch}`);
-            return isMatch;
-          });
-          
-          console.log('ConfirmationPage - Matching courses count:', courses.length);
-          console.log('ConfirmationPage - Matching courses:', courses);
-          setMatchingCourses(courses);
-        } catch (error) {
-          console.error('Error fetching courses:', error);
+    // Rimuoviamo la condizione per eseguire sempre il caricamento dei corsi
+    const fetchCourses = async () => {
+      try {
+        console.log('ConfirmationPage - Fetching courses for IDs:', matchingCourseIds);
+        
+        // Choose the appropriate JSON file based on navigation source
+        const jsonFile = isFromSelectionPage ? '/corsi.json' : '/otto.json';
+        console.log(`ConfirmationPage - Fetching from ${jsonFile} based on navigation source`);
+        
+        let response = await fetch(jsonFile);
+        console.log(`ConfirmationPage - ${jsonFile} response status:`, response.status);
+        
+        if (!response.ok) {
+          console.error(`Failed to fetch from ${jsonFile}:`, response.statusText);
+          return;
         }
-      };
-      
-      fetchCourses();
-    }
+        
+        const allCourses: Course[] = await response.json();
+        console.log('ConfirmationPage - Fetched courses count:', allCourses.length);
+        console.log('ConfirmationPage - First few courses:', allCourses.slice(0, 3));
+        
+        // Se non ci sono matchingCourseIds, mostriamo tutti i corsi
+        if (matchingCourseIds.length === 0) {
+          console.log('ConfirmationPage - No matching course IDs provided, showing all courses');
+          setMatchingCourses(allCourses);
+          return;
+        }
+        
+        // Ensure matchingCourseIds are strings for comparison
+        const normalizedIds = matchingCourseIds.map(id => String(id));
+        console.log('ConfirmationPage - Normalized IDs for comparison:', normalizedIds);
+        
+        // Filter courses by matching IDs
+        const courses = allCourses.filter(course => {
+          const courseIdStr = String(course.id);
+          const isMatch = normalizedIds.includes(courseIdStr);
+          console.log(`ConfirmationPage - Course ${courseIdStr} (${course.name}) match: ${isMatch}`);
+          return isMatch;
+        });
+        
+        console.log('ConfirmationPage - Matching courses count:', courses.length);
+        console.log('ConfirmationPage - Matching courses:', courses);
+        setMatchingCourses(courses);
+      } catch (error) {
+        console.error('Error fetching courses:', error);
+      }
+    };
+    
+    fetchCourses();
   }, [matchingCourseIds, isFromSelectionPage]);
   
   return (
@@ -115,20 +121,21 @@ export const ConfirmationPage = ({ activities, contactID, matchingCourseIds = []
           <div className="text-center text-white text-xl mb-8 font-bold">
             {t('emailRecapSent')}
           </div>
-          <div className="bg-white p-8 rounded-lg shadow-lg mb-12">
+          <div className="bg-white rounded-lg shadow-lg mb-12 w-2/3 mx-auto relative" style={{ padding: '2px' }}>
             <img
               src={qrCodeUrl}
               alt="QR Code"
-              className="w-full aspect-square object-contain"
+              className="aspect-square object-contain mx-auto"
+              style={{ width: '98%', maxWidth: '100%' }}
             />
           </div>
-          {/* Display matching courses FIRST */}
-          {matchingCourses.length > 0 && (
-            <div className="space-y-4 mb-16">
-              <h2 className="text-2xl text-white font-bold text-center mb-4">
-                {t('matchingCourses', 'Your Courses')}
-              </h2>
-              {matchingCourses.map((course, index) => (
+          {/* Display matching courses FIRST - sempre visualizzato */}
+          <div className="space-y-4 mb-16">
+            <h2 className="text-2xl text-white font-bold text-center mb-4">
+              {t('matchingCourses', 'Your Courses')}
+            </h2>
+            {matchingCourses.length > 0 ? (
+              matchingCourses.map((course, index) => (
                 <div key={index} className="bg-[#0082b6] p-6 rounded">
                   <h2 className="text-xl text-white font-extrabold mb-2">
                     {course.name}
@@ -146,9 +153,13 @@ export const ConfirmationPage = ({ activities, contactID, matchingCourseIds = []
                     )}
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            ) : (
+              <div className="bg-[#0082b6] p-6 rounded">
+                <p className="text-white text-center">{t('noCourses', 'No courses available')}</p>
+              </div>
+            )}
+          </div>
           
           {/* Then display selected activities */}
           {activities.length > 0 && (

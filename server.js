@@ -115,7 +115,7 @@ app.get('/fix_frontend', (req, res) => {
 // Serve the frontend app for language-specific routes and root
 app.get(['/en/opendays', '/it/opendays', '/opendays', '/en/opendays/confirmation', '/it/opendays/confirmation', '/it/opendays/genitori', '/en/opendays/genitori', '/opendays/genitori'], async (req, res) => {
     // Function to get matching courses from corsi.json
-    function getMatchingCourses(courseTypes) {
+    function getMatchingCourses(courseTypes, returnAllCourses = false) {
         try {
             logger.info(`Attempting to read corsi.json file...`);
             logger.info(`Current directory: ${__dirname}`);
@@ -129,6 +129,13 @@ app.get(['/en/opendays', '/it/opendays', '/opendays', '/en/opendays/confirmation
             
             const allCourses = JSON.parse(coursesData);
             logger.info(`Parsed ${allCourses.length} courses from corsi.json`);
+            
+            // Se returnAllCourses è true, restituisci tutti i corsi senza filtrare
+            if (returnAllCourses) {
+                logger.info(`Returning all ${allCourses.length} courses from corsi.json without filtering`);
+                return allCourses;
+            }
+            
             logger.info(`Looking for courses with course types: ${courseTypes.join(', ')}`);
             
             // Filter courses by matching course types
@@ -142,6 +149,39 @@ app.get(['/en/opendays', '/it/opendays', '/opendays', '/en/opendays/confirmation
             return matchingCourses;
         } catch (error) {
             logger.error('Error reading courses data:', error);
+            logger.error('Error stack:', error.stack);
+            return [];
+        }
+    }
+
+    // Function to get matching courses from otto.json
+    function getMatchingCoursesFromOtto(courseTypes) {
+        try {
+            logger.info(`Attempting to read otto.json file...`);
+            logger.info(`Current directory: ${__dirname}`);
+            const coursesPath = path.join(__dirname, 'otto.json');
+            logger.info(`Full path to otto.json: ${coursesPath}`);
+            logger.info(`File exists: ${fs.existsSync(coursesPath)}`);
+            
+            const coursesData = fs.readFileSync(coursesPath, 'utf8');
+            logger.info(`Successfully read otto.json file`);
+            logger.info(`Courses data length: ${coursesData.length} characters`);
+            
+            const allCourses = JSON.parse(coursesData);
+            logger.info(`Parsed ${allCourses.length} courses from otto.json`);
+            logger.info(`Looking for courses with course types: ${courseTypes.join(', ')}`);
+            
+            // Filter courses by matching course types
+            const matchingCourses = allCourses.filter(course =>
+                courseTypes.includes(course.id)
+            );
+            
+            logger.info(`Found ${matchingCourses.length} matching courses in otto.json`);
+            logger.info(`Matching courses: ${JSON.stringify(matchingCourses)}`);
+            
+            return matchingCourses;
+        } catch (error) {
+            logger.error('Error reading otto.json data:', error);
             logger.error('Error stack:', error.stack);
             return [];
         }
@@ -179,9 +219,45 @@ app.get(['/en/opendays', '/it/opendays', '/opendays', '/en/opendays/confirmation
     }
     
     // Function to send email with QR code that returns a Promise
-    function sendEmailWithQR(contact, qrCodeUrl, validExperiences, language, matchingCourses = []) {
+    function sendEmailWithQR(contact, qrCodeUrl, validExperiences, language, matchingCourses = [], useOttoJson = false) {
         return new Promise((resolve, reject) => {
             console.log("XXXXX");
+            
+            // Validate language parameter
+            if (!language || (language !== 'en' && language !== 'it')) {
+                logger.info(`Invalid or empty language parameter: "${language}". Using default language: "en"`);
+                language = 'en';
+            } else {
+                logger.info(`Using language: "${language}" for email template`);
+            }
+            
+            // Se matchingCourses è vuoto, carica TUTTI i corsi dalla fonte appropriata
+            if (!matchingCourses || matchingCourses.length === 0) {
+                if (useOttoJson === true) {
+                    // Se useOttoJson è true (non si arriva dal submit), carica tutti i corsi da otto.json
+                    try {
+                        const coursesPath = path.join(__dirname, 'otto.json');
+                        const coursesData = fs.readFileSync(coursesPath, 'utf8');
+                        matchingCourses = JSON.parse(coursesData);
+                        logger.info(`Using all courses from otto.json, found ${matchingCourses.length} courses`);
+                    } catch (error) {
+                        logger.error('Error reading all courses from otto.json:', error);
+                        matchingCourses = [];
+                    }
+                } else {
+                    // Se useOttoJson è false (si arriva dal submit), carica tutti i corsi da corsi.json
+                    try {
+                        const coursesPath = path.join(__dirname, 'corsi.json');
+                        const coursesData = fs.readFileSync(coursesPath, 'utf8');
+                        matchingCourses = JSON.parse(coursesData);
+                        logger.info(`Using all courses from corsi.json, found ${matchingCourses.length} courses`);
+                    } catch (error) {
+                        logger.error('Error reading all courses from corsi.json:', error);
+                        matchingCourses = [];
+                    }
+                }
+            }
+            
             // Prepare email data with the same structure as the confirmation page
             const emailData = {
                 name: contact.firstname,
@@ -362,8 +438,8 @@ app.get(['/en/opendays', '/it/opendays', '/opendays', '/en/opendays/confirmation
                 const qrCode = await generateQRCode(encoded);
                 const qrCodeUrl = await saveQRCodeToFile(qrCode);
                 
-                // 3. Ottieni i corsi corrispondenti
-                const matchingCourses = getMatchingCourses(matchingOttoCourseIds);
+                // 3. Ottieni i corsi corrispondenti direttamente da otto.json
+                const matchingCourses = getMatchingCoursesFromOtto(matchingOttoCourseIds);
                 
                 // 4. Chiama sendEmailWithQR con array vuoto per le esperienze
                 await sendEmailWithQR(contact, qrCodeUrl, [], language, matchingCourses);
@@ -852,9 +928,45 @@ app.get('/api/test', (req, res) => {
 });
 
         // Function to send email with QR code that returns a Promise
-        function sendEmailWithQR(contact, qrCodeUrl, validExperiences, language, matchingCourses = []) {
+        function sendEmailWithQR(contact, qrCodeUrl, validExperiences, language, matchingCourses = [], useOttoJson = false) {
             return new Promise((resolve, reject) => {
                 console.log("XXXXX");
+                
+                // Validate language parameter
+                if (!language || (language !== 'en' && language !== 'it')) {
+                    logger.info(`Invalid or empty language parameter: "${language}". Using default language: "en"`);
+                    language = 'en';
+                } else {
+                    logger.info(`Using language: "${language}" for email template`);
+                }
+                
+                // Se matchingCourses è vuoto, carica TUTTI i corsi dalla fonte appropriata
+                if (!matchingCourses || matchingCourses.length === 0) {
+                    if (useOttoJson === true) {
+                        // Se useOttoJson è true (non si arriva dal submit), carica tutti i corsi da otto.json
+                        try {
+                            const coursesPath = path.join(__dirname, 'otto.json');
+                            const coursesData = fs.readFileSync(coursesPath, 'utf8');
+                            matchingCourses = JSON.parse(coursesData);
+                            logger.info(`Using all courses from otto.json, found ${matchingCourses.length} courses`);
+                        } catch (error) {
+                            logger.error('Error reading all courses from otto.json:', error);
+                            matchingCourses = [];
+                        }
+                    } else {
+                        // Se useOttoJson è false (si arriva dal submit), carica tutti i corsi da corsi.json
+                        try {
+                            const coursesPath = path.join(__dirname, 'corsi.json');
+                            const coursesData = fs.readFileSync(coursesPath, 'utf8');
+                            matchingCourses = JSON.parse(coursesData);
+                            logger.info(`Using all courses from corsi.json, found ${matchingCourses.length} courses`);
+                        } catch (error) {
+                            logger.error('Error reading all courses from corsi.json:', error);
+                            matchingCourses = [];
+                        }
+                    }
+                }
+                
                 // Prepare email data with the same structure as the confirmation page
                 const emailData = {
                     name: contact.firstname,
@@ -1012,6 +1124,9 @@ app.post('/api/update-selected-experiences', async (req, res) => {
         
         // Extract language from request headers or query parameters
         // Default to English if not specified
+        logger.info(`Request query parameters: ${JSON.stringify(req.query)}`);
+        logger.info(`Request query lang parameter: ${req.query.lang}`);
+        
         const language = req.query.lang === 'it' ? 'it' : 'en';
         logger.info(`Using language: ${language} for email`);
         
@@ -1022,7 +1137,7 @@ app.post('/api/update-selected-experiences', async (req, res) => {
         logger.info(`Email transporter configuration: host=${process.env.SMTP_HOST}, port=${process.env.SMTP_PORT}, secure=${process.env.SMTP_SECURE}`);
         
         // Function to get matching courses from corsi.json
-        function getMatchingCourses(courseTypes) {
+        function getMatchingCourses(courseTypes, returnAllCourses = false) {
             try {
                 logger.info(`Attempting to read corsi.json file...`);
                 logger.info(`Current directory: ${__dirname}`);
@@ -1036,6 +1151,13 @@ app.post('/api/update-selected-experiences', async (req, res) => {
                 
                 const allCourses = JSON.parse(coursesData);
                 logger.info(`Parsed ${allCourses.length} courses from corsi.json`);
+                
+                // Se returnAllCourses è true, restituisci tutti i corsi senza filtrare
+                if (returnAllCourses) {
+                    logger.info(`Returning all ${allCourses.length} courses from corsi.json without filtering`);
+                    return allCourses;
+                }
+                
                 logger.info(`Looking for courses with course types: ${courseTypes.join(', ')}`);
                 
                 // Filter courses by matching course types
@@ -1088,6 +1210,14 @@ app.post('/api/update-selected-experiences', async (req, res) => {
         // Function to send email without QR code that returns a Promise
         function sendEmailWithoutQR(contact, validExperiences, language, matchingCourses = []) {
             return new Promise((resolve, reject) => {
+                // Validate language parameter
+                if (!language || (language !== 'en' && language !== 'it')) {
+                    logger.info(`Invalid or empty language parameter: "${language}". Using default language: "en"`);
+                    language = 'en';
+                } else {
+                    logger.info(`Using language: "${language}" for email template`);
+                }
+                
                 // Similar to sendEmailWithQR but without the QR code
                 const emailData = {
                     name: contact.firstname,
@@ -1257,10 +1387,10 @@ app.post('/api/update-selected-experiences', async (req, res) => {
             
             logger.info(`Retrieved ${courseTypes.length} course types: ${courseTypes.join(', ')}`);
             
-            // Get matching courses from corsi.json
-            logger.info(`Calling getMatchingCourses with course types: ${courseTypes.join(', ')}`);
-            const matchingCourses = getMatchingCourses(courseTypes);
-            logger.info(`Retrieved ${matchingCourses.length} matching courses for email`);
+            // Get ALL courses from corsi.json, not just matching ones
+            logger.info(`Calling getMatchingCourses with returnAllCourses=true to get all courses`);
+            const matchingCourses = getMatchingCourses(courseTypes, true);
+            logger.info(`Retrieved ${matchingCourses.length} courses for email (all courses from corsi.json)`);
             logger.info(`Matching courses details: ${JSON.stringify(matchingCourses)}`);
 
             try {
@@ -1270,7 +1400,7 @@ app.post('/api/update-selected-experiences', async (req, res) => {
                     // Save QR code to file
                     const qrCodeUrl = await saveQRCodeToFile(qrCode);
                     // Send email with QR code
-                    await sendEmailWithQR(contact, qrCodeUrl, validExperiences, language, matchingCourses);
+                    await sendEmailWithQR(contact, qrCodeUrl, validExperiences, language, matchingCourses, false);
                     logger.info('Email with QR code sent successfully');
                 } catch (saveError) {
                     logger.error('Error saving QR code:', saveError);

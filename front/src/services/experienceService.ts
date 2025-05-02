@@ -168,10 +168,14 @@ export const fetchReservationCounters = async (): Promise<Record<string, number>
  */
 export const updateSelectedExperiences = async (
   contactID: string,
-  experienceIds: (string | number)[]
+  experienceIds: (string | number)[],
+  lang: string = 'en' // Add language parameter with default value
 ): Promise<{ success: boolean, error?: string }> => {
   try {
-    console.log('Updating selected experiences:', { contactID, experienceIds });
+    // Ensure we're using a simple language code (en or it)
+    const simpleLang = lang.startsWith('en') ? 'en' : lang.startsWith('it') ? 'it' : 'en';
+    
+    console.log('Updating selected experiences:', { contactID, experienceIds, language: simpleLang });
     
     // Log the request details
     const requestBody = {
@@ -180,7 +184,8 @@ export const updateSelectedExperiences = async (
     };
     console.log('Request body:', JSON.stringify(requestBody));
     
-    const response = await fetch(' /api/update-selected-experiences', {
+    // Add language as a query parameter
+    const response = await fetch(` /api/update-selected-experiences?lang=${simpleLang}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

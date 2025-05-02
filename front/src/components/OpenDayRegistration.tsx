@@ -424,7 +424,11 @@ export const OpenDayRegistration = () => {
       // Make reservations for all selected time slots
       const selectedSlots = Object.entries(selectedTimeSlots);
       
-      for (let i = 0; i < selectedSlots.length; i++) {
+      // Verifica se ci sono slot selezionati
+      if (selectedSlots.length > 0) {
+        console.log(`Processing ${selectedSlots.length} selected slots`);
+        
+        for (let i = 0; i < selectedSlots.length; i++) {
         const [activityId, timeSlotId] = selectedSlots[i];
         console.log(`Making reservation for activity ${activityId}, time slot ${timeSlotId}`);
         
@@ -482,13 +486,16 @@ export const OpenDayRegistration = () => {
             return;
           }
         }
+        }
+        
+        console.log('All reservations completed successfully');
+      } else {
+        console.log('No slots selected, proceeding without making reservations');
       }
       
-      console.log('All reservations completed successfully');
+      // All reservations successful or no reservations needed
       
-      // All reservations successful
-      
-      // Extract just the activity IDs from the selected time slots
+      // Extract just the activity IDs from the selected time slots (empty array if none selected)
       const selectedActivityIds = Object.keys(selectedTimeSlots);
       console.log('Selected activity IDs for HubSpot update:', selectedActivityIds);
       console.log('Contact ID for HubSpot update:', contactID);
@@ -510,8 +517,10 @@ export const OpenDayRegistration = () => {
       // Update the HubSpot contact with the selected experience IDs
       console.log('Now updating HubSpot contact with selected experiences');
       try {
-        console.log('Calling updateSelectedExperiences with:', { contactID, selectedActivityIds });
-        const result = await updateSelectedExperiences(contactID, selectedActivityIds);
+        // Get the current language from URL parameters
+        const language = lang || 'en';
+        console.log('Calling updateSelectedExperiences with:', { contactID, selectedActivityIds, language });
+        const result = await updateSelectedExperiences(contactID, selectedActivityIds, language);
         console.log('Result from updateSelectedExperiences:', result);
         console.log('Successfully updated HubSpot contact with selected experiences');
       } catch (updateError) {
@@ -787,7 +796,7 @@ export const OpenDayRegistration = () => {
         {!contactIdMissing && (
             <div className="flex justify-center mb-16">
           <button onClick={handleSubmit}
-              disabled={!hasSelections || loading}
+              disabled={loading}
               className={`bg-yellow-300 text-white font-bold text-xl px-16 py-4 rounded-full border-2 border-white hover:bg-yellow-400 transition-colors `}>
           {t('submitRegistration')}
           </button>

@@ -56,11 +56,53 @@
       "location": "Aula Tertulliano"
     },
     {
+      "id": "26674022268",
+      "name": "Politics, Philosophy and Public Affairs",
+      "orario_inizio": "",
+      "orario_fine": "",
+      "location": ""
+    },
+    {
       "id": "26732275839",
       "name": "Teoria e Storia delle Arti e dell’Immagine",
       "orario_inizio": "17:00",
       "orario_fine": "18:00",
       "location": "Aula Tertulliano"
+    },
+    {
+      "id": "26732275842",
+      "name": "Talk: Scuole di Specializzazione - Area Psicologica",
+      "orario_inizio": "15:00",
+      "orario_fine": "15:30",
+      "location": "Aula Scuola di Atene"
+    },
+    {
+      "id": "26732275843",
+      "name": "Talk: Scuole di Specializzazione - Area Odontoiatrica",
+      "orario_inizio": "15:30",
+      "orario_fine": "16:00",
+      "location": "Aula Scuola di Atene"
+    },
+    {
+      "id": "26674022269",
+      "name": "Talk: Scuole di Specializzazione - Area Chirurgica",
+      "orario_inizio": "16:00",
+      "orario_fine": "16:30",
+      "location": "Aula Scuola di Atene"
+    },
+    {
+      "id": "26674022273",
+      "name": "Talk: Scuole di Specializzazione - Area Medica",
+      "orario_inizio": "16:30",
+      "orario_fine": "17:00",
+      "location": "Aula Scuola di Atene"
+    },
+    {
+      "id": "26674022274",
+      "name": "Talk: Scuole di Specializzazione - Area Servizi Clinici",
+      "orario_inizio": "17:00",
+      "orario_fine": "17:30",
+      "location": "Aula Scuola di Atene"
     }
-]
+  ]
   
