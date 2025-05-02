@@ -96,5 +96,12 @@
     "orario_inizio": "13:00",
     "orario_fine": "14:00",
     "location": "Aula S. Ambrogio"
+  },
+  {
+    "id": "140261653720",
+    "name": "Offerta formativa Lauree Triennali e Magistrali a Ciclo Unico",
+    "orario_inizio": "",
+    "orario_fine": "",
+    "location": ""
   }
 ]

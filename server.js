@@ -1094,14 +1094,28 @@ app.post('/api/update-selected-experiences', async (req, res) => {
         
         logger.info(`Updating HubSpot contact ${contactID} with selected experiences: ${experiencesString}`);
         
+        // Verifica se uno degli experienceIds è un workshop genitori (10026 o 10027)
+        const WORKSHOP_GENITORI_IDS = ['10026', '10027'];
+        const isWorkshopGenitori = Array.isArray(experienceIds)
+            ? experienceIds.some(id => WORKSHOP_GENITORI_IDS.includes(id))
+            : WORKSHOP_GENITORI_IDS.includes(experienceIds);
+        
+        // Determina quale campo HubSpot aggiornare in base all'ID dell'esperienza
+        let hubspotField = 'open_day__iscrizione_esperienze_10_05_2025';
+        if (isWorkshopGenitori) {
+            hubspotField = 'slot_prenotazione_workshop_genitori_open_day_2025';
+            logger.info(`Using workshop genitori field: ${hubspotField}`);
+        }
+        
         // Log the request details
         const requestData = {
             properties: {
-                open_day__iscrizione_esperienze_10_05_2025: experiencesString
+                [hubspotField]: experiencesString
             }
         };
         logger.info('HubSpot update request data:', JSON.stringify(requestData, null, 2));
         logger.info(`Final property value being sent to HubSpot: "${experiencesString}"`);
+        logger.info(`Using HubSpot field: ${hubspotField} (isWorkshopGenitori: ${isWorkshopGenitori})`);
         
         // Log the API key being used (without showing the full key)
         const apiKeyPrefix = apiKey.substring(0, 10);
@@ -1473,6 +1487,21 @@ app.post('/api/update-selected-experiences', async (req, res) => {
                 // Check if it's a property not found error
                 if (error.response.data.message.includes('property') && error.response.data.message.includes('not found')) {
                     logger.error('This appears to be a property not found error. The property might not exist in HubSpot.');
+                }
+                
+                // Check if it's an invalid option error
+                if (error.response.data.message.includes('not one of the allowed options')) {
+                    logger.error('This appears to be an invalid option error. The value sent is not in the list of allowed options for the property.');
+                    logger.error(`Field used: ${hubspotField}, Value sent: ${experiencesString}`);
+                    
+                    // Log the workshop genitori detection logic for debugging
+                    logger.error(`Workshop genitori detection: isWorkshopGenitori=${isWorkshopGenitori}`);
+                    logger.error(`Workshop genitori IDs: ${WORKSHOP_GENITORI_IDS.join(', ')}`);
+                    if (Array.isArray(experienceIds)) {
+                        logger.error(`Experience IDs checked: ${experienceIds.join(', ')}`);
+                    } else {
+                        logger.error(`Experience ID checked: ${experienceIds}`);
+                    }
                 }
                 
                 // Check if it's an authentication error

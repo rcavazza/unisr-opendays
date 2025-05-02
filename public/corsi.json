@@ -1,98 +1,105 @@
 [
   {
-    "id": "25417865530",
-    "name": "Filosofia",
-    "orario_inizio": "",
-    "orario_fine": "",
-    "location": ""
+    "id": "25417865498",
+    "name": "International Medical Doctor Program",
+    "orario_inizio": "12:00",
+    "orario_fine": "13:00",
+    "location": "Aula Newton"
   },
   {
-    "id": "25417865528",
-    "name": "Scienze Tecniche Psicologiche",
-    "orario_inizio": "",
-    "orario_fine": "",
-    "location": ""
+    "id": "25326449768",
+    "name": "Cdl magistrale in Medicina e chirurgia",
+    "orario_inizio": "13:00",
+    "orario_fine": "14:00",
+    "location": "Aula Newton"
   },
   {
-    "id": "25415255386",
-    "name": "Scienze Politiche",
-    "orario_inizio": "",
-    "orario_fine": "",
-    "location": ""
-  },
-  {
-    "id": "25417865519",
-    "name": "Tecniche di Radiologia",
-    "orario_inizio": "",
-    "orario_fine": "",
-    "location": ""
-  },
-  {
-    "id": "25415255380",
-    "name": "Fisioterapia",
+    "id": "25417865392",
+    "name": "Cdl magistrale in Medicina e chirurgia",
     "orario_inizio": "14:00",
     "orario_fine": "15:00",
-    "location": "Aula S. G. Crisostomo"
+    "location": "Aula Newton"
+  },
+  {
+    "id": "25417865493",
+    "name": "Cdl magistrale in Medicina e chirurgia",
+    "orario_inizio": "15:00",
+    "orario_fine": "16:00",
+    "location": "Aula Newton"
   },
   {
     "id": "25417865515",
-    "name": "Odontoiatria e Igiene Dentale",
-    "orario_inizio": "",
-    "orario_fine": "",
-    "location": ""
+    "name": "Cdl magistrale in Odontoiatria e protesi dentaria",
+    "orario_inizio": "14:00",
+    "orario_fine": "15:00",
+    "location": "Aula Sant'Agostino"
+  },
+  {
+    "id": "25417865501",
+    "name": "Cdl triennale in Ricerca Biotecnologica in medicina",
+    "orario_inizio": "12:00",
+    "orario_fine": "13:00",
+    "location": "Aula Avicenna"
+  },
+  {
+    "id": "25415255368",
+    "name": "Cdl triennale in Infermieristica",
+    "orario_inizio": "12:00",
+    "orario_fine": "13:00",
+    "location": "Aula Scuola di Atene"
   },
   {
     "id": "25417865510",
-    "name": "Ostetricia",
+    "name": "Cdl triennale in Ostetricia",
     "orario_inizio": "13:00",
     "orario_fine": "14:00",
     "location": "Aula Scuola di Atene"
   },
   {
     "id": "25417865508",
-    "name": "Osteopatia",
-    "orario_inizio": "",
-    "orario_fine": "",
-    "location": ""
+    "name": "CdL triennale in Osteopatia",
+    "orario_inizio": "13:00",
+    "orario_fine": "14:00",
+    "location": "Aula S. G. Crisostomo"
   },
   {
-    "id": "25415255368",
-    "name": "Infermieristica",
-    "orario_inizio": "12:00",
-    "orario_fine": "13:00",
-    "location": "Aula Scuola di Atene"
+    "id": "25415255380",
+    "name": "Cdl triennale in Fisioterapia",
+    "orario_inizio": "14:00",
+    "orario_fine": "15:00",
+    "location": "Aula S. G. Crisostomo"
   },
   {
-    "id": "25417865501",
-    "name": "Ricerca Biotecnologica",
-    "orario_inizio": "",
-    "orario_fine": "",
-    "location": ""
+    "id": "25417865519",
+    "name": "CdL triennale in Tecniche di Radiologia Medica per Immagini e Radioterapia",
+    "orario_inizio": "15:00",
+    "orario_fine": "16:00",
+    "location": "Aula S. Ambrogio"
   },
   {
-    "id": "25417865498",
-    "name": "International Medical Doctor Program",
-    "orario_inizio": "",
-    "orario_fine": "",
-    "location": ""
+    "id": "25415255386",
+    "name": "Cdl triennale in Scienze politiche e strategie globali",
+    "orario_inizio": "14:00",
+    "orario_fine": "15:00",
+    "location": "Aula Tertulliano"
   },
   {
-    "id": "25417865493",
-    "name": "Medicina e Chirurgia 3",
-    "orario_inizio": "",
-    "orario_fine": "",
-    "location": ""
+    "id": "25417865528",
+    "name": "Cdl triennale in Scienze e tecniche psicologiche",
+    "orario_inizio": "15:00",
+    "orario_fine": "16:00",
+    "location": "Aula San Crisostomo"
   },
   {
-    "id": "25417865392",
-    "name": "Medicina e Chirurgia 2",
-    "orario_inizio": "",
-    "orario_fine": "",
-    "location": ""
+    "id": "25417865530",
+    "name": "Cdl triennale in Filosofia",
+    "orario_inizio": "13:00",
+    "orario_fine": "14:00",
+    "location": "Aula S. Ambrogio"
   },
   {
-    "id": "25326449768",
-    "name": "Medicina e Chirurgia 1",
+    "id": "140261653720",
+    "name": "Offerta formativa Lauree Triennali e Magistrali a Ciclo Unico",
     "orario_inizio": "",
     "orario_fine": "",
     "location": ""
