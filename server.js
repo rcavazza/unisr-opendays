@@ -223,6 +223,16 @@ app.get(['/en/opendays', '/it/opendays', '/opendays', '/en/opendays/confirmation
         return new Promise((resolve, reject) => {
             console.log("XXXXX");
             
+            // Add detailed logging for matchingCourses parameter
+            logger.info(`sendEmailWithQR received matchingCourses: ${matchingCourses ? (Array.isArray(matchingCourses) ? matchingCourses.length : 'not an array') : 'undefined'}`);
+            logger.info(`matchingCourses type: ${typeof matchingCourses}`);
+            if (matchingCourses && Array.isArray(matchingCourses) && matchingCourses.length > 0) {
+                logger.info(`First matchingCourse: ${JSON.stringify(matchingCourses[0])}`);
+                logger.info(`matchingCourses IDs: ${matchingCourses.map(c => c.id).join(', ')}`);
+            } else {
+                logger.info(`matchingCourses is empty or not an array`);
+            }
+            
             // Validate language parameter
             if (!language || (language !== 'en' && language !== 'it')) {
                 logger.info(`Invalid or empty language parameter: "${language}". Using default language: "en"`);
@@ -644,9 +654,47 @@ app.get('/api/get_experiences', async (req, res) => {
             return obj.id;
         });
         
+        // MODIFICATION: Replace specific custom object IDs with 25326449768
+        const targetIds = ['25417865498', '25417865493', '25417865392'];
+        const replacementId = '25326449768';
+        
+        // Convert all IDs to strings for consistent comparison
+        const processedCustomObjectIds = customObjectIds.map(id => {
+            const strId = String(id);
+            // If the ID is one of the target IDs, replace it with the replacement ID
+            if (targetIds.includes(strId)) {
+                logger.info(`Replacing custom object ID ${strId} with ${replacementId}`);
+                return replacementId;
+            }
+            return strId;
+        });
+        
+        // Remove duplicates of the replacement ID
+        const uniqueCustomObjectIds = [];
+        const replacementIdCount = {};
+        
+        processedCustomObjectIds.forEach(id => {
+            // If it's the replacement ID, check if we've already added it
+            if (id === replacementId) {
+                if (!replacementIdCount[replacementId]) {
+                    replacementIdCount[replacementId] = 0;
+                    uniqueCustomObjectIds.push(id);
+                }
+                replacementIdCount[replacementId]++;
+                logger.info(`Found ${replacementId} (count: ${replacementIdCount[replacementId]})`);
+            } else {
+                // For other IDs, always add them
+                uniqueCustomObjectIds.push(id);
+            }
+        });
+        
+        logger.info(`Original custom object IDs: ${customObjectIds.join(', ')}`);
+        logger.info(`Processed custom object IDs: ${processedCustomObjectIds.join(', ')}`);
+        logger.info(`Unique custom object IDs: ${uniqueCustomObjectIds.join(', ')}`);
+        
         // Try both string and number comparisons for filtering
         const filteredObjectIds = [];
-        for (const customId of customObjectIds) {
+        for (const customId of uniqueCustomObjectIds) {
             for (const courseId of courseIds) {
                 // Try string comparison
                 if (String(customId) === String(courseId)) {
@@ -687,9 +735,24 @@ app.get('/api/get_experiences', async (req, res) => {
         });
         
         // Return the experiences and matching course IDs as JSON
+        // Make sure the replacement ID is included in the matchingCourseIds if it was used
+        let finalMatchingCourseIds = filteredObjectIds;
+        
+        // Check if any of the target IDs were replaced
+        // Use the same targetIds and replacementId defined earlier
+        const anyTargetIdReplaced = customObjectIds.some(id =>
+            ['25417865498', '25417865493', '25417865392'].includes(String(id))
+        );
+        
+        // If any target ID was replaced and the replacement ID is not already in the list, add it
+        if (anyTargetIdReplaced && !finalMatchingCourseIds.includes('25326449768')) {
+            logger.info(`Adding replacement ID 25326449768 to matchingCourseIds`);
+            finalMatchingCourseIds.push('25326449768');
+        }
+        
         res.json({
             experiences: experiences,
-            matchingCourseIds: filteredObjectIds
+            matchingCourseIds: finalMatchingCourseIds
         });
     } catch (error) {
         logger.error('Error in /api/get_experiences:', error);
@@ -1014,6 +1077,16 @@ app.get('/api/test', (req, res) => {
             return new Promise((resolve, reject) => {
                 console.log("XXXXX");
                 
+                // Add detailed logging for matchingCourses parameter
+                logger.info(`sendEmailWithQR received matchingCourses: ${matchingCourses ? (Array.isArray(matchingCourses) ? matchingCourses.length : 'not an array') : 'undefined'}`);
+                logger.info(`matchingCourses type: ${typeof matchingCourses}`);
+                if (matchingCourses && Array.isArray(matchingCourses) && matchingCourses.length > 0) {
+                    logger.info(`First matchingCourse: ${JSON.stringify(matchingCourses[0])}`);
+                    logger.info(`matchingCourses IDs: ${matchingCourses.map(c => c.id).join(', ')}`);
+                } else {
+                    logger.info(`matchingCourses is empty or not an array`);
+                }
+                
                 // Validate language parameter
                 if (!language || (language !== 'en' && language !== 'it')) {
                     logger.info(`Invalid or empty language parameter: "${language}". Using default language: "en"`);
@@ -1298,7 +1371,7 @@ app.post('/api/update-selected-experiences', async (req, res) => {
                 const matchingCourses = allCourses.filter(course => {
                     const courseIdStr = String(course.id);
                     const isMatch = normalizedCourseIds.includes(courseIdStr);
-                    logger.debug(`Course ID ${courseIdStr} match: ${isMatch}`);
+                    logger.info(`Course ID ${courseIdStr} match: ${isMatch}`);
                     return isMatch;
                 });
                 
