@@ -15,7 +15,7 @@ const slotCalculationService = require('./slotCalculationService');
  */
 async function saveReservation(db, contactId, experienceId, timeSlotId, qrCodeUrl = null, replaceAll = false) {
     try {
-        logger.info(`Saving reservation for contact ${contactId}, experience ${experienceId}, time slot ${timeSlotId}`);
+        logger.info(`Saving reservation for contact ${contactId}, experience ${experienceId} (this should be the dbId of the slot), time slot ${timeSlotId}`);
         
         // If replaceAll is true, delete all existing reservations for this contact
         if (replaceAll) {
@@ -140,6 +140,18 @@ async function getReservationsForContact(db, contactId) {
                         reject(err);
                     } else {
                         logger.info(`Found ${rows.length} reservations for contact ${contactId}`);
+                        
+                        // Log dettagliato per ogni prenotazione
+                        rows.forEach((row, index) => {
+                            logger.info(`Reservation ${index + 1}: experience_id=${row.experience_id} (type: ${typeof row.experience_id}), time_slot_id=${row.time_slot_id}`);
+                            
+                            // Assicurati che experience_id sia un numero
+                            if (typeof row.experience_id === 'string') {
+                                row.experience_id = parseInt(row.experience_id, 10);
+                                logger.info(`Converted experience_id to number: ${row.experience_id}`);
+                            }
+                        });
+                        
                         resolve(rows);
                     }
                 }

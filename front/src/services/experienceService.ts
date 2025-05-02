@@ -247,3 +247,42 @@ export const fetchQRCode = async (contactID: string): Promise<string> => {
     return '/images/qr.png'; // Fallback to the static image
   }
 };
+
+/**
+ * Resets all reservations for a contact
+ * @param contactID The ID of the contact
+ * @returns Promise with the reset result
+ */
+export const resetReservations = async (
+  contactID: string
+): Promise<{ success: boolean, error?: string }> => {
+  try {
+    console.log('Resetting all reservations for contact:', contactID);
+    
+    const response = await fetch(' /api/reset-reservations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        contactID
+      })
+    });
+    
+    const data = await response.json();
+    console.log('Reset reservations response:', data);
+    
+    if (!response.ok) {
+      console.error('API response not OK:', response.status, response.statusText, data);
+      return {
+        success: false,
+        error: data.error || 'Failed to reset reservations'
+      };
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error resetting reservations:', error);
+    throw error;
+  }
+};

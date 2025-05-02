@@ -328,8 +328,13 @@ async function getExperiencesByCustomObjectIds(db, customObjectIds, language, co
         const reservationMap = {};
         // Also create a map of experience_id to array of time_slot_id for easier lookup
         const userReservationsByExperience = {};
+        // Create a map for reservations based on dbId (which is now in experience_id)
+        const reservationMapByDbId = {};
         
         userReservations.forEach(reservation => {
+            // Log the type of experience_id for debugging
+            logger.info(`Reservation experience_id=${reservation.experience_id} (type: ${typeof reservation.experience_id}), time_slot_id=${reservation.time_slot_id}`);
+            
             // Store the original key format
             const key = `${reservation.experience_id}_${reservation.time_slot_id}`;
             reservationMap[key] = true;
@@ -339,6 +344,9 @@ async function getExperiencesByCustomObjectIds(db, customObjectIds, language, co
                 userReservationsByExperience[reservation.experience_id] = [];
             }
             userReservationsByExperience[reservation.experience_id].push(reservation.time_slot_id);
+            
+            // Store by dbId (which is now in experience_id)
+            reservationMapByDbId[reservation.experience_id] = true;
             
             logger.info(`User has reservation for: ${key}`);
         });
@@ -525,22 +533,32 @@ async function getExperiencesByCustomObjectIds(db, customObjectIds, language, co
                                             const timeSlotId = `${baseExperienceId}-${slotNumber}`;
                                             
                                             // Check if this slot matches any of the user's reservations
-                                            // First try the exact match
-                                            const exactKey = `${baseExperienceId}_${timeSlotId}`;
-                                            let isSelected = reservationMap[exactKey] || false;
+                                            // First check if the dbId matches any of the user's reservations
+                                            let isSelected = reservationMapByDbId[row.id] || false;
                                             
-                                            // If not found, check if the experience ID has any reservations
-                                            if (!isSelected && userReservationsByExperience[baseExperienceId]) {
-                                                // Check if any of the time slot IDs for this experience match our format
-                                                isSelected = userReservationsByExperience[baseExperienceId].some(slotId => {
-                                                    // Try different formats of the slot ID
-                                                    return slotId === timeSlotId ||
-                                                           slotId === `${baseExperienceId}-${slotNumber}`;
-                                                });
+                                            // If not found using dbId, try the legacy approach
+                                            if (!isSelected) {
+                                                // Try exact match with the key format
+                                                const exactKey = `${baseExperienceId}_${timeSlotId}`;
+                                                isSelected = reservationMap[exactKey] || false;
+                                                
+                                                // If still not found, check if the experience ID has any reservations
+                                                if (!isSelected && userReservationsByExperience[baseExperienceId]) {
+                                                    // Check if any of the time slot IDs for this experience match our format
+                                                    isSelected = userReservationsByExperience[baseExperienceId].some(slotId => {
+                                                        // Try different formats of the slot ID
+                                                        return slotId === timeSlotId ||
+                                                               slotId === `${baseExperienceId}-${slotNumber}`;
+                                                    });
+                                                }
                                             }
                                             
                                             if (isSelected) {
-                                                logger.info(`Marking slot ${timeSlotId} as selected for experience ${baseExperienceId}`);
+                                                if (reservationMapByDbId[row.id]) {
+                                                    logger.info(`Marking slot with dbId ${row.id} as selected for experience ${baseExperienceId}`);
+                                                } else {
+                                                    logger.info(`Marking slot ${timeSlotId} as selected for experience ${baseExperienceId} (using legacy method)`);
+                                                }
                                             }
                                             
                                             experience.timeSlots.push({

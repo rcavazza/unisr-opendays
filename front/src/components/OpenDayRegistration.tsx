@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { ActivityAccordion } from './ActivityAccordion';
 import { ActivityDetails } from '../data/activities';
-import { fetchExperiences, makeReservation, updateSelectedExperiences } from '../services/experienceService';
+import { fetchExperiences, makeReservation, updateSelectedExperiences, resetReservations } from '../services/experienceService';
 import { LoadingOverlay } from './LoadingOverlay';
 
 export const OpenDayRegistration = () => {
@@ -420,7 +420,21 @@ export const OpenDayRegistration = () => {
     setReservationError(null);
     
     try {
-      console.log('Starting to make reservations for selected time slots');
+      console.log('Starting to reset existing reservations and make new ones');
+      
+      // Reset all existing reservations first
+      console.log('Resetting all existing reservations for contact:', contactID);
+      const resetResult = await resetReservations(contactID);
+      
+      if (!resetResult.success) {
+        console.error('Failed to reset reservations:', resetResult.error);
+        setReservationError('Failed to reset existing reservations');
+        setSubmitting(false);
+        return;
+      }
+      
+      console.log('Successfully reset all existing reservations');
+      
       // Make reservations for all selected time slots
       const selectedSlots = Object.entries(selectedTimeSlots);
       
@@ -431,9 +445,6 @@ export const OpenDayRegistration = () => {
         for (let i = 0; i < selectedSlots.length; i++) {
         const [activityId, timeSlotId] = selectedSlots[i];
         console.log(`Making reservation for activity ${activityId}, time slot ${timeSlotId}`);
-        
-        // Set replaceAll to true for the first reservation only
-        const isFirstReservation = i === 0;
         
         // Trovare l'attività e lo slot selezionato
         const activity = activities.find(a => String(a.id) === String(activityId));
@@ -452,8 +463,8 @@ export const OpenDayRegistration = () => {
         
         console.log(`Submitting reservation for activity ${activityId}, slot ${timeSlotId}, dbId: ${dbId}`);
         
-        // Make the reservation with dbId
-        const result = await makeReservation(contactID, activityId, timeSlotId, dbId, isFirstReservation);
+        // Make the reservation with dbId (no need for replaceAll since we've already reset all reservations)
+        const result = await makeReservation(contactID, activityId, timeSlotId, dbId, false);
         console.log(`Reservation result for ${activityId}:`, result);
         
         if (!result.success) {

@@ -832,8 +832,9 @@ app.post('/api/reserve', async (req, res) => {
                 });
             }
             
-            // Salva la prenotazione
-            await reservationService.saveReservation(db, contactID, experienceId, timeSlotId, null, replaceAll);
+            // Salva la prenotazione usando slot.id (dbId) invece di experienceId
+            logger.info(`Saving reservation with slot.id=${slot.id} instead of experienceId=${experienceId}`);
+            await reservationService.saveReservation(db, contactID, slot.id, timeSlotId, null, replaceAll);
             
             // Incrementa il contatore dei partecipanti usando l'ID dello slot
             await experiencesService.incrementParticipantCount(db, slot.id);
@@ -914,6 +915,87 @@ app.post('/api/cancel-reservation', async (req, res) => {
         });
     } catch (error) {
         logger.error('Error in /api/cancel-reservation:', error);
+        res.status(500).json({
+            error: 'Internal server error'
+        });
+    }
+});
+
+// Endpoint to reset all reservations for a contact
+app.post('/api/reset-reservations', async (req, res) => {
+    const { contactID } = req.body;
+    
+    if (!contactID) {
+        return res.status(400).json({
+            error: 'Contact ID is required'
+        });
+    }
+    
+    logger.info(`Reset reservations request received for contactID=${contactID}`);
+    
+    try {
+        // Inizia una transazione
+        await new Promise((resolve, reject) => {
+            db.run("BEGIN TRANSACTION", (err) => {
+                if (err) {
+                    logger.error(`Errore nell'iniziare la transazione: ${err.message}`);
+                    reject(err);
+                } else {
+                    resolve();
+                }
+            });
+        });
+        
+        try {
+            // 1. Recupera tutte le prenotazioni esistenti dell'utente
+            const existingReservations = await reservationService.getReservationsForContact(db, contactID);
+            logger.info(`Found ${existingReservations.length} existing reservations for contact ${contactID}`);
+            
+            // 2. Per ogni prenotazione esistente, decrementa il contatore dei partecipanti
+            for (const reservation of existingReservations) {
+                logger.info(`Decrementing participant count for experience_id=${reservation.experience_id} (type: ${typeof reservation.experience_id}), time_slot_id=${reservation.time_slot_id}`);
+                await experiencesService.decrementParticipantCountForTimeSlot(
+                    db,
+                    reservation.experience_id,
+                    reservation.time_slot_id
+                );
+            }
+            
+            // 3. Cancella tutte le prenotazioni esistenti dell'utente
+            await reservationService.deleteAllReservationsForContact(db, contactID);
+            
+            // Commit della transazione
+            await new Promise((resolve, reject) => {
+                db.run("COMMIT", (err) => {
+                    if (err) {
+                        logger.error(`Errore nel commit della transazione: ${err.message}`);
+                        reject(err);
+                    } else {
+                        resolve();
+                    }
+                });
+            });
+            
+            // Aggiorna i posti rimanenti
+            await updateRemainingSlots();
+            
+            // Ritorna successo
+            res.json({
+                success: true,
+                message: `Successfully reset all reservations for contact ${contactID}`
+            });
+        } catch (error) {
+            // Rollback in caso di errore
+            await new Promise((resolve) => {
+                db.run("ROLLBACK", () => {
+                    logger.info("Transazione annullata a causa di un errore");
+                    resolve();
+                });
+            });
+            throw error;
+        }
+    } catch (error) {
+        logger.error('Error in /api/reset-reservations:', error);
         res.status(500).json({
             error: 'Internal server error'
         });

@@ -508,7 +508,29 @@ async function decrementParticipantCountForTimeSlot(db, experienceId, timeSlotId
   try {
     logger.info(`[DEBUG] Decremento contatore per experienceId: ${experienceId}, timeSlotId: ${timeSlotId}`);
     
-    // Estrai il numero dello slot dal timeSlotId
+    // Verifica se experienceId è già un dbId numerico
+    if (!isNaN(experienceId)) {
+      logger.info(`[DEBUG] experienceId è già un dbId numerico: ${experienceId}`);
+      
+      // Decrementa il campo current_participants per questa riga specifica
+      return new Promise((resolve, reject) => {
+        db.run(
+          "UPDATE experiences SET current_participants = MAX(0, current_participants - 1) WHERE id = ?",
+          [experienceId],
+          function(err) {
+            if (err) {
+              logger.error(`Errore nel decremento del contatore: ${err.message}`);
+              reject(err);
+            } else {
+              logger.info(`[DEBUG] Contatore decrementato per ID riga ${experienceId}, changes: ${this.changes}`);
+              resolve(true);
+            }
+          }
+        );
+      });
+    }
+    
+    // Approccio legacy: estrai il numero dello slot dal timeSlotId
     const parts = timeSlotId.split('-');
     const slotNumber = parseInt(parts[parts.length - 1]);
     logger.info(`[DEBUG] Numero slot estratto: ${slotNumber}, parts: ${JSON.stringify(parts)}`);
