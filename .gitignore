@@ -132,8 +132,4 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-# SQLite database files
-*.sqlite
-*.db
-# Exception for the main database file that should be tracked
-!fcfs.sqlite"fcfs.sqlite" 
+# Database files are now tracked
