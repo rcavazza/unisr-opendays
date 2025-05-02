@@ -85,8 +85,8 @@
                     <div class="course-card">
                         <h3><%= course.title %></h3>
                         <div class="course-info">
-                            <p><strong>Data:</strong> <%= course.date %></p>
-                            <p><strong>Luogo:</strong> <%= course.location %></p>
+                            <p><strong>Orario:</strong> <%= course.time || course.date %></p>
+                            <p><strong>Location:</strong> <%= course.location %></p>
                         </div>
                         <div class="confirmation-checkbox">
                             <input type="checkbox" id="course-<%= course.id %>" name="courses" value="<%= course.id %>" checked>

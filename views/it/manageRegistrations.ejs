@@ -131,7 +131,7 @@
             <h2>Luoghi</h2>
             <div id="locations-container">
                 <div class="input-group">
-                    <input type="text" placeholder="Nome del luogo">
+                    <input type="text" placeholder="Nome del location">
                     <button onclick="addLocation(this)">Aggiungi</button>
                 </div>
             </div>
@@ -192,7 +192,7 @@
             const value = input.value.trim();
             if (!value) return;
             if (currentData.locations.includes(value)) {
-                showMessage('Questo luogo esiste già', true);
+                showMessage('Questo location esiste già', true);
                 return;
             }
             currentData.locations.push(value);

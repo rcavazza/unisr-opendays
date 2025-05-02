@@ -8,7 +8,6 @@ interface SelectedActivity {
   course?: string;
   time?: string;
   location?: string;  // Add location field
-  duration?: string;  // Add duration field
 }
 
 interface Course {
@@ -175,12 +174,9 @@ export const ConfirmationPage = ({ activities, contactID, matchingCourseIds = []
                   <div className="text-yellow-300 font-bold">
                     {activity.course}
                   </div>
-                  <div className="flex justify-between mt-2">
+                  <div className="mt-2">
                     <div className="text-yellow-300 font-bold">
                       {t('location')}: {activity.location || t('locationNotAvailable')}
-                    </div>
-                    <div className="text-yellow-300 font-bold">
-                      {t('duration')}: {activity.duration || t('durationNotAvailable')}
                     </div>
                   </div>
                   <div className="text-yellow-300 mt-2 font-bold">

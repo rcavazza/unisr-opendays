@@ -145,7 +145,7 @@
             
             <div class="input-group" style="margin-top: 20px;">
                 <input type="text" id="field-id" placeholder="ID Campo (es. day, location)">
-                <input type="text" id="field-name" placeholder="Nome Campo (es. Giorno, Luogo)">
+                <input type="text" id="field-name" placeholder="Nome Campo (es. Giorno, Location)">
                 <select id="field-type">
                     <option value="text">Testo</option>
                     <option value="date">Data</option>
@@ -183,11 +183,11 @@
                 delete currentData.days;
             }
             
-            // Aggiungi il campo luogo se esiste nel vecchio formato
+            // Aggiungi il campo location se esiste nel vecchio formato
             if (Array.isArray(currentData.locations)) {
                 currentData.fields.push({
                     id: 'location',
-                    name: 'Luogo',
+                    name: 'Location',
                     type: 'text',
                     values: currentData.locations
                 });

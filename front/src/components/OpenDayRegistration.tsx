@@ -519,9 +519,8 @@ export const OpenDayRegistration = () => {
         return {
           activity: activity?.title,
           course: activity?.course,
-          time: timeSlot?.time,
-          location: activity?.location,  // Add location
-          duration: activity?.duration   // Add duration
+          time: timeSlot?.endTime ? `${timeSlot.time} - ${timeSlot.endTime}` : timeSlot?.time,
+          location: activity?.location  // Add location
         };
       });
       
@@ -530,8 +529,8 @@ export const OpenDayRegistration = () => {
       try {
         // Get the current language from URL parameters
         const language = lang || 'en';
-        console.log('Calling updateSelectedExperiences with:', { contactID, selectedActivityIds, language });
-        const result = await updateSelectedExperiences(contactID, selectedActivityIds, language);
+        console.log('Calling updateSelectedExperiences with:', { contactID, selectedActivityIds, matchingCourseIds, language });
+        const result = await updateSelectedExperiences(contactID, selectedActivityIds, matchingCourseIds, language);
         console.log('Result from updateSelectedExperiences:', result);
         console.log('Successfully updated HubSpot contact with selected experiences');
       } catch (updateError) {

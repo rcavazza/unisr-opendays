@@ -164,23 +164,27 @@ export const fetchReservationCounters = async (): Promise<Record<string, number>
  * Updates the HubSpot contact with selected experiences
  * @param contactID The ID of the contact
  * @param experienceIds Array of selected experience IDs
+ * @param matchingCourseIds Array of matching course IDs
+ * @param lang The language code (en/it)
  * @returns Promise with the update result
  */
 export const updateSelectedExperiences = async (
   contactID: string,
   experienceIds: (string | number)[],
-  lang: string = 'en' // Add language parameter with default value
+  matchingCourseIds: string[] = [], // Add matchingCourseIds parameter with default empty array
+  lang: string = 'en'
 ): Promise<{ success: boolean, error?: string }> => {
   try {
     // Ensure we're using a simple language code (en or it)
     const simpleLang = lang.startsWith('en') ? 'en' : lang.startsWith('it') ? 'it' : 'en';
     
-    console.log('Updating selected experiences:', { contactID, experienceIds, language: simpleLang });
+    console.log('Updating selected experiences:', { contactID, experienceIds, matchingCourseIds, language: simpleLang });
     
     // Log the request details
     const requestBody = {
       contactID,
-      experienceIds
+      experienceIds,
+      matchingCourseIds // Include matchingCourseIds in the request body
     };
     console.log('Request body:', JSON.stringify(requestBody));
     

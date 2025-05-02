@@ -230,7 +230,7 @@ Add the following section for "frontali" experiences before the "Esperienze sele
                         <p><strong>Data:</strong> <%= exp.date %></p>
                     <% } %>
                     <% if (exp.location) { %>
-                        <p><strong>Luogo:</strong> <%= exp.location %></p>
+                        <p><strong>Location:</strong> <%= exp.location %></p>
                     <% } %>
                 </div>
             </div>

@@ -133,8 +133,8 @@
                             <% fieldData.courses.forEach(course => { %>
                             <div class="event-card">
                               <h3 class="event-title"><%= course.title %></h3>
-                              <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Data:</strong> <%= course.date %></p>
-                              <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Luogo:</strong> <%= course.location %></p>
+                              <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Orario:</strong> <%= course.time %></p>
+                              <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Location:</strong> <%= course.location %></p>
                             </div>
                             <% }); %>
                           </td>
@@ -151,10 +151,10 @@
                             <div class="event-card">
                               <h3 class="event-title"><%= exp.title %></h3>
                               <% if (exp.date) { %>
-                              <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Data:</strong> <%= exp.date %></p>
+                              <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Orario:</strong> <%= exp.time || exp.date %></p>
                               <% } %>
                               <% if (exp.location) { %>
-                              <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Luogo:</strong> <%= exp.location %></p>
+                              <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Location:</strong> <%= exp.location %></p>
                               <% } %>
                             </div>
                             <% }); %>
@@ -171,8 +171,8 @@
                             <% fieldData.experiences.forEach(exp => { %>
                             <div class="event-card">
                               <h3 class="event-title"><%= exp.title %></h3>
-                              <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Data:</strong> <%= exp.date %></p>
-                              <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Luogo:</strong> <%= exp.location %></p>
+                              <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Orario:</strong> <%= exp.time || exp.date %></p>
+                              <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Location:</strong> <%= exp.location %></p>
                             </div>
                             <% }); %>
                           </td>

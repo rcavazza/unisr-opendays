@@ -6,7 +6,6 @@
   "titintro":"Bachelor's Degrees and Single-Cycle Master's Degrees.",
   "intro": "Experience the UniSR atmosphere: visit our educational spaces, where theory meets practice in environments designed for excellence. \nBook your spot for practical activities and experience UniSR's hands-on teaching approach, exploring our cutting-edge facilities. \nSpots for each activity are limited: register by selecting your preferred activities and choosing a time slot to secure your place.",
   "location": "Location",
-  "duration": "Duration",
   "availableTimeSlots": "Available Time Slots",
   "spotsAvailable": "{{count}} spots available",
   "registeredFor": "You're registered for the {{time}} session",
@@ -34,35 +33,30 @@
       "title": "Mannequin with listening and viewing of the eardrum",
       "course": "Medical Diagnostics",
       "location": "Medical Lab A",
-      "duration": "45 minutes",
       "desc": "Practice diagnostic techniques on a medical mannequin"
     },
     "2": {
       "title": "Minor surgery, suturing",
       "course": "Basic Surgery",
       "location": "Surgical Lab B",
-      "duration": "60 minutes",
       "desc": "Learn basic suturing techniques on practice materials"
     },
     "3": {
       "title": "Airway obstruction maneuver with mannequin",
       "course": "Emergency Medicine",
       "location": "Emergency Lab C",
-      "duration": "30 minutes",
       "desc": "Practice emergency airway management techniques"
     },
     "4": {
       "title": "Semiotics",
       "course": "Medical Diagnostics",
       "location": "Room 101",
-      "duration": "45 minutes",
       "desc": "Learn to interpret signs and symptoms in medical diagnosis"
     },
     "5": {
       "title": "DNA Extraction",
       "course": "Laboratory Medicine",
       "location": "Lab D",
-      "duration": "90 minutes",
       "desc": "Hands-on experience with DNA extraction techniques"
     }
   }

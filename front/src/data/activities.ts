@@ -14,7 +14,6 @@ export interface ActivityDetails {
   title: string;
   course: string;
   location: string;
-  duration: string;
   desc: string; // New field for description
   timeSlots: TimeSlot[];
 }
@@ -25,7 +24,6 @@ export const getActivities = (t: TFunction): ActivityDetails[] => [
     title: t('activities.1.title'),
     course: t('activities.1.course'),
     location: t('activities.1.location'),
-    duration: t('activities.1.duration'),
     desc: t('activities.1.desc'),
     timeSlots: [
       {
@@ -50,7 +48,6 @@ export const getActivities = (t: TFunction): ActivityDetails[] => [
     title: t('activities.2.title'),
     course: t('activities.2.course'),
     location: t('activities.2.location'),
-    duration: t('activities.2.duration'),
     desc: t('activities.2.desc'),
     timeSlots: [
       {
@@ -75,7 +72,6 @@ export const getActivities = (t: TFunction): ActivityDetails[] => [
     title: t('activities.3.title'),
     course: t('activities.3.course'),
     location: t('activities.3.location'),
-    duration: t('activities.3.duration'),
     desc: t('activities.3.desc'),
     timeSlots: [
       {
@@ -100,7 +96,6 @@ export const getActivities = (t: TFunction): ActivityDetails[] => [
     title: t('activities.4.title'),
     course: t('activities.4.course'),
     location: t('activities.4.location'),
-    duration: t('activities.4.duration'),
     desc: t('activities.4.desc'),
     timeSlots: [
       {
@@ -120,7 +115,6 @@ export const getActivities = (t: TFunction): ActivityDetails[] => [
     title: t('activities.5.title'),
     course: t('activities.5.course'),
     location: t('activities.5.location'),
-    duration: t('activities.5.duration'),
     desc: t('activities.5.desc'),
     timeSlots: [
       {

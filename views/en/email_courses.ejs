@@ -133,7 +133,7 @@
                             <% fieldData.courses.forEach(course => { %>
                             <div class="event-card">
                               <h3 class="event-title"><%= course.title %></h3>
-                              <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Date:</strong> <%= course.date %></p>
+                              <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Time:</strong> <%= course.time %></p>
                               <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Location:</strong> <%= course.location %></p>
                             </div>
                             <% }); %>
@@ -151,7 +151,7 @@
                             <div class="event-card">
                               <h3 class="event-title"><%= exp.title %></h3>
                               <% if (exp.date) { %>
-                              <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Date:</strong> <%= exp.date %></p>
+                              <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Time:</strong> <%= exp.time || exp.date %></p>
                               <% } %>
                               <% if (exp.location) { %>
                               <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Location:</strong> <%= exp.location %></p>
@@ -171,7 +171,7 @@
                             <% fieldData.experiences.forEach(exp => { %>
                             <div class="event-card">
                               <h3 class="event-title"><%= exp.title %></h3>
-                              <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Date:</strong> <%= exp.date %></p>
+                              <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Time:</strong> <%= exp.time || exp.date %></p>
                               <p class="event-detail" style="color: #FACC15 !important; font-weight: 700;"><strong>Location:</strong> <%= exp.location %></p>
                             </div>
                             <% }); %>

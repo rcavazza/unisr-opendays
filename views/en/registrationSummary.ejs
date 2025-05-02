@@ -120,7 +120,7 @@
                     <div class="summary-card">
                         <h3><%= course.title %></h3>
                         <div class="summary-info">
-                            <p><strong>Date:</strong> <%= course.date %></p>
+                            <p><strong>Time:</strong> <%= course.time || course.date %></p>
                             <p><strong>Location:</strong> <%= course.location %></p>
                         </div>
                     </div>
@@ -140,7 +140,7 @@
                         <h3><%= exp.title %></h3>
                         <div class="summary-info">
                             <% if (exp.date) { %>
-                                <p><strong>Date:</strong> <%= exp.date %></p>
+                                <p><strong>Time:</strong> <%= exp.time || exp.date %></p>
                             <% } %>
                             <% if (exp.location) { %>
                                 <p><strong>Location:</strong> <%= exp.location %></p>
@@ -162,7 +162,7 @@
                     <div class="summary-card">
                         <h3><%= exp.title %></h3>
                         <div class="summary-info">
-                            <p><strong>Date:</strong> <%= exp.date %></p>
+                            <p><strong>Time:</strong> <%= exp.time || exp.date %></p>
                             <p><strong>Location:</strong> <%= exp.location %></p>
                         </div>
                     </div>

@@ -241,12 +241,28 @@ async function getConfirmedCourses(db, contactId) {
                         logger.info(`Recuperati ${rows.length} corsi confermati per contatto ID: ${contactId}`);
                         
                         // Trasforma i risultati nel formato desiderato
-                        const courses = rows.map(row => ({
-                            id: row.course_id,
-                            title: row.course_title,
-                            date: row.course_date,
-                            location: row.course_location
-                        }));
+                        const courses = rows.map(row => {
+                            // Parse the course_date to extract start and end times if available
+                            let date = row.course_date;
+                            
+                            // If the date contains a time part (e.g., "2025-05-12 09:00")
+                            if (date && date.includes(' ')) {
+                                const timePart = date.split(' ')[1];
+                                // If there's an end time stored in a separate field, combine them
+                                if (row.course_end_time) {
+                                    date = `${formatTime(timePart)} - ${formatTime(row.course_end_time)}`;
+                                } else {
+                                    date = formatTime(timePart);
+                                }
+                            }
+                            
+                            return {
+                                id: row.course_id,
+                                title: row.course_title,
+                                date: date,
+                                location: row.course_location
+                            };
+                        });
                         
                         resolve(courses);
                     }
@@ -281,12 +297,28 @@ async function getSelectedExperiences(db, contactId) {
                         logger.info(`Recuperate ${rows.length} esperienze selezionate per contatto ID: ${contactId}`);
                         
                         // Trasforma i risultati nel formato desiderato
-                        const experiences = rows.map(row => ({
-                            id: row.experience_id,
-                            title: row.experience_title,
-                            date: row.experience_date,
-                            location: row.experience_location
-                        }));
+                        const experiences = rows.map(row => {
+                            // Parse the experience_date to extract start and end times if available
+                            let date = row.experience_date;
+                            
+                            // If the date contains a time part (e.g., "2025-05-12 09:00")
+                            if (date && date.includes(' ')) {
+                                const timePart = date.split(' ')[1];
+                                // If there's an end time stored in a separate field, combine them
+                                if (row.experience_end_time) {
+                                    date = `${formatTime(timePart)} - ${formatTime(row.experience_end_time)}`;
+                                } else {
+                                    date = formatTime(timePart);
+                                }
+                            }
+                            
+                            return {
+                                id: row.experience_id,
+                                title: row.experience_title,
+                                date: date,
+                                location: row.experience_location
+                            };
+                        });
                         
                         resolve(experiences);
                     }
@@ -769,6 +801,26 @@ async function getFrontaliExperiences(contactId) {
  * @returns {string} - Formatted time string
  */
 function formatTime(time) {
+    if (!time) return '';
+    
+    // Check if the time already contains a hyphen, indicating it's already in "start - end" format
+    if (time.includes(' - ')) {
+        // Split the time into start and end parts
+        const [startTime, endTime] = time.split(' - ');
+        // Format each part separately and recombine
+        return `${formatSingleTime(startTime)} - ${formatSingleTime(endTime)}`;
+    }
+    
+    // Otherwise, format as a single time
+    return formatSingleTime(time);
+}
+
+/**
+ * Formats a single time value to 12-hour AM/PM format
+ * @param {string} time - Time in HH:MM format
+ * @returns {string} - Formatted time
+ */
+function formatSingleTime(time) {
     if (!time) return '';
     
     // Parse the time - handle both colon and period separators

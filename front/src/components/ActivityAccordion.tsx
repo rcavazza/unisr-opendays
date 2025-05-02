@@ -51,14 +51,10 @@ export const ActivityAccordion = ({
       {isOpen && (
         <div className="px-6 py-4 bg-white/10">
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 text-sm text-white/90">
+            <div className="text-sm text-white/90">
               <div>
                 <span className="font-medium text-yellow-300">{t('location')}:</span>{' '}
                 <span className="font-bold">{activity.location}</span>
-              </div>
-              <div>
-                <span className="font-medium text-yellow-300">{t('duration')}:</span>{' '}
-                <span className="font-bold"> {activity.duration}</span>
               </div>
             </div>
             

@@ -1153,7 +1153,7 @@ app.post('/api/update-selected-experiences', async (req, res) => {
     console.log('Request body:', req.body);
     logger.info('Endpoint /api/update-selected-experiences hit - this should appear in the server logs when the endpoint is called');
     logger.info('Request body:', req.body);
-    const { contactID, experienceIds } = req.body;
+    const { contactID, experienceIds, matchingCourseIds } = req.body;
     
     if (!contactID || !experienceIds) {
         return res.status(400).json({
@@ -1167,6 +1167,36 @@ app.post('/api/update-selected-experiences', async (req, res) => {
         logger.info(`experienceIds is array: ${Array.isArray(experienceIds)}`);
         if (Array.isArray(experienceIds)) {
             logger.info(`Number of experienceIds: ${experienceIds.length}`);
+        }
+        
+        // Log the received matchingCourseIds if provided
+        if (matchingCourseIds) {
+            logger.info(`Received matchingCourseIds: ${JSON.stringify(matchingCourseIds)}`);
+            logger.info(`matchingCourseIds is array: ${Array.isArray(matchingCourseIds)}`);
+            logger.info(`matchingCourseIds type: ${typeof matchingCourseIds}`);
+            
+            if (Array.isArray(matchingCourseIds)) {
+                logger.info(`Number of matchingCourseIds: ${matchingCourseIds.length}`);
+                
+                // Log the types of the first few IDs for debugging
+                if (matchingCourseIds.length > 0) {
+                    const sampleIds = matchingCourseIds.slice(0, Math.min(5, matchingCourseIds.length));
+                    sampleIds.forEach((id, index) => {
+                        logger.info(`matchingCourseId[${index}] = ${id}, type: ${typeof id}`);
+                    });
+                }
+            } else if (typeof matchingCourseIds === 'string') {
+                // Check if it's a JSON string that needs to be parsed
+                try {
+                    const parsed = JSON.parse(matchingCourseIds);
+                    logger.info(`Parsed matchingCourseIds from string: ${JSON.stringify(parsed)}`);
+                    logger.info(`Parsed matchingCourseIds is array: ${Array.isArray(parsed)}`);
+                } catch (e) {
+                    logger.info(`matchingCourseIds is not a JSON string: ${matchingCourseIds}`);
+                }
+            }
+        } else {
+            logger.info(`No matchingCourseIds provided in request`);
         }
         
         // Format the experience IDs as a semicolon-separated string
@@ -1233,7 +1263,7 @@ app.post('/api/update-selected-experiences', async (req, res) => {
         logger.info(`Email transporter configuration: host=${process.env.SMTP_HOST}, port=${process.env.SMTP_PORT}, secure=${process.env.SMTP_SECURE}`);
         
         // Function to get matching courses from corsi.json
-        function getMatchingCourses(courseTypes, returnAllCourses = false) {
+        function getMatchingCourses(courseIds, returnAllCourses = false) {
             try {
                 logger.info(`Attempting to read corsi.json file...`);
                 logger.info(`Current directory: ${__dirname}`);
@@ -1254,15 +1284,26 @@ app.post('/api/update-selected-experiences', async (req, res) => {
                     return allCourses;
                 }
                 
-                logger.info(`Looking for courses with course types: ${courseTypes.join(', ')}`);
+                // Ensure courseIds is an array
+                if (!Array.isArray(courseIds)) {
+                    logger.warn(`courseIds is not an array, converting to array: ${courseIds}`);
+                    courseIds = courseIds ? [courseIds] : [];
+                }
                 
-                // Filter courses by matching course types
-                const matchingCourses = allCourses.filter(course =>
-                    courseTypes.includes(course.id)
-                );
+                // Convert all courseIds to strings for consistent comparison
+                const normalizedCourseIds = courseIds.map(id => String(id));
+                logger.info(`Looking for courses with normalized IDs: ${normalizedCourseIds.join(', ')}`);
+                
+                // Filter courses by matching course IDs with string comparison
+                const matchingCourses = allCourses.filter(course => {
+                    const courseIdStr = String(course.id);
+                    const isMatch = normalizedCourseIds.includes(courseIdStr);
+                    logger.debug(`Course ID ${courseIdStr} match: ${isMatch}`);
+                    return isMatch;
+                });
                 
                 logger.info(`Found ${matchingCourses.length} matching courses`);
-                logger.info(`Matching courses: ${JSON.stringify(matchingCourses)}`);
+                logger.info(`Matching course IDs: ${matchingCourses.map(c => c.id).join(', ')}`);
                 
                 return matchingCourses;
             } catch (error) {
@@ -1462,32 +1503,97 @@ app.post('/api/update-selected-experiences', async (req, res) => {
             const text2encode = contact.email + '**' + contactID;
             const encoded = xorCipher.encode(text2encode, xorKey);
             
-            // Get course_types from experiences
-            logger.info(`Getting course_types for experiences with IDs: ${expIds.join(', ')}`);
-            const courseTypes = await new Promise((resolve, reject) => {
-                const placeholders = expIds.map(() => '?').join(',');
-                db.all(
-                    `SELECT DISTINCT course_type FROM experiences WHERE experience_id IN (${placeholders})`,
-                    expIds,
-                    (err, rows) => {
-                        if (err) {
-                            logger.error(`Error fetching course_types: ${err.message}`);
-                            reject(err);
-                        } else {
-                            const types = rows.map(row => row.course_type).filter(type => type !== null);
-                            resolve(types);
+            // Use req.body.matchingCourseIds if provided, otherwise get course_types from experiences
+            let courseTypes = [];
+            if (req.body.matchingCourseIds && Array.isArray(req.body.matchingCourseIds) && req.body.matchingCourseIds.length > 0) {
+                // Use the provided matchingCourseIds from request body
+                courseTypes = req.body.matchingCourseIds;
+                logger.info(`Using provided matchingCourseIds for courses: ${courseTypes.join(', ')}`);
+            } else {
+                // Fall back to getting course_types from experiences
+                logger.info(`Getting course_types for experiences with IDs: ${expIds.join(', ')}`);
+                courseTypes = await new Promise((resolve, reject) => {
+                    const placeholders = expIds.map(() => '?').join(',');
+                    db.all(
+                        `SELECT DISTINCT course_type FROM experiences WHERE experience_id IN (${placeholders})`,
+                        expIds,
+                        (err, rows) => {
+                            if (err) {
+                                logger.error(`Error fetching course_types: ${err.message}`);
+                                reject(err);
+                            } else {
+                                const types = rows.map(row => row.course_type).filter(type => type !== null);
+                                resolve(types);
+                            }
                         }
-                    }
-                );
-            });
+                    );
+                });
+            }
             
             logger.info(`Retrieved ${courseTypes.length} course types: ${courseTypes.join(', ')}`);
             
-            // Get ALL courses from corsi.json, not just matching ones
-            logger.info(`Calling getMatchingCourses with returnAllCourses=true to get all courses`);
-            const matchingCourses = getMatchingCourses(courseTypes, true);
-            logger.info(`Retrieved ${matchingCourses.length} courses for email (all courses from corsi.json)`);
-            logger.info(`Matching courses details: ${JSON.stringify(matchingCourses)}`);
+            // Get all courses associated with the user from corsi.json
+            // If matchingCourseIds were provided, filter courses by these IDs
+            // Otherwise, return all courses
+            
+            // Ensure req.body.matchingCourseIds is properly normalized
+            let normalizedMatchingCourseIds = [];
+            if (req.body.matchingCourseIds) {
+                if (Array.isArray(req.body.matchingCourseIds)) {
+                    // Convert all IDs to strings for consistent comparison
+                    normalizedMatchingCourseIds = req.body.matchingCourseIds.map(id => String(id));
+                    logger.info(`Normalized matchingCourseIds: ${normalizedMatchingCourseIds.join(', ')}`);
+                    
+                    // Log the types of the first few IDs for debugging
+                    if (normalizedMatchingCourseIds.length > 0) {
+                        const sampleIds = normalizedMatchingCourseIds.slice(0, Math.min(5, normalizedMatchingCourseIds.length));
+                        sampleIds.forEach((id, index) => {
+                            logger.info(`matchingCourseId[${index}] = ${id}, type: ${typeof id}`);
+                        });
+                    }
+                } else {
+                    logger.warn(`matchingCourseIds is not an array, converting to array: ${req.body.matchingCourseIds}`);
+                    normalizedMatchingCourseIds = [String(req.body.matchingCourseIds)];
+                }
+            }
+            
+            const hasMatchingCourseIds = normalizedMatchingCourseIds.length > 0;
+            
+            // Determine which IDs to use for filtering
+            let filterIds;
+            let returnAllCourses = false;
+            
+            if (hasMatchingCourseIds) {
+                // If we have matchingCourseIds, use them for filtering
+                // These IDs represent ALL courses associated with the user
+                filterIds = normalizedMatchingCourseIds;
+                logger.info(`Using normalized matchingCourseIds for filtering: ${filterIds.join(', ')}`);
+                returnAllCourses = false;
+            } else {
+                // If no matchingCourseIds, return all courses
+                logger.info(`No matchingCourseIds provided, returning all courses`);
+                returnAllCourses = true;
+                filterIds = []; // Not used when returnAllCourses is true
+            }
+            
+            logger.info(`Calling getMatchingCourses with returnAllCourses=${returnAllCourses}`);
+            const matchingCourses = getMatchingCourses(filterIds, returnAllCourses);
+            logger.info(`Retrieved ${matchingCourses.length} courses for email`);
+            
+            // Log the IDs of the matching courses for easier debugging
+            const matchingCourseIds = matchingCourses.map(course => course.id);
+            logger.info(`Matching course IDs: ${matchingCourseIds.join(', ')}`);
+            
+            // Log a sample of the matching courses (first 3) to avoid huge logs
+            const courseSample = matchingCourses.slice(0, Math.min(3, matchingCourses.length));
+            logger.info(`Sample of matching courses: ${JSON.stringify(courseSample)}`);
+            
+            // Log a warning if no courses were found
+            if (matchingCourses.length === 0) {
+                logger.warn(`No matching courses found! This might indicate a filtering issue.`);
+                logger.warn(`Filter IDs: ${filterIds.join(', ')}`);
+                logger.warn(`returnAllCourses: ${returnAllCourses}`);
+            }
 
             try {
                 // Generate and save QR code

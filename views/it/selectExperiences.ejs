@@ -112,8 +112,8 @@
                     <div class="experience-card">
                         <h3><%= exp.title %></h3>
                         <div class="experience-info">
-                            <p><strong>Data:</strong> <%= exp.date %></p>
-                            <p><strong>Luogo:</strong> <%= exp.location %></p>
+                            <p><strong>Orario:</strong> <%= exp.time || exp.date %></p>
+                            <p><strong>Location:</strong> <%= exp.location %></p>
                         </div>
                         <div class="selection-checkbox">
                             <input type="checkbox" id="exp-<%= exp.id %>" name="experiences" value="<%= exp.id %>">
