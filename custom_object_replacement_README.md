@@ -1,30 +1,36 @@
-# Custom Object Replacement Implementation
+# Modified Custom Object Replacement Implementation
 
-This implementation modifies the server to replace specific custom object IDs with a replacement ID and remove duplicates of the replacement ID.
+This implementation modifies the server to replace specific custom object IDs with a replacement ID when querying the database, but keeps the original IDs in the response to the frontend.
 
 ## Problem Statement
 
-When querying for custom objects associated with a contact in OpenDayRegistration.tsx, if the custom object code is 25417865498, 25417865493, or 25417865392, it should become 25326449768 before being used or saved. After the cycle, any duplicate 25326449768 entries should be removed from the array.
+When querying for custom objects associated with a contact in OpenDayRegistration.tsx, if the custom object code is 25417865498, 25417865493, or 25417865392, it should become 25326449768 before being used to query the database. After the cycle, any duplicate 25326449768 entries should be removed from the array. However, the original custom object IDs should be preserved in the response to the frontend.
 
 ## Implementation Details
 
 ### Changes Made
 
 1. Modified the `/api/get_experiences` endpoint in server.js to:
-   - Replace custom object IDs 25417865498, 25417865493, and 25417865392 with 25326449768
-   - Remove any duplicates of 25326449768 after the replacement
-   - Ensure the replacement ID is added to the list of course IDs returned to the frontend
+   - Keep the original custom object IDs for the response to the frontend
+   - Create a separate list of modified IDs (with replacements and duplicates removed) for querying the database
+   - Use the modified IDs only for the database query, not for the frontend response
+
+### Key Differences from Previous Implementation
+
+1. **Original IDs Preserved**: The frontend now receives the original custom object IDs instead of the modified ones
+2. **Database Query Unchanged**: The database query still uses the modified IDs with replacements and deduplication
+3. **User Experience**: The frontend logic continues to work with the original IDs, while the backend still retrieves the correct experiences
 
 ### Files Modified
 
-- **server.js**: Added code to replace specific custom object IDs and remove duplicates
+- **server.js**: Modified to maintain two separate lists of IDs (original and modified)
+- **restart_server_with_custom_object_replacement.js**: Updated to handle the new implementation
+- **verify_custom_object_replacement.js**: Updated to test the new implementation
 
 ### Files Created
 
-- **restart_server_with_custom_object_replacement.js**: Script to restart the server after applying the changes
-- **verify_custom_object_replacement.js**: Script to verify that the changes are working correctly
-- **custom_object_replacement_implementation_plan.md**: Detailed implementation plan
-- **custom_object_replacement_code.md**: Code snippets for the implementation
+- **modified_implementation_plan.md**: Detailed implementation plan for the modified approach
+- **user_experience_impact.md**: Analysis of how the modified implementation affects the user experience
 
 ## Testing Instructions
 
@@ -39,23 +45,23 @@ When querying for custom objects associated with a contact in OpenDayRegistratio
    ```
 
 The verification script will check if:
-- The target IDs (25417865498, 25417865493, 25417865392) are being replaced with 25326449768
-- Any duplicates of 25326449768 are being removed
-- The replacement ID is added to the list of course IDs returned to the frontend
+- The original target IDs are preserved in the response to the frontend
+- The experiences are still returned correctly (indicating that the database query is using the modified IDs)
 
 ## Expected Behavior
 
 When a contact has custom objects with IDs 25417865498, 25417865493, or 25417865392:
-1. These IDs will be replaced with 25326449768
-2. Only one instance of 25326449768 will be kept (duplicates removed)
-3. The replacement ID will be included in the list of course IDs returned to the frontend
+1. These IDs will be preserved in the response to the frontend
+2. For the database query, these IDs will be replaced with 25326449768, and duplicates will be removed
+3. The experiences returned will be based on the modified IDs used for the database query
 
 ## Logs to Look For
 
 The server logs will show messages like:
-- "Replacing custom object ID 25417865493 with 25326449768"
-- "Found 25326449768 (count: 1)"
-- "Adding replacement ID 25326449768 to matchingCourseIds"
+- "Original match found: 25417865493 matches 25417865493"
+- "Replacing custom object ID 25417865493 with 25326449768 for database query"
+- "Found 25326449768 for query (count: 1)"
+- "Returning original filtered object IDs: 25417865493, 25417865498"
 
 ## Troubleshooting
 

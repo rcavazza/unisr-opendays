@@ -654,7 +654,26 @@ app.get('/api/get_experiences', async (req, res) => {
             return obj.id;
         });
         
-        // MODIFICATION: Replace specific custom object IDs with 25326449768
+        // Filter the original IDs for the response
+        const originalFilteredObjectIds = [];
+        for (const customId of customObjectIds) {
+            for (const courseId of courseIds) {
+                // Try string comparison
+                if (String(customId) === String(courseId)) {
+                    logger.info(`Original match found: ${customId} matches ${courseId}`);
+                    originalFilteredObjectIds.push(customId);
+                    break;
+                }
+                // Try number comparison if both can be converted to numbers
+                else if (!isNaN(Number(customId)) && !isNaN(Number(courseId)) && Number(customId) === Number(courseId)) {
+                    logger.info(`Original numeric match found: ${customId} matches ${courseId}`);
+                    originalFilteredObjectIds.push(customId);
+                    break;
+                }
+            }
+        }
+        
+        // Create modified IDs for the database query
         const targetIds = ['25417865498', '25417865493', '25417865392'];
         const replacementId = '25326449768';
         
@@ -663,14 +682,14 @@ app.get('/api/get_experiences', async (req, res) => {
             const strId = String(id);
             // If the ID is one of the target IDs, replace it with the replacement ID
             if (targetIds.includes(strId)) {
-                logger.info(`Replacing custom object ID ${strId} with ${replacementId}`);
+                logger.info(`Replacing custom object ID ${strId} with ${replacementId} for database query`);
                 return replacementId;
             }
             return strId;
         });
         
         // Remove duplicates of the replacement ID
-        const uniqueCustomObjectIds = [];
+        const queryObjectIds = [];
         const replacementIdCount = {};
         
         processedCustomObjectIds.forEach(id => {
@@ -678,50 +697,49 @@ app.get('/api/get_experiences', async (req, res) => {
             if (id === replacementId) {
                 if (!replacementIdCount[replacementId]) {
                     replacementIdCount[replacementId] = 0;
-                    uniqueCustomObjectIds.push(id);
+                    queryObjectIds.push(id);
                 }
                 replacementIdCount[replacementId]++;
-                logger.info(`Found ${replacementId} (count: ${replacementIdCount[replacementId]})`);
+                logger.info(`Found ${replacementId} for query (count: ${replacementIdCount[replacementId]})`);
             } else {
                 // For other IDs, always add them
-                uniqueCustomObjectIds.push(id);
+                queryObjectIds.push(id);
             }
         });
         
         logger.info(`Original custom object IDs: ${customObjectIds.join(', ')}`);
-        logger.info(`Processed custom object IDs: ${processedCustomObjectIds.join(', ')}`);
-        logger.info(`Unique custom object IDs: ${uniqueCustomObjectIds.join(', ')}`);
+        logger.info(`Query object IDs: ${queryObjectIds.join(', ')}`);
         
-        // Try both string and number comparisons for filtering
-        const filteredObjectIds = [];
-        for (const customId of uniqueCustomObjectIds) {
+        // Filter the query IDs for the database query
+        const queryFilteredObjectIds = [];
+        for (const customId of queryObjectIds) {
             for (const courseId of courseIds) {
                 // Try string comparison
                 if (String(customId) === String(courseId)) {
-                    logger.info(`Match found: ${customId} (${typeof customId}) matches ${courseId} (${typeof courseId})`);
-                    filteredObjectIds.push(customId);
+                    logger.info(`Query match found: ${customId} (${typeof customId}) matches ${courseId} (${typeof courseId})`);
+                    queryFilteredObjectIds.push(customId);
                     break;
                 }
                 // Try number comparison if both can be converted to numbers
                 else if (!isNaN(Number(customId)) && !isNaN(Number(courseId)) && Number(customId) === Number(courseId)) {
-                    logger.info(`Numeric match found: ${customId} (${typeof customId}) matches ${courseId} (${typeof courseId})`);
-                    filteredObjectIds.push(customId);
+                    logger.info(`Query numeric match found: ${customId} (${typeof customId}) matches ${courseId} (${typeof courseId})`);
+                    queryFilteredObjectIds.push(customId);
                     break;
                 }
             }
         }
         
-        // If no matching custom objects found, return an empty response
-        if (filteredObjectIds.length === 0) {
-            logger.info(`No matching custom objects found for contact ID: ${contactID}`);
+        // If no matching custom objects found for the query, return an empty response
+        if (queryFilteredObjectIds.length === 0) {
+            logger.info(`No matching custom objects found for database query for contact ID: ${contactID}`);
             return res.json({
                 experiences: [],
                 matchingCourseIds: []
             });
         }
         
-        // Get experiences from the database based on the filtered IDs, language, and contactID
-        const experiences = await courseExperienceService.getExperiencesByCustomObjectIds(db, filteredObjectIds, language, contactID);
+        // Get experiences from the database based on the filtered query IDs, language, and contactID
+        const experiences = await courseExperienceService.getExperiencesByCustomObjectIds(db, queryFilteredObjectIds, language, contactID);
         
         // Log the experiences for debugging
         logger.info(`Returning ${experiences.length} experiences to frontend`);
@@ -734,25 +752,12 @@ app.get('/api/get_experiences', async (req, res) => {
             }
         });
         
-        // Return the experiences and matching course IDs as JSON
-        // Make sure the replacement ID is included in the matchingCourseIds if it was used
-        let finalMatchingCourseIds = filteredObjectIds;
-        
-        // Check if any of the target IDs were replaced
-        // Use the same targetIds and replacementId defined earlier
-        const anyTargetIdReplaced = customObjectIds.some(id =>
-            ['25417865498', '25417865493', '25417865392'].includes(String(id))
-        );
-        
-        // If any target ID was replaced and the replacement ID is not already in the list, add it
-        if (anyTargetIdReplaced && !finalMatchingCourseIds.includes('25326449768')) {
-            logger.info(`Adding replacement ID 25326449768 to matchingCourseIds`);
-            finalMatchingCourseIds.push('25326449768');
-        }
+        // Return the experiences and original matching course IDs as JSON
+        logger.info(`Returning original filtered object IDs: ${originalFilteredObjectIds.join(', ')}`);
         
         res.json({
             experiences: experiences,
-            matchingCourseIds: finalMatchingCourseIds
+            matchingCourseIds: originalFilteredObjectIds
         });
     } catch (error) {
         logger.error('Error in /api/get_experiences:', error);
