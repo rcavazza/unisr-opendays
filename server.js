@@ -2805,11 +2805,15 @@ app.post('/decodeqr', async (req, res) => {
         // Se ci sono associazioni, verifica se il locationId è tra gli ID dei custom object
         if (associationsResponse.data.results && associationsResponse.data.results.length > 0) {
             // Estrai tutti gli ID dei custom object associati
-            const customObjectIds = associationsResponse.data.results.map(result => result.toObjectId);
+            const customObjectIds = associationsResponse.data.results.map(result => String(result.toObjectId));
             logger.info(`Found ${customObjectIds.length} custom object associations: ${customObjectIds.join(', ')}`);
+
+            // Verifica se il locationId è tra gli ID dei custom object (assicurandosi che entrambi siano stringhe)
+            const locationIdFound = customObjectIds.includes(String(locationId));
             
-            // Verifica se il locationId è tra gli ID dei custom object
-            const locationIdFound = customObjectIds.includes(locationId);
+            // Log per debug
+            logger.info(`Location ID type: ${typeof locationId}, value: ${locationId}`);
+            logger.info(`Custom Object IDs types: ${customObjectIds.map(id => typeof id).join(', ')}`);
             
             if (!locationIdFound) {
                 logger.info(`Location ID ${locationId} not found in custom object IDs`);
@@ -2923,11 +2927,15 @@ app.get('/docheckin/:contactID', async (req, res) => {
         }
         
         // Estrai tutti gli ID dei custom object associati
-        const customObjectIds = associationsResponse.data.results.map(result => result.toObjectId);
+        const customObjectIds = associationsResponse.data.results.map(result => String(result.toObjectId));
         logger.info(`Found ${customObjectIds.length} custom object associations: ${customObjectIds.join(', ')}`);
+
+        // Verifica se il locationId è tra gli ID dei custom object (assicurandosi che entrambi siano stringhe)
+        const locationIdFound = customObjectIds.includes(String(locationId));
         
-        // Verifica se il locationId è tra gli ID dei custom object
-        const locationIdFound = customObjectIds.includes(locationId);
+        // Log per debug
+        logger.info(`Location ID type: ${typeof locationId}, value: ${locationId}`);
+        logger.info(`Custom Object IDs types: ${customObjectIds.map(id => typeof id).join(', ')}`);
         
         if (!locationIdFound) {
             logger.info(`Location ID ${locationId} not found in custom object IDs`);
