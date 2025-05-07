@@ -2805,16 +2805,34 @@ app.post('/decodeqr', async (req, res) => {
         
         // Se ci sono associazioni, verifica se il locationId è tra gli ID dei custom object
         if (associationsResponse.data.results && associationsResponse.data.results.length > 0) {
-            // Estrai tutti gli ID dei custom object associati
+            // Estrai tutti gli ID dei custom object associati e assicurati che siano stringhe
             const customObjectIds = associationsResponse.data.results.map(result => String(result.toObjectId));
             logger.info(`Found ${customObjectIds.length} custom object associations: ${customObjectIds.join(', ')}`);
-
-            // Verifica se il locationId è tra gli ID dei custom object (assicurandosi che entrambi siano stringhe)
-            const locationIdFound = customObjectIds.includes(String(locationId));
             
-            // Log per debug
-            logger.info(`Location ID type: ${typeof locationId}, value: ${locationId}`);
-            logger.info(`Custom Object IDs types: ${customObjectIds.map(id => typeof id).join(', ')}`);
+            // Converti locationId in stringa per il confronto
+            const locationIdStr = String(locationId);
+            
+            // Debug dettagliato
+            console.log("DEBUG - Custom Object IDs:", JSON.stringify(customObjectIds));
+            console.log("DEBUG - Location ID:", locationIdStr);
+            console.log("DEBUG - Types:", {
+                locationIdType: typeof locationId,
+                locationIdStrType: typeof locationIdStr,
+                customObjectIdsTypes: customObjectIds.map(id => typeof id)
+            });
+            
+            // Verifica esplicita con loop invece di includes()
+            let locationIdFound = false;
+            for (const id of customObjectIds) {
+                console.log(`Comparing: '${id}' (${typeof id}) === '${locationIdStr}' (${typeof locationIdStr}): ${id === locationIdStr}`);
+                if (id === locationIdStr) {
+                    locationIdFound = true;
+                    break;
+                }
+            }
+            
+            // Log del risultato
+            console.log(`Location ID found: ${locationIdFound}`);
             
             if (!locationIdFound) {
                 logger.info(`Location ID ${locationId} not found in custom object IDs`);
@@ -2846,7 +2864,7 @@ app.post('/decodeqr', async (req, res) => {
             }
             
             // Verifica se il locationId è già presente nella proprietà di conferma partecipazione
-            const participationProperty = contactResponse.data.properties["[Open Day] Conferma partecipazione corsi open day 08/05/2025"] || "";
+            const participationProperty = contactResponse.data.properties["conferma_partecipazione_corsi_open_day_08_05_2025"] || "";
             logger.info(`Participation property: ${participationProperty}`);
             
             if (participationProperty.includes(locationId)) {
@@ -2887,12 +2905,12 @@ app.get('/docheckin/:contactID', async (req, res) => {
         
         // Ottieni le informazioni del contatto, inclusa la proprietà di conferma partecipazione
         const contactResponse = await axios.get(
-            `https://api.hubapi.com/crm/v3/objects/contacts/${contactID}?properties=firstname,lastname,email,[Open Day] Conferma partecipazione corsi open day 08/05/2025`
+            `https://api.hubapi.com/crm/v3/objects/contacts/${contactID}?properties=firstname,lastname,email,conferma_partecipazione_corsi_open_day_08_05_2025`
         );
         logger.info(`Contact details retrieved: ${JSON.stringify(contactResponse.data.properties)}`);
         
         // Verifica se il locationId è già presente nella proprietà di conferma partecipazione
-        const participationProperty = contactResponse.data.properties["[Open Day] Conferma partecipazione corsi open day 08/05/2025"] || "";
+        const participationProperty = contactResponse.data.properties["conferma_partecipazione_corsi_open_day_08_05_2025"] || "";
         logger.info(`Participation property: ${participationProperty}`);
         
         if (participationProperty.includes(locationId)) {
@@ -2927,16 +2945,34 @@ app.get('/docheckin/:contactID', async (req, res) => {
             });
         }
         
-        // Estrai tutti gli ID dei custom object associati
+        // Estrai tutti gli ID dei custom object associati e assicurati che siano stringhe
         const customObjectIds = associationsResponse.data.results.map(result => String(result.toObjectId));
         logger.info(`Found ${customObjectIds.length} custom object associations: ${customObjectIds.join(', ')}`);
-
-        // Verifica se il locationId è tra gli ID dei custom object (assicurandosi che entrambi siano stringhe)
-        const locationIdFound = customObjectIds.includes(String(locationId));
         
-        // Log per debug
-        logger.info(`Location ID type: ${typeof locationId}, value: ${locationId}`);
-        logger.info(`Custom Object IDs types: ${customObjectIds.map(id => typeof id).join(', ')}`);
+        // Converti locationId in stringa per il confronto
+        const locationIdStr = String(locationId);
+        
+        // Debug dettagliato
+        console.log("DEBUG - Custom Object IDs:", JSON.stringify(customObjectIds));
+        console.log("DEBUG - Location ID:", locationIdStr);
+        console.log("DEBUG - Types:", {
+            locationIdType: typeof locationId,
+            locationIdStrType: typeof locationIdStr,
+            customObjectIdsTypes: customObjectIds.map(id => typeof id)
+        });
+        
+        // Verifica esplicita con loop invece di includes()
+        let locationIdFound = false;
+        for (const id of customObjectIds) {
+            console.log(`Comparing: '${id}' (${typeof id}) === '${locationIdStr}' (${typeof locationIdStr}): ${id === locationIdStr}`);
+            if (id === locationIdStr) {
+                locationIdFound = true;
+                break;
+            }
+        }
+        
+        // Log del risultato
+        console.log(`Location ID found: ${locationIdFound}`);
         
         if (!locationIdFound) {
             logger.info(`Location ID ${locationId} not found in custom object IDs`);
@@ -2954,23 +2990,23 @@ app.get('/docheckin/:contactID', async (req, res) => {
         
         await axios.patch(`https://api.hubapi.com/crm/v3/objects/contacts/${contactID}`, {
             properties: {
-                "[Open Day] Conferma partecipazione corsi open day 08/05/2025": updatedProperty
+                "conferma_partecipazione_corsi_open_day_08_05_2025": updatedProperty
             }
         });
         
         logger.info(`Updated contact property with location ID ${locationId}`);
         
-        // Ottieni l'ID del primo custom object associato per mantenere la compatibilità con il codice esistente
-        const customObjectId = associationsResponse.data.results[0].toObjectId;
+        // // Ottieni l'ID del primo custom object associato per mantenere la compatibilità con il codice esistente
+        // const customObjectId = associationsResponse.data.results[0].toObjectId;
         
-        // Aggiorna le proprietà del custom object
-        await axios.patch(`https://api.hubapi.com/crm/v3/objects/${customObjectTypeId}/${customObjectId}`, {
-            "properties": {
-                ritiro_avvenuto: "true"
-            }
-        });
+        // // Aggiorna le proprietà del custom object
+        // await axios.patch(`https://api.hubapi.com/crm/v3/objects/${customObjectTypeId}/${customObjectId}`, {
+        //     "properties": {
+        //         ritiro_avvenuto: "true"
+        //     }
+        // });
         
-        logger.info(`Updated custom object ${customObjectId} with ritiro_avvenuto=true`);
+        // logger.info(`Updated custom object ${customObjectId} with ritiro_avvenuto=true`);
         res.json({
             result: "success",
             custom_object_updated: true,
