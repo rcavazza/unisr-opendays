@@ -2851,17 +2851,17 @@ app.post('/decodeqr', async (req, res) => {
             );
             
             // Aggiungi i campi del custom object all'oggetto di risposta
-            datares.location = customObjectResponse.data.properties.location || '';
-            datares.ritiro_avvenuto = customObjectResponse.data.properties.ritiro_avvenuto || 'false';
-            datares.data_ritiro_text = customObjectResponse.data.properties.data_ritiro_text || '';
+            // datares.location = customObjectResponse.data.properties.location || '';
+            // datares.ritiro_avvenuto = customObjectResponse.data.properties.ritiro_avvenuto || 'false';
+            // datares.data_ritiro_text = customObjectResponse.data.properties.data_ritiro_text || '';
             
             // Verifica se la data di ritiro corrisponde al giorno corrente
-            const today = new Date();
-            const formattedToday = today.toISOString().split('T')[0]; // Formato YYYY-MM-DD
-            if (datares.data_ritiro_text && datares.data_ritiro_text !== formattedToday) {
-                // Imposta come errore invece che come avviso
-                datares.error = "data errata";
-            }
+            // const today = new Date();
+            // const formattedToday = today.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+            // if (datares.data_ritiro_text && datares.data_ritiro_text !== formattedToday) {
+            //     // Imposta come errore invece che come avviso
+            //     datares.error = "data errata";
+            // }
             
             // Verifica se il locationId è già presente nella proprietà di conferma partecipazione
             const participationProperty = contactResponse.data.properties["conferma_partecipazione_corsi_open_day_08_05_2025"] || "";
