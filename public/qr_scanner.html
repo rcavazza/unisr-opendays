@@ -78,16 +78,53 @@
             font-weight: bold;
             text-align: center;
         }
+        /* Nuovo stile per il contenitore scrollabile */
+        #locationList {
+            max-height: 400px;
+            overflow-y: auto;
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: white;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        /* Stile per il messaggio di caricamento */
+        #loadingMessage {
+            margin: 20px;
+            color: #666;
+            text-align: center;
+        }
+        /* Stile per il messaggio di errore */
+        #errorMessage {
+            margin: 20px;
+            color: red;
+            text-align: center;
+        }
+        /* Stile per il display della location selezionata */
+        #selectedLocationDisplay {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: bold;
+            width: 100%;
+            max-width: 300px;
+        }
     </style>
 </head>
 <body>
     <div id="locationSelection">
         <h2>Seleziona Ubicazione</h2>
         <p>Seleziona l'ubicazione in cui ti trovi:</p>
-        <button id="milano2Button" class="button location-button">Milano2</button>
-        <button id="olgettinaButton" class="button location-button">Olgettina</button>
+        <div id="locationList">
+            <div id="loadingMessage">Caricamento ubicazioni...</div>
+        </div>
     </div>
     <div id="scannerControls" style="display: none;">
+        <div id="selectedLocationDisplay"></div>
         <video id="video"></video>
         <button id="switchCamera" class="button">Cambia fotocamera</button>
     </div>
@@ -109,14 +146,14 @@
         const scannerControls = document.getElementById('scannerControls');
         const resultControls = document.getElementById('resultControls');
         const locationSelection = document.getElementById('locationSelection');
-        const milano2Button = document.getElementById('milano2Button');
-        const olgettinaButton = document.getElementById('olgettinaButton');
+        const locationList = document.getElementById('locationList');
         const debugInfo = document.getElementById('debugInfo');
         let qrScanner;
         let currentCamera = 'environment';
         let lastQrContent = '';
         let lastScannedId = '';
         let selectedLocation = '';
+        let selectedLocationId = null;
 
         function updateDebugInfo(message) {
             debugInfo.innerHTML += `<p>${message}</p>`;
@@ -126,7 +163,11 @@
         async function fetchApiData(id) {
             updateDebugInfo('Chiamata API in corso...');
             try {
-                const response = await fetch(`/docheckin/${encodeURIComponent(id)}`);
+                // Aggiungi l'ID della location come parametro di query
+                const url = `/docheckin/${encodeURIComponent(id)}${selectedLocationId ? `?locationId=${selectedLocationId}` : ''}`;
+                updateDebugInfo(`URL API: ${url}`);
+                
+                const response = await fetch(url);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -142,6 +183,15 @@
         function displayJsonResult(jsonData) {
             if (jsonData.result === 'success') {
                 resultDiv.innerHTML = '<p style="color: green;">Check In OK</p>';
+            } else if (jsonData.result === 'error') {
+                // Gestisci i diversi tipi di errore
+                if (jsonData.error === "QR NON VALIDO") {
+                    resultDiv.innerHTML = '<p style="color: red;">QR NON VALIDO</p>';
+                } else if (jsonData.error === "INGRESSO GIA' EFFETTUATO") {
+                    resultDiv.innerHTML = '<p style="color: orange;">INGRESSO GIA\' EFFETTUATO</p>';
+                } else {
+                    resultDiv.innerHTML = `<p style="color: orange;">${jsonData.error || 'Errore sconosciuto'}</p>`;
+                }
             } else {
                 resultDiv.innerHTML = '<h3>Risposta API:</h3>';
                 resultDiv.innerHTML += `<pre>${JSON.stringify(jsonData, null, 2)}</pre>`;
@@ -165,7 +215,10 @@
                                 headers: {
                                     'Content-Type': 'application/json'
                                 },
-                                body: JSON.stringify({ qrContent: lastQrContent })
+                                body: JSON.stringify({ 
+                                    qrContent: lastQrContent,
+                                    locationId: selectedLocationId // Passa l'ID della location selezionata
+                                })
                             });
 
                             if (!response.ok) {
@@ -229,6 +282,14 @@
                                 // Se il ritiro è già avvenuto, mostra un errore e nascondi il pulsante
                                 resultDiv.innerHTML = `<p style="color: red;">Il ritiro è già avvenuto.</p>`;
                                 confirmButton.style.display = 'none';
+                            } else if (apiResult.error === "QR NON VALIDO") {
+                                // Se il QR non è valido, mostra un errore e nascondi il pulsante
+                                resultDiv.innerHTML = `<p style="color: red;">QR NON VALIDO</p>`;
+                                confirmButton.style.display = 'none';
+                            } else if (apiResult.error === "INGRESSO GIA' EFFETTUATO") {
+                                // Se l'ingresso è già stato effettuato, mostra un errore e nascondi il pulsante
+                                resultDiv.innerHTML = `<p style="color: orange;">INGRESSO GIA' EFFETTUATO</p>`;
+                                confirmButton.style.display = 'none';
                             } else {
                                 // Per tutti gli altri casi, mostra il pulsante
                                 confirmButton.style.display = 'block';
@@ -263,57 +324,91 @@
                 alert('Impossibile accedere alla fotocamera. Assicurati di aver concesso i permessi necessari.');
             }
         }
-// Event listeners per i pulsanti di ubicazione
-milano2Button.addEventListener('click', () => {
-    selectedLocation = 'Milano2';
-    locationSelection.style.display = 'none';
-    scannerControls.style.display = 'flex';
-    startScanner();
-    updateDebugInfo(`Ubicazione selezionata: ${selectedLocation}`);
-});
 
-olgettinaButton.addEventListener('click', () => {
-    selectedLocation = 'Olgettina';
-    locationSelection.style.display = 'none';
-    scannerControls.style.display = 'flex';
-    startScanner();
-    updateDebugInfo(`Ubicazione selezionata: ${selectedLocation}`);
-});
+        // Funzione per caricare le ubicazioni dal file JSON
+        async function loadLocations() {
+            try {
+                updateDebugInfo('Caricamento ubicazioni dal file JSON...');
+                const response = await fetch('checkin_list_hostess_8.json');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const locations = await response.json();
+                updateDebugInfo(`Caricate ${locations.length} ubicazioni`);
+                
+                // Svuota il contenitore delle ubicazioni
+                locationList.innerHTML = '';
+                
+                // Crea un pulsante per ogni ubicazione
+                locations.forEach(location => {
+                    const button = document.createElement('button');
+                    button.className = 'button location-button';
+                    button.textContent = location.name;
+                    button.dataset.id = location.id;
+                    
+                    // Aggiungi l'event listener per il click
+                    button.addEventListener('click', () => {
+                        selectedLocation = location.name;
+                        selectedLocationId = location.id;
+                        
+                        // Aggiorna il display della location selezionata
+                        const selectedLocationDisplay = document.getElementById('selectedLocationDisplay');
+                        selectedLocationDisplay.textContent = `Ubicazione: ${selectedLocation}`;
+                        
+                        locationSelection.style.display = 'none';
+                        scannerControls.style.display = 'flex';
+                        startScanner();
+                        updateDebugInfo(`Ubicazione selezionata: ${selectedLocation} (ID: ${selectedLocationId})`);
+                    });
+                    
+                    locationList.appendChild(button);
+                });
+                
+            } catch (error) {
+                updateDebugInfo(`Errore nel caricamento delle ubicazioni: ${error.message}`);
+                locationList.innerHTML = `<div id="errorMessage">Errore nel caricamento delle ubicazioni: ${error.message}</div>`;
+            }
+        }
 
-switchCameraButton.addEventListener('click', () => {
-    currentCamera = currentCamera === 'environment' ? 'user' : 'environment';
-    qrScanner.setCamera(currentCamera);
-    updateDebugInfo(`Fotocamera cambiata a: ${currentCamera}`);
-});
+        switchCameraButton.addEventListener('click', () => {
+            currentCamera = currentCamera === 'environment' ? 'user' : 'environment';
+            qrScanner.setCamera(currentCamera);
+            updateDebugInfo(`Fotocamera cambiata a: ${currentCamera}`);
+        });
 
-confirmButton.addEventListener('click', async () => {
-    updateDebugInfo('Pulsante Confirm premuto');
-    confirmButton.style.display = 'none'; // Nasconde il pulsante Confirm
-    if (lastScannedId) {
-        const apiResponse = await fetchApiData(lastScannedId);
-        displayJsonResult(apiResponse);
-    } else {
-        updateDebugInfo('Nessun ID disponibile per la chiamata API');
-        alert('Nessun ID disponibile. Scansiona nuovamente il QR code.');
-    }
-});
+        confirmButton.addEventListener('click', async () => {
+            updateDebugInfo('Pulsante Confirm premuto');
+            confirmButton.style.display = 'none'; // Nasconde il pulsante Confirm
+            if (lastScannedId) {
+                const apiResponse = await fetchApiData(lastScannedId);
+                displayJsonResult(apiResponse);
+            } else {
+                updateDebugInfo('Nessun ID disponibile per la chiamata API');
+                alert('Nessun ID disponibile. Scansiona nuovamente il QR code.');
+            }
+        });
 
-restartScannerButton.addEventListener('click', () => {
-    updateDebugInfo('Riavvio scanner...');
-    resultControls.style.display = 'none';
-    // Non mostrare più la selezione dell'ubicazione
-    // locationSelection.style.display = 'flex';
-    // Non resettare l'ubicazione selezionata
-    // selectedLocation = '';
-    
-    // Mostra direttamente lo scanner con l'ubicazione già selezionata
-    scannerControls.style.display = 'flex';
-    startScanner();
-});
+        restartScannerButton.addEventListener('click', () => {
+            updateDebugInfo('Riavvio scanner...');
+            resultControls.style.display = 'none';
+            // Non mostrare più la selezione dell'ubicazione
+            // locationSelection.style.display = 'flex';
+            // Non resettare l'ubicazione selezionata
+            // selectedLocation = '';
+            
+            // Assicurati che il display della location selezionata sia ancora visibile
+            const selectedLocationDisplay = document.getElementById('selectedLocationDisplay');
+            selectedLocationDisplay.textContent = `Ubicazione: ${selectedLocation}`;
+            
+            // Mostra direttamente lo scanner con l'ubicazione già selezionata
+            scannerControls.style.display = 'flex';
+            startScanner();
+        });
 
-// Non avviare lo scanner automaticamente, aspetta la selezione dell'ubicazione
-// startScanner();
-        startScanner();
+        // Carica le ubicazioni all'avvio della pagina
+        loadLocations();
     </script>
 </body>
 </html>
