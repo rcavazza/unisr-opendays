@@ -2760,6 +2760,7 @@ app.post('/decodeqr', async (req, res) => {
     try {
         // Decodifica il contenuto del QR code
         let msg = xorCipher.decode(req.body.qrContent, xorKey);
+        console.log("CONTENUTO QR: ",msg);
         let contactID = msg.split("**")[1];
         let email = msg.split("**")[0];
         
@@ -2768,7 +2769,7 @@ app.post('/decodeqr', async (req, res) => {
         console.log("Location ID selezionato:", locationId);
         
         // Ottieni le informazioni di base del contatto, inclusa la proprietà di conferma partecipazione
-        const contactResponse = await axios.get('https://api.hubapi.com/crm/v3/objects/contacts/' + contactID + '?properties=ischeckin,isregistered,firstname,lastname,email,[Open Day] Conferma partecipazione corsi open day 08/05/2025');
+        const contactResponse = await axios.get('https://api.hubapi.com/crm/v3/objects/contacts/' + contactID + '?properties=ischeckin,isregistered,firstname,lastname,email,conferma_partecipazione_corsi_open_day_08_05_2025');
         console.log("Contatto recuperato:", JSON.stringify(contactResponse.data, null, 4));
         
         // Estrai le proprietà di base del contatto
