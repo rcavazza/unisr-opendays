@@ -1,52 +1,97 @@
 [
   {
-    "id": "40001",
-    "name": "Laboratorio 1 - Esperienza",
+    "id": "140332577011",
+    "name": "SimLab2 11.00",
     "isexp": true
   },
   {
-    "id": "40002",
-    "name": "Laboratorio 2 - Esperienza",
+    "id": "140329700586",
+    "name": "SimLab2 12.00",
     "isexp": true
   },
   {
-    "id": "40003",
-    "name": "Laboratorio 3 - Esperienza",
+    "id": "140332577012",
+    "name": "SimLab2 14.00",
     "isexp": true
   },
   {
-    "id": "40004",
-    "name": "Laboratorio 4 - Esperienza",
+    "id": "140329700587",
+    "name": "SimLab2 15.00",
     "isexp": true
   },
   {
-    "id": "40005",
-    "name": "Laboratorio 5 - Esperienza",
+    "id": "140329700588",
+    "name": "Visita libera",
     "isexp": true
   },
   {
-    "id": "40006",
-    "name": "Simulazione 1 - Esperienza",
+    "id": "140329700589",
+    "name": "Estrazione DNA 14.00",
     "isexp": true
   },
   {
-    "id": "40007",
-    "name": "Simulazione 2 - Esperienza",
+    "id": "140329700590",
+    "name": "Estrazione DNA 15.00",
     "isexp": true
   },
   {
-    "id": "40008",
-    "name": "Simulazione 3 - Esperienza",
+    "id": "140329700591",
+    "name": "Technical skills infermieristiche e scenario dinamico presso il centro di Simulazione avanzata SimLab 13.00",
     "isexp": true
   },
   {
-    "id": "40009",
-    "name": "Workshop 1 - Esperienza",
+    "id": "140332577015",
+    "name": "Technical skills infermieristiche e scenario dinamico presso il centro di Simulazione avanzata SimLab 13.30",
     "isexp": true
   },
   {
-    "id": "40010",
-    "name": "Workshop 2 - Esperienza",
+    "id": "140332577016",
+    "name": "Simulazione assistita del parto eutocico 14.00",
+    "isexp": true
+  },
+  {
+    "id": "140332577017",
+    "name": "Simulazione assistita del parto eutocico 14.30",
+    "isexp": true
+  },
+  {
+    "id": "140329700593",
+    "name": "Simulazione assistita del parto eutocico 15.00",
+    "isexp": true
+  },
+  {
+    "id": "140332577978",
+    "name": "Visita guidata ai Laboratori di Simulazione e ai Reparti della Dental Clinic San Raffaele 15.00",
+    "isexp": true
+  },
+  {
+    "id": "140329700594",
+    "name": "Visita guidata ai Laboratori di Simulazione e ai Reparti della Dental Clinic San Raffaele 15.30",
+    "isexp": true
+  },
+  {
+    "id": "140329700595",
+    "name": "Esecuzione di sigillature dei solchi dentali su modelli digitali derivati da scansione intraorale 15.00",
+    "isexp": true
+  },
+  {
+    "id": "140332577979",
+    "name": "Esecuzione di sigillature dei solchi dentali su modelli digitali derivati da scansione intraorale 15.30",
+    "isexp": true
+  },
+  {
+    "id": "140329700596",
+    "name": "visita guidata della palestra riabilitativa con dimostrazione di alcune tecnologie avanzate 13.30",
+    "isexp": true
+  },
+  {
+    "id": "140332577981",
+    "name": "visita guidata della palestra riabilitativa con dimostrazione di alcune tecnologie avanzate 15.00",
+    "isexp": true
+  },
+  {
+    "id": "140329700598",
+    "name": "visita guidata della palestra riabilitativa con dimostrazione di alcune tecnologie avanzate 15.30",
     "isexp": true
   }
 ]
