@@ -2762,9 +2762,10 @@ app.post('/decodeqr', async (req, res) => {
         let msg = xorCipher.decode(req.body.qrContent, xorKey);
         console.log("CONTENUTO QR: ",msg);
         
-        // Ottieni l'ID della location selezionata (se presente)
+        // Ottieni l'ID della location selezionata e il parametro isexp (se presenti)
         const locationId = req.body.locationId || null;
-        console.log("Location ID selezionato:", locationId);
+        const isexp = req.body.isexp === true;
+        console.log("Location ID selezionato:", locationId, "isExp:", isexp);
         
         // Special handling for location ID 999
         if (locationId === "999") {
@@ -2797,8 +2798,55 @@ app.post('/decodeqr', async (req, res) => {
         let contactID = msg.split("**")[1];
         let email = msg.split("**")[0];
         
+        // Se isexp è true, verifica se esiste una prenotazione nel database locale
+        if (isexp) {
+            console.log("Esperienza rilevata, verificando prenotazione nel database locale...");
+            
+            try {
+                // Verifica se esiste una prenotazione per questo contatto e questa esperienza
+                const reservation = await new Promise((resolve, reject) => {
+                    db.get(
+                        "SELECT * FROM opend_reservations WHERE contact_id = ? AND experience_id = ?",
+                        [contactID, locationId],
+                        (err, row) => {
+                            if (err) {
+                                console.error("Errore nella query al database:", err);
+                                reject(err);
+                            } else {
+                                resolve(row);
+                            }
+                        }
+                    );
+                });
+                
+                // Se non esiste una prenotazione, restituisci un errore
+                if (!reservation) {
+                    console.log(`Nessuna prenotazione trovata per contactID=${contactID} e experience_id=${locationId}`);
+                    return res.json({
+                        id: contactID,
+                        firstname: "",
+                        lastname: "",
+                        email: email,
+                        error: "QR NON VALIDO"
+                    });
+                }
+                
+                console.log("Prenotazione trovata:", reservation);
+            } catch (dbError) {
+                console.error("Errore durante la verifica della prenotazione:", dbError);
+                // In caso di errore del database, procedi comunque con la validazione standard
+                logger.error(`Database error checking reservation: ${dbError.message}`);
+            }
+        }
+        
         // Ottieni le informazioni di base del contatto, inclusa la proprietà di conferma partecipazione
-        const contactResponse = await axios.get('https://api.hubapi.com/crm/v3/objects/contacts/' + contactID + '?properties=ischeckin,isregistered,firstname,lastname,email,conferma_partecipazione_corsi_open_day_08_05_2025');
+        // Usa la proprietà appropriata in base al valore di isexp
+        const participationProperty = isexp
+            ? "open_day__conferma_partecipazione_esperienze_10_05"
+            : "conferma_partecipazione_corsi_open_day_10_05_2025";
+        
+        const contactResponse = await axios.get('https://api.hubapi.com/crm/v3/objects/contacts/' + contactID +
+            `?properties=ischeckin,isregistered,firstname,lastname,email,${participationProperty}`);
         console.log("Contatto recuperato:", JSON.stringify(contactResponse.data, null, 4));
         
         // Estrai le proprietà di base del contatto
@@ -2813,7 +2861,8 @@ app.post('/decodeqr', async (req, res) => {
             firstname: firstname,
             lastname: lastname,
             email: email,
-            selectedLocationId: locationId // Aggiungi l'ID della location selezionata alla risposta
+            selectedLocationId: locationId, // Aggiungi l'ID della location selezionata alla risposta
+            isexp: isexp // Aggiungi il parametro isexp alla risposta
         };
         
         // Rimossi i controlli su isCheckIn e isRegistered come richiesto
@@ -2912,10 +2961,15 @@ app.post('/decodeqr', async (req, res) => {
             // }
             
             // Verifica se il locationId è già presente nella proprietà di conferma partecipazione
-            const participationProperty = contactResponse.data.properties["conferma_partecipazione_corsi_open_day_08_05_2025"] || "";
-            logger.info(`Participation property: ${participationProperty}`);
+            // Usa la proprietà appropriata in base al valore di isexp
+            const propertyName = isexp
+                ? "open_day__conferma_partecipazione_esperienze_10_05"
+                : "conferma_partecipazione_corsi_open_day_10_05_2025";
             
-            if (participationProperty.includes(locationId)) {
+            const participationValue = contactResponse.data.properties[propertyName] || "";
+            logger.info(`Participation property (${propertyName}): ${participationValue}`);
+            
+            if (participationValue.includes(locationId)) {
                 logger.info(`Location ID ${locationId} already in participation property`);
                 datares.error = "INGRESSO GIA' EFFETTUATO";
             }
@@ -2939,9 +2993,10 @@ app.post('/decodeqr', async (req, res) => {
 app.get('/docheckin/:contactID', async (req, res) => {
     try {
         const contactID = req.params.contactID;
-        // Ottieni l'ID della location dalla query string (se presente)
+        // Ottieni l'ID della location e il parametro isexp dalla query string (se presenti)
         const locationId = req.query.locationId || null;
-        console.log("CHECKIN " + contactID + " - Location ID: " + locationId);
+        const isexp = req.query.isexp === 'true';
+        console.log("CHECKIN " + contactID + " - Location ID: " + locationId + " - isExp: " + isexp);
         
         if (!locationId) {
             logger.error('Location ID is required');
@@ -2988,18 +3043,123 @@ app.get('/docheckin/:contactID', async (req, res) => {
             }
         }
         
+        // Se isexp è true, verifica se esiste una prenotazione nel database locale
+        if (isexp) {
+            console.log("Esperienza rilevata, verificando prenotazione nel database locale...");
+            
+            try {
+                // Verifica se esiste una prenotazione per questo contatto e questa esperienza
+                const reservation = await new Promise((resolve, reject) => {
+                    db.get(
+                        "SELECT * FROM opend_reservations WHERE contact_id = ? AND experience_id = ?",
+                        [contactID, locationId],
+                        (err, row) => {
+                            if (err) {
+                                console.error("Errore nella query al database:", err);
+                                reject(err);
+                            } else {
+                                resolve(row);
+                            }
+                        }
+                    );
+                });
+                
+                // Se non esiste una prenotazione, restituisci un errore
+                if (!reservation) {
+                    console.log(`Nessuna prenotazione trovata per contactID=${contactID} e experience_id=${locationId}`);
+                    return res.json({
+                        result: "error",
+                        error: "QR NON VALIDO",
+                        locationId: locationId
+                    });
+                }
+                
+                console.log("Prenotazione trovata:", reservation);
+                
+                // Ottieni le informazioni del contatto
+                const contactResponse = await axios.get(
+                    `https://api.hubapi.com/crm/v3/objects/contacts/${contactID}?properties=firstname,lastname,email,open_day__conferma_partecipazione_esperienze_10_05`
+                );
+                logger.info(`Contact details retrieved: ${JSON.stringify(contactResponse.data.properties)}`);
+                
+                // Verifica se il locationId è già presente nella proprietà di conferma partecipazione
+                const participationValue = contactResponse.data.properties["open_day__conferma_partecipazione_esperienze_10_05"] || "";
+                logger.info(`Participation property (open_day__conferma_partecipazione_esperienze_10_05): ${participationValue}`);
+                
+                if (participationValue.includes(locationId)) {
+                    logger.info(`Location ID ${locationId} already in participation property`);
+                    return res.json({
+                        result: "error",
+                        error: "INGRESSO GIA' EFFETTUATO",
+                        locationId: locationId
+                    });
+                }
+                
+                // Aggiorna la proprietà di conferma partecipazione del contatto
+                const updatedProperty = participationValue ? `${participationValue};${locationId}` : locationId;
+                
+                await axios.patch(`https://api.hubapi.com/crm/v3/objects/contacts/${contactID}`, {
+                    properties: {
+                        "open_day__conferma_partecipazione_esperienze_10_05": updatedProperty
+                    }
+                });
+                
+                logger.info(`Updated contact property open_day__conferma_partecipazione_esperienze_10_05 with location ID ${locationId}`);
+                
+                // Elimina la riga corrispondente dal database
+                await new Promise((resolve, reject) => {
+                    db.run(
+                        "DELETE FROM opend_reservations WHERE contact_id = ? AND experience_id = ?",
+                        [contactID, locationId],
+                        (err) => {
+                            if (err) {
+                                logger.error(`Error deleting reservation from database: ${err.message}`);
+                                reject(err);
+                            } else {
+                                logger.info(`Deleted reservation for contact_id=${contactID} and experience_id=${locationId}`);
+                                resolve();
+                            }
+                        }
+                    );
+                }).catch(err => {
+                    logger.error(`Failed to delete reservation: ${err.message}`);
+                    // Continue even if deletion fails
+                });
+                
+                // Restituisci una risposta di successo
+                return res.json({
+                    result: "success",
+                    custom_object_updated: false,
+                    contact_property_updated: true,
+                    locationId: locationId,
+                    message: "Esperienza confermata con successo"
+                });
+                
+            } catch (dbError) {
+                console.error("Errore durante la verifica della prenotazione:", dbError);
+                return res.json({
+                    result: "error",
+                    error: "Errore del database",
+                    message: dbError.message
+                });
+            }
+        }
+        
+        // Procedura standard per isexp=false
         // Ottieni le informazioni del contatto, inclusa la proprietà di conferma partecipazione
+        const participationProperty = "conferma_partecipazione_corsi_open_day_10_05_2025";
+        
         const contactResponse = await axios.get(
-            `https://api.hubapi.com/crm/v3/objects/contacts/${contactID}?properties=firstname,lastname,email,conferma_partecipazione_corsi_open_day_08_05_2025`
+            `https://api.hubapi.com/crm/v3/objects/contacts/${contactID}?properties=firstname,lastname,email,${participationProperty}`
         );
         logger.info(`Contact details retrieved: ${JSON.stringify(contactResponse.data.properties)}`);
         
         // Verifica se il locationId è già presente nella proprietà di conferma partecipazione
-        const participationProperty = contactResponse.data.properties["conferma_partecipazione_corsi_open_day_08_05_2025"] || "";
-        logger.info(`Participation property: ${participationProperty}`);
+        const participationValue = contactResponse.data.properties[participationProperty] || "";
+        logger.info(`Participation property (${participationProperty}): ${participationValue}`);
         
-        if (participationProperty.includes(locationId)) {
-            logger.info(`Location ID ${locationId} already in participation property`);
+        if (participationValue.includes(locationId)) {
+            logger.info(`Location ID ${locationId} already in participation property ${participationProperty}`);
             return res.json({
                 result: "error",
                 error: "INGRESSO GIA' EFFETTUATO",
@@ -3071,15 +3231,16 @@ app.get('/docheckin/:contactID', async (req, res) => {
         logger.info(`Location ID ${locationId} found in custom object IDs`);
         
         // Aggiorna la proprietà di conferma partecipazione del contatto
-        const updatedProperty = participationProperty ? `${participationProperty};${locationId}` : locationId;
+        const updatedProperty = participationValue ? `${participationValue};${locationId}` : locationId;
         
+        // Aggiorniamo la proprietà conferma_partecipazione_corsi_open_day_10_05_2025
         await axios.patch(`https://api.hubapi.com/crm/v3/objects/contacts/${contactID}`, {
             properties: {
-                "conferma_partecipazione_corsi_open_day_08_05_2025": updatedProperty
+                [participationProperty]: updatedProperty
             }
         });
         
-        logger.info(`Updated contact property with location ID ${locationId}`);
+        logger.info(`Updated contact property ${participationProperty} with location ID ${locationId}`);
         
         // // Ottieni l'ID del primo custom object associato per mantenere la compatibilità con il codice esistente
         // const customObjectId = associationsResponse.data.results[0].toObjectId;

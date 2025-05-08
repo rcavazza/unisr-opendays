@@ -1,0 +1,52 @@
+[
+  {
+    "id": "40001",
+    "name": "Laboratorio 1 - Esperienza",
+    "isexp": true
+  },
+  {
+    "id": "40002",
+    "name": "Laboratorio 2 - Esperienza",
+    "isexp": true
+  },
+  {
+    "id": "40003",
+    "name": "Laboratorio 3 - Esperienza",
+    "isexp": true
+  },
+  {
+    "id": "40004",
+    "name": "Laboratorio 4 - Esperienza",
+    "isexp": true
+  },
+  {
+    "id": "40005",
+    "name": "Laboratorio 5 - Esperienza",
+    "isexp": true
+  },
+  {
+    "id": "40006",
+    "name": "Simulazione 1 - Esperienza",
+    "isexp": true
+  },
+  {
+    "id": "40007",
+    "name": "Simulazione 2 - Esperienza",
+    "isexp": true
+  },
+  {
+    "id": "40008",
+    "name": "Simulazione 3 - Esperienza",
+    "isexp": true
+  },
+  {
+    "id": "40009",
+    "name": "Workshop 1 - Esperienza",
+    "isexp": true
+  },
+  {
+    "id": "40010",
+    "name": "Workshop 2 - Esperienza",
+    "isexp": true
+  }
+]
