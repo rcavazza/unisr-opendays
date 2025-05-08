@@ -2761,12 +2761,64 @@ app.post('/decodeqr', async (req, res) => {
         // Decodifica il contenuto del QR code
         let msg = xorCipher.decode(req.body.qrContent, xorKey);
         console.log("CONTENUTO QR: ",msg);
-        let contactID = msg.split("**")[1];
-        let email = msg.split("**")[0];
         
         // Ottieni l'ID della location selezionata (se presente)
         const locationId = req.body.locationId || null;
         console.log("Location ID selezionato:", locationId);
+        
+        // Special handling for location ID 999
+        if (locationId === "999") {
+            console.log("Location ID 999 detected - special handling");
+            
+            // Check if "**" is present in the decoded content
+            if (!msg.includes("**")) {
+                console.log("QR code does not contain '**' - invalid format");
+                return res.json({
+                    error: "QR NON VALIDO: Formato non corretto"
+                });
+            }
+            
+            // If "**" is present, increment the counter
+            try {
+                // Read the current counter value
+                let counterData = { conta_ingressi: 0 };
+                const counterFilePath = path.join(__dirname, 'conta_ingressi.json');
+                
+                if (fs.existsSync(counterFilePath)) {
+                    const counterFileContent = fs.readFileSync(counterFilePath, 'utf8');
+                    counterData = JSON.parse(counterFileContent);
+                }
+                
+                // Increment the counter
+                counterData.conta_ingressi += 1;
+                
+                // Save the updated counter value
+                fs.writeFileSync(counterFilePath, JSON.stringify(counterData, null, 2));
+                
+                // Extract contact information from the QR content
+                let contactID = msg.split("**")[1];
+                let email = msg.split("**")[0];
+                
+                console.log(`Counter incremented to ${counterData.conta_ingressi}`);
+                
+                // Return success response with counter value
+                return res.json({
+                    id: contactID,
+                    email: email,
+                    conta_ingressi: counterData.conta_ingressi,
+                    message: "Ingresso registrato con successo"
+                });
+            } catch (error) {
+                console.error('Error updating counter:', error);
+                return res.json({
+                    error: "Errore nell'aggiornamento del contatore"
+                });
+            }
+        }
+        
+        // Regular processing for other location IDs
+        let contactID = msg.split("**")[1];
+        let email = msg.split("**")[0];
         
         // Ottieni le informazioni di base del contatto, inclusa la proprietà di conferma partecipazione
         const contactResponse = await axios.get('https://api.hubapi.com/crm/v3/objects/contacts/' + contactID + '?properties=ischeckin,isregistered,firstname,lastname,email,conferma_partecipazione_corsi_open_day_08_05_2025');
@@ -2819,6 +2871,25 @@ app.post('/decodeqr', async (req, res) => {
                 locationIdType: typeof locationId,
                 locationIdStrType: typeof locationIdStr,
                 customObjectIdsTypes: customObjectIds.map(id => typeof id)
+            });
+            
+            // API endpoint to get the counter value
+            app.get('/api/conta-ingressi', (req, res) => {
+                try {
+                    const counterFilePath = path.join(__dirname, 'conta_ingressi.json');
+                    
+                    if (!fs.existsSync(counterFilePath)) {
+                        return res.json({ conta_ingressi: 0 });
+                    }
+                    
+                    const counterFileContent = fs.readFileSync(counterFilePath, 'utf8');
+                    const counterData = JSON.parse(counterFileContent);
+                    
+                    return res.json(counterData);
+                } catch (error) {
+                    console.error('Error reading counter:', error);
+                    return res.status(500).json({ error: 'Error reading counter' });
+                }
             });
             
             // Verifica esplicita con loop invece di includes()
