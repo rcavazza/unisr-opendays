@@ -154,6 +154,7 @@
         let lastScannedId = '';
         let selectedLocation = '';
         let selectedLocationId = null;
+        let selectedLocationIsExp = false; // Nuovo parametro per memorizzare se la location è un'esperienza
 
         function updateDebugInfo(message) {
             debugInfo.innerHTML += `<p>${message}</p>`;
@@ -163,8 +164,8 @@
         async function fetchApiData(id) {
             updateDebugInfo('Chiamata API in corso...');
             try {
-                // Aggiungi l'ID della location come parametro di query
-                const url = `/docheckin/${encodeURIComponent(id)}${selectedLocationId ? `?locationId=${selectedLocationId}` : ''}`;
+                // Aggiungi l'ID della location e il parametro isexp come parametri di query
+                const url = `/docheckin/${encodeURIComponent(id)}${selectedLocationId ? `?locationId=${selectedLocationId}&isexp=${selectedLocationIsExp}` : ''}`;
                 updateDebugInfo(`URL API: ${url}`);
                 
                 const response = await fetch(url);
@@ -215,9 +216,10 @@
                                 headers: {
                                     'Content-Type': 'application/json'
                                 },
-                                body: JSON.stringify({ 
+                                body: JSON.stringify({
                                     qrContent: lastQrContent,
-                                    locationId: selectedLocationId // Passa l'ID della location selezionata
+                                    locationId: selectedLocationId, // Passa l'ID della location selezionata
+                                    isexp: selectedLocationIsExp // Passa il parametro isexp
                                 })
                             });
 
@@ -325,18 +327,34 @@
             }
         }
 
-        // Funzione per caricare le ubicazioni dal file JSON
+        // Funzione per caricare le ubicazioni dai file JSON
         async function loadLocations() {
             try {
-                updateDebugInfo('Caricamento ubicazioni dal file JSON...');
-                const response = await fetch('checkin_list_hostess_8.json');
+                updateDebugInfo('Caricamento ubicazioni dai file JSON...');
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                // Carica le ubicazioni frontali
+                const responseFrontali = await fetch('checkin_frontali_10.json');
+                if (!responseFrontali.ok) {
+                    throw new Error(`HTTP error! status: ${responseFrontali.status} - Frontali`);
                 }
                 
-                const locations = await response.json();
-                updateDebugInfo(`Caricate ${locations.length} ubicazioni`);
+                // Carica le ubicazioni esperienze
+                const responseEsperienze = await fetch('checkin_esperienze_10.json');
+                if (!responseEsperienze.ok) {
+                    throw new Error(`HTTP error! status: ${responseEsperienze.status} - Esperienze`);
+                }
+                
+                // Ottieni i dati JSON
+                const locationsFrontali = await responseFrontali.json();
+                const locationsEsperienze = await responseEsperienze.json();
+                
+                // Combina tutte le ubicazioni in un unico array
+                const locations = [
+                    ...locationsFrontali,
+                    ...locationsEsperienze
+                ];
+                
+                updateDebugInfo(`Caricate ${locations.length} ubicazioni totali`);
                 
                 // Svuota il contenitore delle ubicazioni
                 locationList.innerHTML = '';
@@ -345,22 +363,38 @@
                 locations.forEach(location => {
                     const button = document.createElement('button');
                     button.className = 'button location-button';
-                    button.textContent = location.name;
+                    
+                    // Aggiungi un indicatore visivo per le esperienze
+                    if (location.isexp === true) {
+                        button.textContent = `${location.name} [Esperienza]`;
+                        button.style.backgroundColor = '#9C27B0'; // Colore diverso per le esperienze
+                    } else {
+                        button.textContent = location.name;
+                    }
+                    
                     button.dataset.id = location.id;
+                    button.dataset.isexp = location.isexp || false;
                     
                     // Aggiungi l'event listener per il click
                     button.addEventListener('click', () => {
                         selectedLocation = location.name;
                         selectedLocationId = location.id;
+                        selectedLocationIsExp = location.isexp === true;
                         
                         // Aggiorna il display della location selezionata
                         const selectedLocationDisplay = document.getElementById('selectedLocationDisplay');
-                        selectedLocationDisplay.textContent = `Ubicazione: ${selectedLocation}`;
+                        if (selectedLocationIsExp) {
+                            selectedLocationDisplay.textContent = `Ubicazione: ${selectedLocation} [Esperienza]`;
+                            selectedLocationDisplay.style.backgroundColor = '#9C27B0';
+                        } else {
+                            selectedLocationDisplay.textContent = `Ubicazione: ${selectedLocation}`;
+                            selectedLocationDisplay.style.backgroundColor = '#4CAF50';
+                        }
                         
                         locationSelection.style.display = 'none';
                         scannerControls.style.display = 'flex';
                         startScanner();
-                        updateDebugInfo(`Ubicazione selezionata: ${selectedLocation} (ID: ${selectedLocationId})`);
+                        updateDebugInfo(`Ubicazione selezionata: ${selectedLocation} (ID: ${selectedLocationId}, isExp: ${selectedLocationIsExp})`);
                     });
                     
                     locationList.appendChild(button);

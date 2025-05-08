@@ -1,52 +1,77 @@
 [
   {
-    "id": "30001",
-    "name": "Aula Magna - Presentazione Frontale",
+    "id": "25417865498",
+    "name": "International Medical Doctor Program",
     "isexp": false
   },
   {
-    "id": "30002",
-    "name": "Aula 1 - Presentazione Frontale",
+    "id": "25326449768",
+    "name": "Cdl magistrale in Medicina e chirurgia",
     "isexp": false
   },
   {
-    "id": "30003",
-    "name": "Aula 2 - Presentazione Frontale",
+    "id": "25417865392",
+    "name": "Cdl magistrale in Medicina e chirurgia",
     "isexp": false
   },
   {
-    "id": "30004",
-    "name": "Aula 3 - Presentazione Frontale",
+    "id": "25417865493",
+    "name": "Cdl magistrale in Medicina e chirurgia",
     "isexp": false
   },
   {
-    "id": "30005",
-    "name": "Aula 4 - Presentazione Frontale",
+    "id": "25417865515",
+    "name": "Cdl magistrale in Odontoiatria e protesi dentaria",
     "isexp": false
   },
   {
-    "id": "30006",
-    "name": "Aula 5 - Presentazione Frontale",
+    "id": "25417865501",
+    "name": "Cdl triennale in Ricerca Biotecnologica in medicina",
     "isexp": false
   },
   {
-    "id": "30007",
-    "name": "Aula 6 - Presentazione Frontale",
+    "id": "25415255368",
+    "name": "Cdl triennale in Infermieristica",
     "isexp": false
   },
   {
-    "id": "30008",
-    "name": "Aula 7 - Presentazione Frontale",
+    "id": "25417865510",
+    "name": "Cdl triennale in Ostetricia",
     "isexp": false
   },
   {
-    "id": "30009",
-    "name": "Aula 8 - Presentazione Frontale",
+    "id": "25417865508",
+    "name": "CdL triennale in Osteopatia",
     "isexp": false
   },
   {
-    "id": "30010",
-    "name": "Aula 9 - Presentazione Frontale",
+    "id": "25415255380",
+    "name": "Cdl triennale in Fisioterapia",
+    "isexp": false
+  },
+  {
+    "id": "25417865519",
+    "name": "CdL triennale in Tecniche di Radiologia Medica per Immagini e Radioterapia",
+    "isexp": false
+  },
+  {
+    "id": "25415255386",
+    "name": "Cdl triennale in Scienze politiche e strategie globali",
+    "isexp": false
+  },
+  {
+    "id": "25417865528",
+    "name": "Cdl triennale in Scienze e tecniche psicologiche",
+    "isexp": false
+  },
+  {
+    "id": "25417865530",
+    "name": "Cdl triennale in Filosofia",
+    "isexp": false
+  },
+  {
+    "id": "140261653720",
+    "name": "Offerta formativa Lauree Triennali e Magistrali a Ciclo Unico",
     "isexp": false
   }
 ]
