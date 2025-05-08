@@ -2778,42 +2778,19 @@ app.post('/decodeqr', async (req, res) => {
                 });
             }
             
-            // If "**" is present, increment the counter
-            try {
-                // Read the current counter value
-                let counterData = { conta_ingressi: 0 };
-                const counterFilePath = path.join(__dirname, 'conta_ingressi.json');
-                
-                if (fs.existsSync(counterFilePath)) {
-                    const counterFileContent = fs.readFileSync(counterFilePath, 'utf8');
-                    counterData = JSON.parse(counterFileContent);
-                }
-                
-                // Increment the counter
-                counterData.conta_ingressi += 1;
-                
-                // Save the updated counter value
-                fs.writeFileSync(counterFilePath, JSON.stringify(counterData, null, 2));
-                
-                // Extract contact information from the QR content
-                let contactID = msg.split("**")[1];
-                let email = msg.split("**")[0];
-                
-                console.log(`Counter incremented to ${counterData.conta_ingressi}`);
-                
-                // Return success response with counter value
-                return res.json({
-                    id: contactID,
-                    email: email,
-                    conta_ingressi: counterData.conta_ingressi,
-                    message: "Ingresso registrato con successo"
-                });
-            } catch (error) {
-                console.error('Error updating counter:', error);
-                return res.json({
-                    error: "Errore nell'aggiornamento del contatore"
-                });
-            }
+            // If "**" is present, extract contact information and return it
+            // (Counter will be incremented only in the /docheckin endpoint)
+            let contactID = msg.split("**")[1];
+            let email = msg.split("**")[0];
+            
+            console.log(`QR code contains '**' - valid format for location ID 999`);
+            
+            // Return success response with contact information
+            return res.json({
+                id: contactID,
+                email: email,
+                message: "QR valido - clicca Confirm per registrare l'ingresso"
+            });
         }
         
         // Regular processing for other location IDs
@@ -2972,6 +2949,43 @@ app.get('/docheckin/:contactID', async (req, res) => {
                 result: "error",
                 error: "Location ID is required"
             });
+        }
+        
+        // Special handling for location ID 999
+        if (locationId === "999") {
+            console.log("Location ID 999 detected in docheckin - special handling");
+            
+            try {
+                // Read the current counter value
+                let counterData = { conta_ingressi: 0 };
+                const counterFilePath = path.join(__dirname, 'conta_ingressi.json');
+                
+                if (fs.existsSync(counterFilePath)) {
+                    const counterFileContent = fs.readFileSync(counterFilePath, 'utf8');
+                    counterData = JSON.parse(counterFileContent);
+                }
+                
+                // Increment the counter
+                counterData.conta_ingressi += 1;
+                
+                // Save the updated counter value
+                fs.writeFileSync(counterFilePath, JSON.stringify(counterData, null, 2));
+                
+                console.log(`Counter incremented to ${counterData.conta_ingressi} in docheckin endpoint`);
+                
+                // Return success response with counter value
+                return res.json({
+                    result: "success",
+                    conta_ingressi: counterData.conta_ingressi,
+                    message: "Ingresso registrato con successo"
+                });
+            } catch (error) {
+                console.error('Error updating counter in docheckin endpoint:', error);
+                return res.json({
+                    result: "error",
+                    error: "Errore nell'aggiornamento del contatore"
+                });
+            }
         }
         
         // Ottieni le informazioni del contatto, inclusa la proprietà di conferma partecipazione
