@@ -2867,6 +2867,15 @@ app.post('/decodeqr', async (req, res) => {
         
         // Rimossi i controlli su isCheckIn e isRegistered come richiesto
         
+        // Se isexp è true, non controlliamo le associazioni a custom objects su HubSpot
+        // La query SQL è sufficiente per la validazione
+        if (isexp) {
+            // Restituisci la risposta senza controllare le associazioni a custom objects
+            console.log("isexp è true, skip controllo associazioni custom objects");
+            return res.json(datares);
+        }
+        
+        // Procedura standard per isexp=false
         // Ottieni l'ID del custom object type dalle variabili d'ambiente
         const customObjectTypeId = process.env.HUBSPOT_CUSTOM_OBJECT_TYPE_ID;
         if (!customObjectTypeId) {
