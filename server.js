@@ -2873,11 +2873,63 @@ app.post('/decodeqr', async (req, res) => {
         
         // Rimossi i controlli su isCheckIn e isRegistered come richiesto
         
-        // Se isexp è true, non controlliamo le associazioni a custom objects su HubSpot
+        // Se isexp è true, generalmente non controlliamo le associazioni a custom objects su HubSpot
         // La query SQL è sufficiente per la validazione
         if (isexp) {
-            // Restituisci la risposta senza controllare le associazioni a custom objects
-            console.log("isexp è true, skip controllo associazioni custom objects");
+            // Eccezione per locationId 140329700588 (Visita libera)
+            if (locationId === "140329700588") {
+                console.log("Eccezione per locationId 140329700588 (Visita libera): controllo associazione custom object 25417865501");
+                
+                try {
+                    // Ottieni l'ID del custom object type dalle variabili d'ambiente
+                    const customObjectTypeId = process.env.HUBSPOT_CUSTOM_OBJECT_TYPE_ID;
+                    if (!customObjectTypeId) {
+                        logger.error('HUBSPOT_CUSTOM_OBJECT_TYPE_ID is not defined in environment variables');
+                        datares.error = "Errore di configurazione del server";
+                        return res.json(datares);
+                    }
+                    
+                    // Verifica se il contatto ha un custom object associato
+                    logger.info(`Checking for custom object associations for contact ID: ${contactID}`);
+                    const associationsResponse = await axios.get(
+                        `https://api.hubapi.com/crm/v4/objects/contact/${contactID}/associations/${customObjectTypeId}`
+                    );
+                    
+                    // Se ci sono associazioni, verifica se l'ID specifico è tra gli ID dei custom object
+                    if (associationsResponse.data.results && associationsResponse.data.results.length > 0) {
+                        // Estrai tutti gli ID dei custom object associati e assicurati che siano stringhe
+                        const customObjectIds = associationsResponse.data.results.map(result => String(result.toObjectId));
+                        logger.info(`Found ${customObjectIds.length} custom object associations: ${customObjectIds.join(', ')}`);
+                        
+                        // Verifica se l'ID specifico è presente
+                        const specificId = "25417865501";
+                        const specificIdFound = customObjectIds.includes(specificId);
+                        
+                        logger.info(`Specific ID ${specificId} found: ${specificIdFound}`);
+                        
+                        if (!specificIdFound) {
+                            logger.info(`Specific ID ${specificId} not found in custom object IDs`);
+                            datares.error = "QR NON VALIDO";
+                            return res.json(datares);
+                        }
+                        
+                        logger.info(`Specific ID ${specificId} found in custom object IDs, proceeding`);
+                    } else {
+                        // Nessun custom object associato trovato
+                        logger.info(`No custom object association found for contact ID: ${contactID}`);
+                        datares.error = "QR NON VALIDO";
+                        return res.json(datares);
+                    }
+                } catch (error) {
+                    logger.error(`Error checking custom object association: ${error.message}`);
+                    datares.error = "Errore nella verifica dell'associazione";
+                    return res.json(datares);
+                }
+            } else {
+                // Per tutti gli altri casi con isexp=true, procedi normalmente
+                console.log("isexp è true, skip controllo associazioni custom objects");
+            }
+            
             return res.json(datares);
         }
         
@@ -3062,6 +3114,65 @@ app.get('/docheckin/:contactID', async (req, res) => {
         // Se isexp è true, verifica se esiste una prenotazione nel database locale
         if (isexp) {
             console.log("Esperienza rilevata, verificando prenotazione nel database locale...");
+            
+            // Eccezione per locationId 140329700588 (Visita libera)
+            if (locationId === "140329700588") {
+                console.log("Eccezione per locationId 140329700588 (Visita libera): controllo associazione custom object 25417865501");
+                
+                try {
+                    // Ottieni l'ID del custom object type dalle variabili d'ambiente
+                    const customObjectTypeId = process.env.HUBSPOT_CUSTOM_OBJECT_TYPE_ID;
+                    if (!customObjectTypeId) {
+                        logger.error('HUBSPOT_CUSTOM_OBJECT_TYPE_ID is not defined in environment variables');
+                        return res.json({ result: "error", error: "Errore di configurazione del server" });
+                    }
+                    
+                    // Verifica se il contatto ha un custom object associato
+                    logger.info(`Checking for custom object associations for contact ID: ${contactID}`);
+                    const associationsResponse = await axios.get(
+                        `https://api.hubapi.com/crm/v4/objects/contact/${contactID}/associations/${customObjectTypeId}`
+                    );
+                    
+                    // Se ci sono associazioni, verifica se l'ID specifico è tra gli ID dei custom object
+                    if (associationsResponse.data.results && associationsResponse.data.results.length > 0) {
+                        // Estrai tutti gli ID dei custom object associati e assicurati che siano stringhe
+                        const customObjectIds = associationsResponse.data.results.map(result => String(result.toObjectId));
+                        logger.info(`Found ${customObjectIds.length} custom object associations: ${customObjectIds.join(', ')}`);
+                        
+                        // Verifica se l'ID specifico è presente
+                        const specificId = "25417865501";
+                        const specificIdFound = customObjectIds.includes(specificId);
+                        
+                        logger.info(`Specific ID ${specificId} found: ${specificIdFound}`);
+                        
+                        if (!specificIdFound) {
+                            logger.info(`Specific ID ${specificId} not found in custom object IDs`);
+                            return res.json({
+                                result: "error",
+                                error: "QR NON VALIDO",
+                                locationId: locationId
+                            });
+                        }
+                        
+                        logger.info(`Specific ID ${specificId} found in custom object IDs, proceeding`);
+                    } else {
+                        // Nessun custom object associato trovato
+                        logger.info(`No custom object association found for contact ID: ${contactID}`);
+                        return res.json({
+                            result: "error",
+                            error: "QR NON VALIDO",
+                            locationId: locationId
+                        });
+                    }
+                } catch (error) {
+                    logger.error(`Error checking custom object association: ${error.message}`);
+                    return res.json({
+                        result: "error",
+                        error: "Errore nella verifica dell'associazione",
+                        locationId: locationId
+                    });
+                }
+            }
             
             try {
                 // Determina quale ID usare per la verifica: se isvalid è presente, usa quello invece di locationId
