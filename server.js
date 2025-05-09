@@ -3191,122 +3191,122 @@ app.get('/docheckin/:contactID', async (req, res) => {
                     message: dbError.message
                 });
             }
-        }
+        } else {
+            // Procedura standard per isexp=false
+            // Ottieni le informazioni del contatto, inclusa la proprietà di conferma partecipazione
+            const participationProperty = "conferma_partecipazione_corsi_open_day_10_05_2025";
         
-        // Procedura standard per isexp=false
-        // Ottieni le informazioni del contatto, inclusa la proprietà di conferma partecipazione
-        const participationProperty = "conferma_partecipazione_corsi_open_day_10_05_2025";
-        
-        const contactResponse = await axios.get(
-            `https://api.hubapi.com/crm/v3/objects/contacts/${contactID}?properties=firstname,lastname,email,${participationProperty}`
-        );
-        logger.info(`Contact details retrieved: ${JSON.stringify(contactResponse.data.properties)}`);
-        
-        // Verifica se il locationId è già presente nella proprietà di conferma partecipazione
-        const participationValue = contactResponse.data.properties[participationProperty] || "";
-        logger.info(`Participation property (${participationProperty}): ${participationValue}`);
-        
-        if (participationValue.includes(locationId)) {
-            logger.info(`Location ID ${locationId} already in participation property ${participationProperty}`);
-            return res.json({
-                result: "error",
-                error: "INGRESSO GIA' EFFETTUATO",
-                locationId: locationId
-            });
-        }
-        
-        // Ottieni l'ID del custom object type dalle variabili d'ambiente
-        const customObjectTypeId = process.env.HUBSPOT_CUSTOM_OBJECT_TYPE_ID;
-        if (!customObjectTypeId) {
-            logger.error('HUBSPOT_CUSTOM_OBJECT_TYPE_ID is not defined in environment variables');
-            return res.json({ result: "error", error: "Errore di configurazione del server" });
-        }
-        
-        // Verifica se il contatto ha un custom object associato
-        logger.info(`Checking for custom object associations for contact ID: ${contactID}`);
-        const associationsResponse = await axios.get(
-            `https://api.hubapi.com/crm/v4/objects/contact/${contactID}/associations/${customObjectTypeId}`
-        );
-        
-        // Se non ci sono associazioni, restituisci un errore
-        if (!associationsResponse.data.results || associationsResponse.data.results.length === 0) {
-            logger.info(`No custom object association found for contact ID: ${contactID}`);
-            return res.json({
-                result: "error",
-                error: "QR NON VALIDO",
-                locationId: locationId
-            });
-        }
-        
-        // Estrai tutti gli ID dei custom object associati e assicurati che siano stringhe
-        const customObjectIds = associationsResponse.data.results.map(result => String(result.toObjectId));
-        logger.info(`Found ${customObjectIds.length} custom object associations: ${customObjectIds.join(', ')}`);
-        
-        // Converti locationId in stringa per il confronto
-        const locationIdStr = String(locationId);
-        
-        // Debug dettagliato
-        console.log("DEBUG - Custom Object IDs:", JSON.stringify(customObjectIds));
-        console.log("DEBUG - Location ID:", locationIdStr);
-        console.log("DEBUG - Types:", {
-            locationIdType: typeof locationId,
-            locationIdStrType: typeof locationIdStr,
-            customObjectIdsTypes: customObjectIds.map(id => typeof id)
-        });
-        
-        // Verifica esplicita con loop invece di includes()
-        let locationIdFound = false;
-        for (const id of customObjectIds) {
-            console.log(`Comparing: '${id}' (${typeof id}) === '${locationIdStr}' (${typeof locationIdStr}): ${id === locationIdStr}`);
-            if (id === locationIdStr) {
-                locationIdFound = true;
-                break;
+            const contactResponse = await axios.get(
+                `https://api.hubapi.com/crm/v3/objects/contacts/${contactID}?properties=firstname,lastname,email,${participationProperty}`
+            );
+            logger.info(`Contact details retrieved: ${JSON.stringify(contactResponse.data.properties)}`);
+            
+            // Verifica se il locationId è già presente nella proprietà di conferma partecipazione
+            const participationValue = contactResponse.data.properties[participationProperty] || "";
+            logger.info(`Participation property (${participationProperty}): ${participationValue}`);
+            
+            if (participationValue.includes(locationId)) {
+                logger.info(`Location ID ${locationId} already in participation property ${participationProperty}`);
+                return res.json({
+                    result: "error",
+                    error: "INGRESSO GIA' EFFETTUATO",
+                    locationId: locationId
+                });
             }
-        }
+            
+            // Ottieni l'ID del custom object type dalle variabili d'ambiente
+            const customObjectTypeId = process.env.HUBSPOT_CUSTOM_OBJECT_TYPE_ID;
+            if (!customObjectTypeId) {
+                logger.error('HUBSPOT_CUSTOM_OBJECT_TYPE_ID is not defined in environment variables');
+                return res.json({ result: "error", error: "Errore di configurazione del server" });
+            }
+            
+            // Verifica se il contatto ha un custom object associato
+            logger.info(`Checking for custom object associations for contact ID: ${contactID}`);
+            const associationsResponse = await axios.get(
+                `https://api.hubapi.com/crm/v4/objects/contact/${contactID}/associations/${customObjectTypeId}`
+            );
         
-        // Log del risultato
-        console.log(`Location ID found: ${locationIdFound}`);
-        
-        if (!locationIdFound) {
-            logger.info(`Location ID ${locationId} not found in custom object IDs`);
-            return res.json({
-                result: "error",
-                error: "QR NON VALIDO",
+            // Se non ci sono associazioni, restituisci un errore
+            if (!associationsResponse.data.results || associationsResponse.data.results.length === 0) {
+                logger.info(`No custom object association found for contact ID: ${contactID}`);
+                return res.json({
+                    result: "error",
+                    error: "QR NON VALIDO",
+                    locationId: locationId
+                });
+            }
+            
+            // Estrai tutti gli ID dei custom object associati e assicurati che siano stringhe
+            const customObjectIds = associationsResponse.data.results.map(result => String(result.toObjectId));
+            logger.info(`Found ${customObjectIds.length} custom object associations: ${customObjectIds.join(', ')}`);
+            
+            // Converti locationId in stringa per il confronto
+            const locationIdStr = String(locationId);
+            
+            // Debug dettagliato
+            console.log("DEBUG - Custom Object IDs:", JSON.stringify(customObjectIds));
+            console.log("DEBUG - Location ID:", locationIdStr);
+            console.log("DEBUG - Types:", {
+                locationIdType: typeof locationId,
+                locationIdStrType: typeof locationIdStr,
+                customObjectIdsTypes: customObjectIds.map(id => typeof id)
+            });
+            
+            // Verifica esplicita con loop invece di includes()
+            let locationIdFound = false;
+            for (const id of customObjectIds) {
+                console.log(`Comparing: '${id}' (${typeof id}) === '${locationIdStr}' (${typeof locationIdStr}): ${id === locationIdStr}`);
+                if (id === locationIdStr) {
+                    locationIdFound = true;
+                    break;
+                }
+            }
+            
+            // Log del risultato
+            console.log(`Location ID found: ${locationIdFound}`);
+            
+            if (!locationIdFound) {
+                logger.info(`Location ID ${locationId} not found in custom object IDs`);
+                return res.json({
+                    result: "error",
+                    error: "QR NON VALIDO",
+                    locationId: locationId
+                });
+            }
+            
+            logger.info(`Location ID ${locationId} found in custom object IDs`);
+            
+            // Aggiorna la proprietà di conferma partecipazione del contatto
+            const updatedProperty = participationValue ? `${participationValue};${locationId}` : locationId;
+            
+            // Aggiorniamo la proprietà conferma_partecipazione_corsi_open_day_10_05_2025
+            await axios.patch(`https://api.hubapi.com/crm/v3/objects/contacts/${contactID}`, {
+                properties: {
+                    [participationProperty]: updatedProperty
+                }
+            });
+            
+            logger.info(`Updated contact property ${participationProperty} with location ID ${locationId}`);
+            
+            // // Ottieni l'ID del primo custom object associato per mantenere la compatibilità con il codice esistente
+            // const customObjectId = associationsResponse.data.results[0].toObjectId;
+            
+            // // Aggiorna le proprietà del custom object
+            // await axios.patch(`https://api.hubapi.com/crm/v3/objects/${customObjectTypeId}/${customObjectId}`, {
+            //     "properties": {
+            //         ritiro_avvenuto: "true"
+            //     }
+            // });
+            
+            // logger.info(`Updated custom object ${customObjectId} with ritiro_avvenuto=true`);
+            res.json({
+                result: "success",
+                custom_object_updated: true,
+                contact_property_updated: true,
                 locationId: locationId
             });
         }
-        
-        logger.info(`Location ID ${locationId} found in custom object IDs`);
-        
-        // Aggiorna la proprietà di conferma partecipazione del contatto
-        const updatedProperty = participationValue ? `${participationValue};${locationId}` : locationId;
-        
-        // Aggiorniamo la proprietà conferma_partecipazione_corsi_open_day_10_05_2025
-        await axios.patch(`https://api.hubapi.com/crm/v3/objects/contacts/${contactID}`, {
-            properties: {
-                [participationProperty]: updatedProperty
-            }
-        });
-        
-        logger.info(`Updated contact property ${participationProperty} with location ID ${locationId}`);
-        
-        // // Ottieni l'ID del primo custom object associato per mantenere la compatibilità con il codice esistente
-        // const customObjectId = associationsResponse.data.results[0].toObjectId;
-        
-        // // Aggiorna le proprietà del custom object
-        // await axios.patch(`https://api.hubapi.com/crm/v3/objects/${customObjectTypeId}/${customObjectId}`, {
-        //     "properties": {
-        //         ritiro_avvenuto: "true"
-        //     }
-        // });
-        
-        // logger.info(`Updated custom object ${customObjectId} with ritiro_avvenuto=true`);
-        res.json({
-            result: "success",
-            custom_object_updated: true,
-            contact_property_updated: true,
-            locationId: locationId
-        });
         // Il blocco else è stato rimosso perché ora gestiamo il caso in cui non ci sono associazioni prima
     } catch (error) {
         console.error('Error in /docheckin:', error);
