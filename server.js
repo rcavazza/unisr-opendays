@@ -2935,28 +2935,45 @@ app.post('/decodeqr', async (req, res) => {
         
         // Caso speciale per workshop genitori (locationId 10026 o 10027)
         else if (!isexp && (locationId === "10026" || locationId === "10027")) {
-            console.log(`Caso speciale per workshop genitori (${locationId}): controllo proprietà slot_prenotazione_workshop_genitori_open_day_2025`);
+            console.log(`Caso speciale per workshop genitori (${locationId}): controllo prenotazione nel database`);
             
             try {
-                // Ottieni la proprietà del contatto da Hubspot
-                const contactResponse = await axios.get(
-                    `https://api.hubapi.com/crm/v3/objects/contacts/${contactID}?properties=slot_prenotazione_workshop_genitori_open_day_2025`
-                );
+                // Determina quali experience_id cercare in base al locationId
+                const experienceIds = locationId === "10026" ? [20, 25] : [21, 26];
+                console.log(`Cercando experience_id ${experienceIds.join(' o ')} per locationId ${locationId}`);
                 
-                const slotProperty = contactResponse.data.properties.slot_prenotazione_workshop_genitori_open_day_2025 || "";
-                logger.info(`Proprietà slot_prenotazione_workshop_genitori_open_day_2025: ${slotProperty}`);
+                // Verifica se esiste una prenotazione per questo contatto e uno degli experience_id
+                const placeholders = experienceIds.map(() => '?').join(',');
+                const params = [contactID, ...experienceIds];
                 
-                // Verifica se la proprietà contiene l'ID della location
-                if (!slotProperty.includes(locationId)) {
-                    logger.info(`Location ID ${locationId} non trovato nella proprietà slot_prenotazione_workshop_genitori_open_day_2025`);
+                const reservation = await new Promise((resolve, reject) => {
+                    db.get(
+                        `SELECT * FROM opend_reservations WHERE contact_id = ? AND experience_id IN (${placeholders})`,
+                        params,
+                        (err, row) => {
+                            if (err) {
+                                console.error("Errore nella query al database:", err);
+                                reject(err);
+                            } else {
+                                resolve(row);
+                            }
+                        }
+                    );
+                });
+                
+                // Se non esiste una prenotazione, restituisci un errore
+                if (!reservation) {
+                    console.log(`Nessuna prenotazione trovata per contactID=${contactID} e experience_id in [${experienceIds.join(', ')}]`);
                     datares.error = "QR NON VALIDO";
                 } else {
-                    logger.info(`Location ID ${locationId} trovato nella proprietà slot_prenotazione_workshop_genitori_open_day_2025`);
+                    console.log("Prenotazione trovata:", reservation);
+                    // Aggiungi l'experience_id trovato alla risposta per usarlo nel docheckin
+                    datares.foundExperienceId = reservation.experience_id;
                 }
                 
                 return res.json(datares);
             } catch (error) {
-                logger.error(`Errore nella verifica della proprietà: ${error.message}`);
+                logger.error(`Errore nella verifica della prenotazione: ${error.message}`);
                 datares.error = "Errore nella verifica della prenotazione";
                 return res.json(datares);
             }
@@ -3362,20 +3379,61 @@ app.get('/docheckin/:contactID', async (req, res) => {
         } else {
             // Caso speciale per workshop genitori (locationId 10026 o 10027)
             if (locationId === "10026" || locationId === "10027") {
-                console.log(`Caso speciale per workshop genitori (${locationId}): controllo proprietà slot_prenotazione_workshop_genitori_open_day_2025`);
+                console.log(`Caso speciale per workshop genitori (${locationId}): controllo prenotazione nel database`);
                 
                 try {
-                    // Ottieni la proprietà del contatto da Hubspot
-                    const contactResponse = await axios.get(
-                        `https://api.hubapi.com/crm/v3/objects/contacts/${contactID}?properties=slot_prenotazione_workshop_genitori_open_day_2025,open_day__conferma_partecipazione_workshop_genitore`
-                    );
+                    // Determina quali experience_id cercare in base al locationId
+                    const experienceIds = locationId === "10026" ? [20, 25] : [21, 26];
+                    console.log(`Cercando experience_id ${experienceIds.join(' o ')} per locationId ${locationId}`);
                     
-                    const slotProperty = contactResponse.data.properties.slot_prenotazione_workshop_genitori_open_day_2025 || "";
-                    logger.info(`Proprietà slot_prenotazione_workshop_genitori_open_day_2025: ${slotProperty}`);
+                    // Verifica se esiste una prenotazione per questo contatto e uno degli experience_id
+                    const placeholders = experienceIds.map(() => '?').join(',');
+                    const params = [contactID, ...experienceIds];
                     
-                    // Verifica se la proprietà contiene l'ID della location
-                    if (!slotProperty.includes(locationId)) {
-                        logger.info(`Location ID ${locationId} non trovato nella proprietà slot_prenotazione_workshop_genitori_open_day_2025`);
+                    // Inizia una transazione per garantire che l'aggiornamento e la cancellazione siano operazioni atomiche
+                    await new Promise((resolve, reject) => {
+                        db.run("BEGIN TRANSACTION", (err) => {
+                            if (err) {
+                                logger.error(`Error starting transaction: ${err.message}`);
+                                reject(err);
+                            } else {
+                                logger.info("Transaction started");
+                                resolve();
+                            }
+                        });
+                    });
+                    
+                    // Verifica se esiste una prenotazione
+                    const reservation = await new Promise((resolve, reject) => {
+                        db.get(
+                            `SELECT * FROM opend_reservations WHERE contact_id = ? AND experience_id IN (${placeholders})`,
+                            params,
+                            (err, row) => {
+                                if (err) {
+                                    console.error("Errore nella query al database:", err);
+                                    reject(err);
+                                } else {
+                                    resolve(row);
+                                }
+                            }
+                        );
+                    });
+                    
+                    // Se non esiste una prenotazione, restituisci un errore
+                    if (!reservation) {
+                        // Rollback della transazione
+                        await new Promise((resolve) => {
+                            db.run("ROLLBACK", (err) => {
+                                if (err) {
+                                    logger.error(`Error rolling back transaction: ${err.message}`);
+                                } else {
+                                    logger.info("Transaction rolled back");
+                                }
+                                resolve();
+                            });
+                        });
+                        
+                        console.log(`Nessuna prenotazione trovata per contactID=${contactID} e experience_id in [${experienceIds.join(', ')}]`);
                         return res.json({
                             result: "error",
                             error: "QR NON VALIDO",
@@ -3383,40 +3441,66 @@ app.get('/docheckin/:contactID', async (req, res) => {
                         });
                     }
                     
-                    logger.info(`Location ID ${locationId} trovato nella proprietà slot_prenotazione_workshop_genitori_open_day_2025`);
+                    console.log("Prenotazione trovata:", reservation);
                     
-                    // Verifica se il locationId è già presente nella proprietà workshop genitore
-                    const workshopProperty = contactResponse.data.properties.open_day__conferma_partecipazione_workshop_genitore || "";
-                    logger.info(`Proprietà open_day__conferma_partecipazione_workshop_genitore: ${workshopProperty}`);
-                    
-                    if (workshopProperty.includes(locationId)) {
-                        logger.info(`Location ID ${locationId} già presente nella proprietà open_day__conferma_partecipazione_workshop_genitore`);
-                        return res.json({
-                            result: "error",
-                            error: "INGRESSO GIA' EFFETTUATO",
-                            locationId: locationId
-                        });
-                    }
-                    
-                    // Aggiorna la proprietà workshop genitore
-                    const updatedProperty = workshopProperty ? `${workshopProperty};${locationId}` : locationId;
-                    
-                    await axios.patch(`https://api.hubapi.com/crm/v3/objects/contacts/${contactID}`, {
-                        properties: {
-                            "open_day__conferma_partecipazione_workshop_genitore": updatedProperty
-                        }
+                    // Elimina la riga corrispondente dal database
+                    await new Promise((resolve, reject) => {
+                        db.run(
+                            "DELETE FROM opend_reservations WHERE id = ?",
+                            [reservation.id],
+                            function(err) {
+                                if (err) {
+                                    logger.error(`Error deleting reservation from database: ${err.message}`);
+                                    reject(err);
+                                } else {
+                                    // Verifica che almeno una riga sia stata eliminata
+                                    if (this.changes === 0) {
+                                        logger.warn(`No rows deleted for reservation ID=${reservation.id}`);
+                                    } else {
+                                        logger.info(`Deleted reservation with ID=${reservation.id}`);
+                                    }
+                                    resolve(this.changes);
+                                }
+                            }
+                        );
                     });
                     
-                    logger.info(`Aggiornata proprietà open_day__conferma_partecipazione_workshop_genitore con location ID ${locationId}`);
+                    // Commit della transazione
+                    await new Promise((resolve, reject) => {
+                        db.run("COMMIT", (err) => {
+                            if (err) {
+                                logger.error(`Error committing transaction: ${err.message}`);
+                                reject(err);
+                            } else {
+                                logger.info("Transaction committed successfully");
+                                resolve();
+                            }
+                        });
+                    });
                     
+                    // Restituisci una risposta di successo
                     return res.json({
                         result: "success",
                         custom_object_updated: false,
-                        contact_property_updated: true,
+                        contact_property_updated: false,
+                        reservation_deleted: true,
                         locationId: locationId,
+                        experienceId: reservation.experience_id,
                         message: "Workshop genitore confermato con successo"
                     });
                 } catch (error) {
+                    // In caso di errore, esegui il rollback della transazione
+                    await new Promise((resolve) => {
+                        db.run("ROLLBACK", (err) => {
+                            if (err) {
+                                logger.error(`Error rolling back transaction: ${err.message}`);
+                            } else {
+                                logger.info("Transaction rolled back due to error");
+                            }
+                            resolve();
+                        });
+                    });
+                    
                     logger.error(`Errore nel caso speciale workshop genitori: ${error.message}`);
                     return res.json({
                         result: "error",
