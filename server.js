@@ -2933,6 +2933,35 @@ app.post('/decodeqr', async (req, res) => {
             return res.json(datares);
         }
         
+        // Caso speciale per workshop genitori (locationId 10026 o 10027)
+        else if (!isexp && (locationId === "10026" || locationId === "10027")) {
+            console.log(`Caso speciale per workshop genitori (${locationId}): controllo proprietà slot_prenotazione_workshop_genitori_open_day_2025`);
+            
+            try {
+                // Ottieni la proprietà del contatto da Hubspot
+                const contactResponse = await axios.get(
+                    `https://api.hubapi.com/crm/v3/objects/contacts/${contactID}?properties=slot_prenotazione_workshop_genitori_open_day_2025`
+                );
+                
+                const slotProperty = contactResponse.data.properties.slot_prenotazione_workshop_genitori_open_day_2025 || "";
+                logger.info(`Proprietà slot_prenotazione_workshop_genitori_open_day_2025: ${slotProperty}`);
+                
+                // Verifica se la proprietà contiene l'ID della location
+                if (!slotProperty.includes(locationId)) {
+                    logger.info(`Location ID ${locationId} non trovato nella proprietà slot_prenotazione_workshop_genitori_open_day_2025`);
+                    datares.error = "QR NON VALIDO";
+                } else {
+                    logger.info(`Location ID ${locationId} trovato nella proprietà slot_prenotazione_workshop_genitori_open_day_2025`);
+                }
+                
+                return res.json(datares);
+            } catch (error) {
+                logger.error(`Errore nella verifica della proprietà: ${error.message}`);
+                datares.error = "Errore nella verifica della prenotazione";
+                return res.json(datares);
+            }
+        }
+        
         // Procedura standard per isexp=false
         // Ottieni l'ID del custom object type dalle variabili d'ambiente
         const customObjectTypeId = process.env.HUBSPOT_CUSTOM_OBJECT_TYPE_ID;
@@ -3331,6 +3360,72 @@ app.get('/docheckin/:contactID', async (req, res) => {
                 });
             }
         } else {
+            // Caso speciale per workshop genitori (locationId 10026 o 10027)
+            if (locationId === "10026" || locationId === "10027") {
+                console.log(`Caso speciale per workshop genitori (${locationId}): controllo proprietà slot_prenotazione_workshop_genitori_open_day_2025`);
+                
+                try {
+                    // Ottieni la proprietà del contatto da Hubspot
+                    const contactResponse = await axios.get(
+                        `https://api.hubapi.com/crm/v3/objects/contacts/${contactID}?properties=slot_prenotazione_workshop_genitori_open_day_2025,open_day__conferma_partecipazione_workshop_genitore`
+                    );
+                    
+                    const slotProperty = contactResponse.data.properties.slot_prenotazione_workshop_genitori_open_day_2025 || "";
+                    logger.info(`Proprietà slot_prenotazione_workshop_genitori_open_day_2025: ${slotProperty}`);
+                    
+                    // Verifica se la proprietà contiene l'ID della location
+                    if (!slotProperty.includes(locationId)) {
+                        logger.info(`Location ID ${locationId} non trovato nella proprietà slot_prenotazione_workshop_genitori_open_day_2025`);
+                        return res.json({
+                            result: "error",
+                            error: "QR NON VALIDO",
+                            locationId: locationId
+                        });
+                    }
+                    
+                    logger.info(`Location ID ${locationId} trovato nella proprietà slot_prenotazione_workshop_genitori_open_day_2025`);
+                    
+                    // Verifica se il locationId è già presente nella proprietà workshop genitore
+                    const workshopProperty = contactResponse.data.properties.open_day__conferma_partecipazione_workshop_genitore || "";
+                    logger.info(`Proprietà open_day__conferma_partecipazione_workshop_genitore: ${workshopProperty}`);
+                    
+                    if (workshopProperty.includes(locationId)) {
+                        logger.info(`Location ID ${locationId} già presente nella proprietà open_day__conferma_partecipazione_workshop_genitore`);
+                        return res.json({
+                            result: "error",
+                            error: "INGRESSO GIA' EFFETTUATO",
+                            locationId: locationId
+                        });
+                    }
+                    
+                    // Aggiorna la proprietà workshop genitore
+                    const updatedProperty = workshopProperty ? `${workshopProperty};${locationId}` : locationId;
+                    
+                    await axios.patch(`https://api.hubapi.com/crm/v3/objects/contacts/${contactID}`, {
+                        properties: {
+                            "open_day__conferma_partecipazione_workshop_genitore": updatedProperty
+                        }
+                    });
+                    
+                    logger.info(`Aggiornata proprietà open_day__conferma_partecipazione_workshop_genitore con location ID ${locationId}`);
+                    
+                    return res.json({
+                        result: "success",
+                        custom_object_updated: false,
+                        contact_property_updated: true,
+                        locationId: locationId,
+                        message: "Workshop genitore confermato con successo"
+                    });
+                } catch (error) {
+                    logger.error(`Errore nel caso speciale workshop genitori: ${error.message}`);
+                    return res.json({
+                        result: "error",
+                        error: "Errore nella verifica della prenotazione",
+                        locationId: locationId
+                    });
+                }
+            }
+            
             // Procedura standard per isexp=false
             // Ottieni le informazioni del contatto, inclusa la proprietà di conferma partecipazione
             const participationProperty = "conferma_partecipazione_corsi_open_day_10_05_2025";
