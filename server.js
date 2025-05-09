@@ -2762,10 +2762,11 @@ app.post('/decodeqr', async (req, res) => {
         let msg = xorCipher.decode(req.body.qrContent, xorKey);
         console.log("CONTENUTO QR: ",msg);
         
-        // Ottieni l'ID della location selezionata e il parametro isexp (se presenti)
+        // Ottieni l'ID della location selezionata, il parametro isexp e isvalid (se presenti)
         const locationId = req.body.locationId || null;
         const isexp = req.body.isexp === true;
-        console.log("Location ID selezionato:", locationId, "isExp:", isexp);
+        const isvalid = req.body.isvalid || null;
+        console.log("Location ID selezionato:", locationId, "isExp:", isexp, "isValid:", isvalid);
         
         // Special handling for location ID 999
         if (locationId === "999") {
@@ -2803,11 +2804,15 @@ app.post('/decodeqr', async (req, res) => {
             console.log("Esperienza rilevata, verificando prenotazione nel database locale...");
             
             try {
+                // Determina quale ID usare per la verifica: se isvalid è presente, usa quello invece di locationId
+                const verificationId = (isexp && isvalid) ? isvalid : locationId;
+                console.log(`Usando ${isvalid ? 'isvalid' : 'locationId'} per la verifica: ${verificationId}`);
+                
                 // Verifica se esiste una prenotazione per questo contatto e questa esperienza
                 const reservation = await new Promise((resolve, reject) => {
                     db.get(
                         "SELECT * FROM opend_reservations WHERE contact_id = ? AND time_slot_id = ?",
-                        [contactID, locationId],
+                        [contactID, verificationId],
                         (err, row) => {
                             if (err) {
                                 console.error("Errore nella query al database:", err);
@@ -2862,7 +2867,8 @@ app.post('/decodeqr', async (req, res) => {
             lastname: lastname,
             email: email,
             selectedLocationId: locationId, // Aggiungi l'ID della location selezionata alla risposta
-            isexp: isexp // Aggiungi il parametro isexp alla risposta
+            isexp: isexp, // Aggiungi il parametro isexp alla risposta
+            isvalid: isvalid // Aggiungi il parametro isvalid alla risposta
         };
         
         // Rimossi i controlli su isCheckIn e isRegistered come richiesto
@@ -3002,10 +3008,11 @@ app.post('/decodeqr', async (req, res) => {
 app.get('/docheckin/:contactID', async (req, res) => {
     try {
         const contactID = req.params.contactID;
-        // Ottieni l'ID della location e il parametro isexp dalla query string (se presenti)
+        // Ottieni l'ID della location, il parametro isexp e isvalid dalla query string (se presenti)
         const locationId = req.query.locationId || null;
         const isexp = req.query.isexp === 'true';
-        console.log("CHECKIN " + contactID + " - Location ID: " + locationId + " - isExp: " + isexp);
+        const isvalid = req.query.isvalid || null;
+        console.log("CHECKIN " + contactID + " - Location ID: " + locationId + " - isExp: " + isexp + " - isValid: " + isvalid);
         
         if (!locationId) {
             logger.error('Location ID is required');
@@ -3057,11 +3064,15 @@ app.get('/docheckin/:contactID', async (req, res) => {
             console.log("Esperienza rilevata, verificando prenotazione nel database locale...");
             
             try {
+                // Determina quale ID usare per la verifica: se isvalid è presente, usa quello invece di locationId
+                const verificationId = (isexp && isvalid) ? isvalid : locationId;
+                console.log(`Usando ${isvalid ? 'isvalid' : 'locationId'} per la verifica: ${verificationId}`);
+                
                 // Verifica se esiste una prenotazione per questo contatto e questa esperienza
                 const reservation = await new Promise((resolve, reject) => {
                     db.get(
                         "SELECT * FROM opend_reservations WHERE contact_id = ? AND time_slot_id = ?",
-                        [contactID, locationId],
+                        [contactID, verificationId],
                         (err, row) => {
                             if (err) {
                                 console.error("Errore nella query al database:", err);
@@ -3095,7 +3106,10 @@ app.get('/docheckin/:contactID', async (req, res) => {
                 const participationValue = contactResponse.data.properties["open_day__conferma_partecipazione_esperienze_10_05"] || "";
                 logger.info(`Participation property (open_day__conferma_partecipazione_esperienze_10_05): ${participationValue}`);
                 
-                if (participationValue.includes(locationId)) {
+                // Determina quale ID usare per verificare se è già presente nella proprietà di partecipazione
+                const checkId = (isexp && isvalid) ? isvalid : locationId;
+                
+                if (participationValue.includes(checkId)) {
                     logger.info(`Location ID ${locationId} already in participation property`);
                     return res.json({
                         result: "error",
@@ -3119,14 +3133,18 @@ app.get('/docheckin/:contactID', async (req, res) => {
                         });
                     });
                     
-                    // Aggiorna la proprietà di conferma partecipazione del contatto in HubSpot
-                    const updatedProperty = participationValue ? `${participationValue};${locationId}` : locationId;
+                    // Determina quale ID usare per l'aggiornamento: se isvalid è presente, usa locationId (ID specifico dell'attività)
+                    // altrimenti usa lo stesso ID usato per la verifica
+                    const updateId = locationId;
+                    const updatedProperty = participationValue ? `${participationValue};${updateId}` : updateId;
                     
                     await axios.patch(`https://api.hubapi.com/crm/v3/objects/contacts/${contactID}`, {
                         properties: {
                             "open_day__conferma_partecipazione_esperienze_10_05": updatedProperty
                         }
                     });
+                    
+                    logger.info(`Updated contact property with ID: ${updateId} (original locationId: ${locationId}, isvalid: ${isvalid})`);
                     
                     logger.info(`Updated contact property open_day__conferma_partecipazione_esperienze_10_05 with location ID ${locationId}`);
                     
@@ -3189,6 +3207,7 @@ app.get('/docheckin/:contactID', async (req, res) => {
                     custom_object_updated: false,
                     contact_property_updated: true,
                     locationId: locationId,
+                    isvalid: isvalid,
                     message: "Esperienza confermata con successo"
                 });
                 
@@ -3214,7 +3233,10 @@ app.get('/docheckin/:contactID', async (req, res) => {
             const participationValue = contactResponse.data.properties[participationProperty] || "";
             logger.info(`Participation property (${participationProperty}): ${participationValue}`);
             
-            if (participationValue.includes(locationId)) {
+            // Determina quale ID usare per verificare se è già presente nella proprietà di partecipazione
+            const checkId = (isexp && isvalid) ? isvalid : locationId;
+            
+            if (participationValue.includes(checkId)) {
                 logger.info(`Location ID ${locationId} already in participation property ${participationProperty}`);
                 return res.json({
                     result: "error",
@@ -3287,7 +3309,11 @@ app.get('/docheckin/:contactID', async (req, res) => {
             logger.info(`Location ID ${locationId} found in custom object IDs`);
             
             // Aggiorna la proprietà di conferma partecipazione del contatto
-            const updatedProperty = participationValue ? `${participationValue};${locationId}` : locationId;
+            // Determina quale ID usare per l'aggiornamento
+            const updateId = locationId; // Per i non-experience, usiamo sempre locationId
+            const updatedProperty = participationValue ? `${participationValue};${updateId}` : updateId;
+            
+            logger.info(`Updating contact property with ID: ${updateId}`);
             
             // Aggiorniamo la proprietà conferma_partecipazione_corsi_open_day_10_05_2025
             await axios.patch(`https://api.hubapi.com/crm/v3/objects/contacts/${contactID}`, {

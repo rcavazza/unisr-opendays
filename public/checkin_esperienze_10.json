@@ -93,5 +93,101 @@
     "id": "140329700598",
     "name": "visita guidata della palestra riabilitativa con dimostrazione di alcune tecnologie avanzate 15.30",
     "isexp": true
+  },
+  {
+    "id": "10010",
+    "name": "11.00 - SimLab2 Manichino con ascolto e visione del timpano",
+    "isexp": true,
+    "isvalid": "140332577011"
+  },
+  {
+    "id": "10011",
+    "name": "11.00 - SimLab2 Piccola chirurgia, sutura",
+    "isexp": true,
+    "isvalid": "140332577011"
+  },
+  {
+    "id": "10012",
+    "name": "11.00 - SimLab2 Manovra di disostruzione delle vie aeree con manichino",
+    "isexp": true,
+    "isvalid": "140332577011"
+  },
+  {
+    "id": "10013",
+    "name": "11.00 - SimLab2 Semeiotica",
+    "isexp": true,
+    "isvalid": "140332577011"
+  },
+  {
+    "id": "10014",
+    "name": "12.00 - SimLab2 Manichino con ascolto e visione del timpano",
+    "isexp": true,
+    "isvalid": "140329700586"
+  },
+  {
+    "id": "10015",
+    "name": "12.00 - SimLab2 Piccola chirurgia, sutura",
+    "isexp": true,
+    "isvalid": "140329700586"
+  },
+  {
+    "id": "10016",
+    "name": "12.00 - SimLab2 Manovra di disostruzione delle vie aeree con manichino",
+    "isexp": true,
+    "isvalid": "140329700586"
+  },
+  {
+    "id": "10017",
+    "name": "12.00 - SimLab2 Semeiotica",
+    "isexp": true,
+    "isvalid": "140329700586"
+  },
+  {
+    "id": "10018",
+    "name": "14.00 - SimLab2 Manichino con ascolto e visione del timpano",
+    "isexp": true,
+    "isvalid": "140332577012"
+  },
+  {
+    "id": "10019",
+    "name": "14.00 - SimLab2 Piccola chirurgia, sutura",
+    "isexp": true,
+    "isvalid": "140332577012"
+  },
+  {
+    "id": "10020",
+    "name": "14.00 - SimLab2 Manovra di disostruzione delle vie aeree con manichino",
+    "isexp": true,
+    "isvalid": "140332577012"
+  },
+  {
+    "id": "10021",
+    "name": "14.00 - SimLab2 Semeiotica",
+    "isexp": true,
+    "isvalid": "140332577012"
+  },
+  {
+    "id": "10022",
+    "name": "15.00 - SimLab2 Manichino con ascolto e visione del timpano",
+    "isexp": true,
+    "isvalid": "140329700587"
+  },
+  {
+    "id": "10023",
+    "name": "15.00 - SimLab2 Piccola chirurgia, sutura",
+    "isexp": true,
+    "isvalid": "140329700587"
+  },
+  {
+    "id": "10024",
+    "name": "15.00 - SimLab2 Manovra di disostruzione delle vie aeree con manichino",
+    "isexp": true,
+    "isvalid": "140329700587"
+  },
+  {
+    "id": "10025",
+    "name": "15.00 - SimLab2 Semeiotica",
+    "isexp": true,
+    "isvalid": "140329700587"
   }
 ]

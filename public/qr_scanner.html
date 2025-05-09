@@ -155,6 +155,7 @@
         let selectedLocation = '';
         let selectedLocationId = null;
         let selectedLocationIsExp = false; // Nuovo parametro per memorizzare se la location è un'esperienza
+        let selectedLocationIsValid = null; // Nuovo parametro per memorizzare il valore isvalid
 
         function updateDebugInfo(message) {
             debugInfo.innerHTML += `<p>${message}</p>`;
@@ -165,7 +166,7 @@
             updateDebugInfo('Chiamata API in corso...');
             try {
                 // Aggiungi l'ID della location e il parametro isexp come parametri di query
-                const url = `/docheckin/${encodeURIComponent(id)}${selectedLocationId ? `?locationId=${selectedLocationId}&isexp=${selectedLocationIsExp}` : ''}`;
+                const url = `/docheckin/${encodeURIComponent(id)}${selectedLocationId ? `?locationId=${selectedLocationId}&isexp=${selectedLocationIsExp}${selectedLocationIsValid ? `&isvalid=${selectedLocationIsValid}` : ''}` : ''}`;
                 updateDebugInfo(`URL API: ${url}`);
                 
                 const response = await fetch(url);
@@ -219,7 +220,8 @@
                                 body: JSON.stringify({
                                     qrContent: lastQrContent,
                                     locationId: selectedLocationId, // Passa l'ID della location selezionata
-                                    isexp: selectedLocationIsExp // Passa il parametro isexp
+                                    isexp: selectedLocationIsExp, // Passa il parametro isexp
+                                    isvalid: selectedLocationIsValid // Passa il parametro isvalid
                                 })
                             });
 
@@ -374,12 +376,14 @@
                     
                     button.dataset.id = location.id;
                     button.dataset.isexp = location.isexp || false;
+                    button.dataset.isvalid = location.isvalid || null;
                     
                     // Aggiungi l'event listener per il click
                     button.addEventListener('click', () => {
                         selectedLocation = location.name;
                         selectedLocationId = location.id;
                         selectedLocationIsExp = location.isexp === true;
+                        selectedLocationIsValid = location.isvalid || null;
                         
                         // Aggiorna il display della location selezionata
                         const selectedLocationDisplay = document.getElementById('selectedLocationDisplay');
@@ -394,7 +398,7 @@
                         locationSelection.style.display = 'none';
                         scannerControls.style.display = 'flex';
                         startScanner();
-                        updateDebugInfo(`Ubicazione selezionata: ${selectedLocation} (ID: ${selectedLocationId}, isExp: ${selectedLocationIsExp})`);
+                        updateDebugInfo(`Ubicazione selezionata: ${selectedLocation} (ID: ${selectedLocationId}, isExp: ${selectedLocationIsExp}, isValid: ${selectedLocationIsValid})`);
                     });
                     
                     locationList.appendChild(button);
