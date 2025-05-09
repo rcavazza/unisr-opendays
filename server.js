@@ -2806,7 +2806,7 @@ app.post('/decodeqr', async (req, res) => {
                 // Verifica se esiste una prenotazione per questo contatto e questa esperienza
                 const reservation = await new Promise((resolve, reject) => {
                     db.get(
-                        "SELECT * FROM opend_reservations WHERE contact_id = ? AND experience_id = ?",
+                        "SELECT * FROM opend_reservations WHERE contact_id = ? AND time_slot_id = ?",
                         [contactID, locationId],
                         (err, row) => {
                             if (err) {
@@ -2821,7 +2821,7 @@ app.post('/decodeqr', async (req, res) => {
                 
                 // Se non esiste una prenotazione, restituisci un errore
                 if (!reservation) {
-                    console.log(`Nessuna prenotazione trovata per contactID=${contactID} e experience_id=${locationId}`);
+                    console.log(`Nessuna prenotazione trovata per contactID=${contactID} e time_slot_id=${locationId}`);
                     return res.json({
                         id: contactID,
                         firstname: "",
@@ -3051,7 +3051,7 @@ app.get('/docheckin/:contactID', async (req, res) => {
                 // Verifica se esiste una prenotazione per questo contatto e questa esperienza
                 const reservation = await new Promise((resolve, reject) => {
                     db.get(
-                        "SELECT * FROM opend_reservations WHERE contact_id = ? AND experience_id = ?",
+                        "SELECT * FROM opend_reservations WHERE contact_id = ? AND time_slot_id = ?",
                         [contactID, locationId],
                         (err, row) => {
                             if (err) {
@@ -3066,7 +3066,7 @@ app.get('/docheckin/:contactID', async (req, res) => {
                 
                 // Se non esiste una prenotazione, restituisci un errore
                 if (!reservation) {
-                    console.log(`Nessuna prenotazione trovata per contactID=${contactID} e experience_id=${locationId}`);
+                    console.log(`Nessuna prenotazione trovata per contactID=${contactID} e time_slot_id=${locationId}`);
                     return res.json({
                         result: "error",
                         error: "QR NON VALIDO",
@@ -3095,36 +3095,84 @@ app.get('/docheckin/:contactID', async (req, res) => {
                     });
                 }
                 
-                // Aggiorna la proprietà di conferma partecipazione del contatto
-                const updatedProperty = participationValue ? `${participationValue};${locationId}` : locationId;
-                
-                await axios.patch(`https://api.hubapi.com/crm/v3/objects/contacts/${contactID}`, {
-                    properties: {
-                        "open_day__conferma_partecipazione_esperienze_10_05": updatedProperty
-                    }
-                });
-                
-                logger.info(`Updated contact property open_day__conferma_partecipazione_esperienze_10_05 with location ID ${locationId}`);
-                
-                // Elimina la riga corrispondente dal database
-                await new Promise((resolve, reject) => {
-                    db.run(
-                        "DELETE FROM opend_reservations WHERE contact_id = ? AND experience_id = ?",
-                        [contactID, locationId],
-                        (err) => {
+                // Inizia una transazione per garantire che l'aggiornamento HubSpot e la cancellazione dal database siano operazioni atomiche
+                try {
+                    // Inizia la transazione nel database
+                    await new Promise((resolve, reject) => {
+                        db.run("BEGIN TRANSACTION", (err) => {
                             if (err) {
-                                logger.error(`Error deleting reservation from database: ${err.message}`);
+                                logger.error(`Error starting transaction: ${err.message}`);
                                 reject(err);
                             } else {
-                                logger.info(`Deleted reservation for contact_id=${contactID} and experience_id=${locationId}`);
+                                logger.info("Transaction started");
                                 resolve();
                             }
+                        });
+                    });
+                    
+                    // Aggiorna la proprietà di conferma partecipazione del contatto in HubSpot
+                    const updatedProperty = participationValue ? `${participationValue};${locationId}` : locationId;
+                    
+                    await axios.patch(`https://api.hubapi.com/crm/v3/objects/contacts/${contactID}`, {
+                        properties: {
+                            "open_day__conferma_partecipazione_esperienze_10_05": updatedProperty
                         }
-                    );
-                }).catch(err => {
-                    logger.error(`Failed to delete reservation: ${err.message}`);
-                    // Continue even if deletion fails
-                });
+                    });
+                    
+                    logger.info(`Updated contact property open_day__conferma_partecipazione_esperienze_10_05 with location ID ${locationId}`);
+                    
+                    // Elimina la riga corrispondente dal database
+                    await new Promise((resolve, reject) => {
+                        db.run(
+                            "DELETE FROM opend_reservations WHERE contact_id = ? AND time_slot_id = ?",
+                            [contactID, locationId],
+                            function(err) { // Usa function invece di arrow function per accedere a this.changes
+                                if (err) {
+                                    logger.error(`Error deleting reservation from database: ${err.message}`);
+                                    reject(err);
+                                } else {
+                                    // Verifica che almeno una riga sia stata eliminata
+                                    if (this.changes === 0) {
+                                        logger.warn(`No rows deleted for contact_id=${contactID} and time_slot_id=${locationId}`);
+                                    } else {
+                                        logger.info(`Deleted ${this.changes} reservation(s) for contact_id=${contactID} and time_slot_id=${locationId}`);
+                                    }
+                                    resolve(this.changes);
+                                }
+                            }
+                        );
+                    });
+                    
+                    // Commit della transazione
+                    await new Promise((resolve, reject) => {
+                        db.run("COMMIT", (err) => {
+                            if (err) {
+                                logger.error(`Error committing transaction: ${err.message}`);
+                                reject(err);
+                            } else {
+                                logger.info("Transaction committed successfully");
+                                resolve();
+                            }
+                        });
+                    });
+                } catch (transactionError) {
+                    // In caso di errore, esegui il rollback della transazione
+                    logger.error(`Transaction error: ${transactionError.message}`);
+                    
+                    await new Promise((resolve) => {
+                        db.run("ROLLBACK", (err) => {
+                            if (err) {
+                                logger.error(`Error rolling back transaction: ${err.message}`);
+                            } else {
+                                logger.info("Transaction rolled back due to error");
+                            }
+                            resolve();
+                        });
+                    });
+                    
+                    // Rilancia l'errore per gestirlo nel blocco catch esterno
+                    throw transactionError;
+                }
                 
                 // Restituisci una risposta di successo
                 return res.json({
