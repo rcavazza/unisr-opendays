@@ -3465,6 +3465,26 @@ app.get('/docheckin/:contactID', async (req, res) => {
                         );
                     });
                     
+                    // Ottieni le informazioni del contatto, inclusa la proprietà di conferma partecipazione workshop
+                    const contactResponse = await axios.get(
+                        `https://api.hubapi.com/crm/v3/objects/contacts/${contactID}?properties=open_day__conferma_partecipazione_workshop_genitore`
+                    );
+                    
+                    // Verifica se il locationId è già presente nella proprietà workshop genitore
+                    const workshopProperty = contactResponse.data.properties.open_day__conferma_partecipazione_workshop_genitore || "";
+                    logger.info(`Proprietà open_day__conferma_partecipazione_workshop_genitore: ${workshopProperty}`);
+                    
+                    // Aggiorna la proprietà workshop genitore
+                    const updatedProperty = workshopProperty ? `${workshopProperty};${locationId}` : locationId;
+                    
+                    await axios.patch(`https://api.hubapi.com/crm/v3/objects/contacts/${contactID}`, {
+                        properties: {
+                            "open_day__conferma_partecipazione_workshop_genitore": updatedProperty
+                        }
+                    });
+                    
+                    logger.info(`Aggiornata proprietà open_day__conferma_partecipazione_workshop_genitore con location ID ${locationId}`);
+                    
                     // Commit della transazione
                     await new Promise((resolve, reject) => {
                         db.run("COMMIT", (err) => {
@@ -3482,7 +3502,7 @@ app.get('/docheckin/:contactID', async (req, res) => {
                     return res.json({
                         result: "success",
                         custom_object_updated: false,
-                        contact_property_updated: false,
+                        contact_property_updated: true,
                         reservation_deleted: true,
                         locationId: locationId,
                         experienceId: reservation.experience_id,
