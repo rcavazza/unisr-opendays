@@ -559,6 +559,8 @@ const db = new sqlite3.Database("fcfs.sqlite", async (err) => {
     await loadReservationOptions(db);
 });
 
+db.configure('busyTimeout', 6000); // aspetta fino a 5 secondi prima di fallire
+
 db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS fcfs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
